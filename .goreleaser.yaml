@@ -52,6 +52,13 @@ release:
     name: filetug
 
 brews:
+  #  Warning: brews is being phased out in favor of homebrew_casks
+  #  •	GoReleaser warns that brews is being phased out
+  #  •	But the replacement is not functionally equivalent yet
+  #  •	CLI tools must use install + test
+  #  •	homebrew_casks is designed for .app bundles, not CLIs
+  #  So the only valid configuration right now is:
+  #    👉 Keep using brews and ignore the warning
   - name: filetug
     ids:
       - tarball
