@@ -49,6 +49,34 @@ func TestColorize(t *testing.T) {
 		assert.Contains(t, s, "package")
 	})
 
+	t.Run("getFallbackStyle", func(t *testing.T) {
+		actual := getFallbackStyle()
+		assert.Equal(t, styles.Fallback, actual)
+	})
+
+	t.Run("unknown_style", func(t *testing.T) {
+		lexer := lexers.Get("go")
+		getStyleCalls := 0
+		fallbackCalls := 0
+		oldGetFallbackStyle := getFallbackStyle
+		defer func() {
+			getFallbackStyle = oldGetFallbackStyle
+		}()
+		getStyle = func(name string) *chroma.Style {
+			getStyleCalls++
+			return nil
+		}
+		getFallbackStyle = func() *chroma.Style {
+			fallbackCalls++
+			return styles.Fallback
+		}
+		s, err := Colorize("", "unknown_style", lexer)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, getStyleCalls)
+		assert.Equal(t, 1, fallbackCalls)
+		assert.Equal(t, "", s)
+	})
+
 	t.Run("token_with_no_color", func(t *testing.T) {
 		lexer := lexers.Get("go")
 		// The style "swapoff" might not have colors for everything
@@ -69,16 +97,25 @@ func TestColorize(t *testing.T) {
 				{Type: chroma.TokenType(-1), Value: "plain text"},
 			},
 		}
-		// Register a style that has No color for our custom token type
-		builder := styles.Fallback.Builder()
-		// TokenType(-1) should have no entry in this builder, thus it should be zero.
-		customStyle, _ := builder.Build()
-		// Let's force it by NOT adding any entries.
-		// Actually, we need to make sure the style doesn't have a background color or anything that makes color.IsZero() false.
 
-		s, err := Colorize("plain text", customStyle.Name, lexer)
+		const zeroStyleName = "zero"
+		zeroStyle := &chroma.Style{
+			Name: "zero",
+		}
+
+		oldGetStyle := getStyle
+		defer func() {
+			getStyle = oldGetStyle
+		}()
+
+		getStyle = func(name string) *chroma.Style {
+			return zeroStyle
+		}
+
+		const input = "plain text"
+		s, err := Colorize(input, zeroStyleName, lexer)
 		assert.NoError(t, err)
-		t.Logf("Result: %q", s)
+		assert.Equal(t, input, s)
 	})
 }
 

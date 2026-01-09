@@ -8,15 +8,21 @@ import (
 	"github.com/alecthomas/chroma/v2/styles"
 )
 
+var getStyle = styles.Get
+
+var getFallbackStyle = func() *chroma.Style {
+	return styles.Fallback
+}
+
 func Colorize(text, styleName string, lexer chroma.Lexer) (string, error) {
 	iterator, err := lexer.Tokenise(nil, text)
 	if err != nil {
 		return "", err
 	}
 
-	style := styles.Get(styleName)
+	style := getStyle(styleName)
 	if style == nil {
-		style = styles.Fallback
+		style = getFallbackStyle()
 	}
 
 	var sb strings.Builder
