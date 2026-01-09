@@ -33,13 +33,10 @@ type Navigator struct {
 	dirsFocusFunc func()
 	dirsBlurFunc  func()
 
-	leftFocusFunc func()
-	leftBlurFunc  func()
-
 	previewerFocusFunc func()
 	previewerBlurFunc  func()
 
-	left      *tview.Flex
+	left      *left
 	dirs      *Tree
 	favorites *favorites
 

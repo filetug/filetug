@@ -12,8 +12,7 @@ func TestLeft(t *testing.T) {
 	nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
 
 	t.Run("LeftFocusBlur", func(t *testing.T) {
-		nav.leftFocusFunc()
-		nav.leftBlurFunc()
+		nav.left.onFocus()
 	})
 
 	t.Run("FavoritesFocusBlur", func(t *testing.T) {
@@ -79,7 +78,7 @@ func TestLeft(t *testing.T) {
 	})
 
 	t.Run("Left_BlurFunc", func(t *testing.T) {
-		nav.leftBlurFunc()
+		nav.left.onBlur()
 	})
 
 	t.Run("Dirs_BlurFunc", func(t *testing.T) {

@@ -5,8 +5,26 @@ import (
 	"github.com/rivo/tview"
 )
 
+type left struct {
+	*tview.Flex
+	nav *Navigator
+}
+
+func (l *left) onFocus() {
+	l.nav.activeCol = 0
+	l.SetBorderColor(Style.FocusedBorderColor)
+	l.nav.app.SetFocus(l.nav.favorites.TreeView)
+}
+
+func (l *left) onBlur() {
+	l.SetBorderColor(Style.BlurBorderColor)
+}
+
 func createLeft(nav *Navigator) {
-	nav.left = tview.NewFlex().SetDirection(tview.FlexRow)
+	nav.left = &left{
+		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
+		nav:  nav,
+	}
 	nav.left.SetBorder(true)
 	nav.left.AddItem(nav.favorites, 3, 0, false)
 	nav.left.AddItem(nav.dirs, 0, 1, true)
@@ -73,23 +91,9 @@ func createLeft(nav *Navigator) {
 		})
 	})
 
-	nav.left.SetFocusFunc(func() {
-		nav.activeCol = 0
-		nav.left.SetBorderColor(Style.FocusedBorderColor)
-		nav.app.SetFocus(nav.favorites.TreeView)
-	})
-	nav.leftFocusFunc = func() {
-		nav.activeCol = 0
-		nav.left.SetBorderColor(Style.FocusedBorderColor)
-		nav.app.SetFocus(nav.favorites.TreeView)
-	}
+	nav.left.SetFocusFunc(nav.left.onFocus)
 
-	nav.left.SetBlurFunc(func() {
-		nav.left.SetBorderColor(Style.BlurBorderColor)
-	})
-	nav.leftBlurFunc = func() {
-		nav.left.SetBorderColor(Style.BlurBorderColor)
-	}
+	nav.left.SetBlurFunc(nav.left.onBlur)
 
 	onLeftTreeViewFocus := func(t *tview.TreeView) {
 		nav.activeCol = 0
