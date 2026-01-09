@@ -5,7 +5,7 @@
 
 ## ♺ Continuous Integration — [![Build and Test](https://github.com/datatug/filetug/actions/workflows/build.yml/badge.svg)](https://github.com/datatug/filetug/actions/workflows/build.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/datatug/filetug?cache=0)](https://goreportcard.com/report/github.com/datatug/filetug) [![Coverage Status](https://coveralls.io/repos/github/datatug/filetug/badge.svg?branch=main&cache=1)](https://coveralls.io/github/datatug/filetug?branch=main) [![GoDoc](https://godoc.org/github.com/datatug/filetug?status.svg)](https://godoc.org/github.com/datatug/filetug)
 
-[//]: # (Help wanted to [get test coverage to 100%]&#40;https://github.com/datatug/filetug/issues/64&#41;.)
+We are targeting 100% test coverage.
 
 ## Installation
 
@@ -35,4 +35,5 @@ ft <PATH_TO_DIRECTORY_OR_FILE>
 
 ## Contributing
 
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this project.
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this
+project.
