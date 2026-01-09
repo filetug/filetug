@@ -65,7 +65,9 @@ brews:
       token: "{{ .Env.HOMEBREW_FILETUG_GITHUB_TOKEN }}"
 
     install: |
-      bin.install "ft"
+      bin.install "filetug"
+      bin.symlink "filetug" => "ft"
 
     test: |
+      system "#{bin}/filetug", "--version"
       system "#{bin}/ft", "--version"
