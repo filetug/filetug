@@ -83,4 +83,4 @@ go build -o ft main.go
 
 ## License
 
-By contributing to FileTug, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
+By contributing to FileTug, you agree that your contributions will be licensed under the project's [MIT License](../LICENSE).

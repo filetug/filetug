@@ -35,5 +35,5 @@ ft <PATH_TO_DIRECTORY_OR_FILE>
 
 ## Contributing
 
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this
+Contributions are welcome! Please read the [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on how to contribute to this
 project.

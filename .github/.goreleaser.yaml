@@ -1,0 +1,71 @@
+version: 2
+
+project_name: filetug
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: filetug-unix
+    main: .
+    binary: filetug
+    env: [ CGO_ENABLED=0 ]
+    goos: [ linux, darwin ]
+    goarch: [ amd64, arm64 ]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+  - id: filetug-windows
+    main: .
+    binary: filetug
+    env: [ CGO_ENABLED=0 ]
+    goos: [ windows ]
+    goarch: [ amd64 ]
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: tarball
+    formats: [ tar.gz ]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    ids: [ filetug-unix ]
+    files:
+      - README.md
+      - LICENSE*
+
+  - id: zip
+    formats: [ zip ]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    ids: [ filetug-windows ]
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: datatug
+    name: filetug
+
+brews:
+  - name: filetug
+    ids:
+      - tarball
+    description: "FileTug – modern CLI file browser/picker with neat UI"
+    homepage: https://github.com/datatug/filetug-cli
+    license: MIT
+
+    repository:
+      owner: datatug
+      name: homebrew-filetug
+      token: "{{ .Env.HOMEBREW_FILETUG_GITHUB_TOKEN }}"
+
+    install: |
+      bin.install "ft"
+
+    test: |
+      system "#{bin}/ft", "--version"
