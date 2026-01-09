@@ -56,3 +56,12 @@ func TestExpandHome(t *testing.T) {
 		assert.Equal(t, filepath.Join(home, "abc"), ExpandHome("~/abc"))
 	})
 }
+
+func TestReadJSONFile(t *testing.T) {
+	type A struct {
+		B string
+	}
+	var a A
+	err := ReadJSONFile("", false, &a)
+	assert.NoError(t, err)
+}
