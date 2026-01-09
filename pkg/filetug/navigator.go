@@ -221,7 +221,7 @@ func (nav *Navigator) goDir(dir string) {
 			tdName.SetTextColor(color)
 			nav.files.SetCell(fileIndex, 0, tdName)
 			if fi, err := child.Info(); err == nil {
-				td := tview.NewTableCell(strconv.FormatInt(fi.Size(), 10)).SetAlign(tview.AlignRight)
+				td := tview.NewTableCell(strconv.FormatInt(fi.Size(), 10)).SetAlign(tview.AlignRight).SetTextColor(color)
 				nav.files.SetCell(fileIndex, 1, td)
 				modTime := fi.ModTime()
 				var modStr string
@@ -230,7 +230,7 @@ func (nav *Navigator) goDir(dir string) {
 				} else {
 					modStr = modTime.Format("2006-01-02")
 				}
-				td = tview.NewTableCell(modStr).SetAlign(tview.AlignRight)
+				td = tview.NewTableCell(modStr).SetAlign(tview.AlignRight).SetTextColor(color)
 				nav.files.SetCell(fileIndex, 2, td)
 			}
 			fileIndex++
