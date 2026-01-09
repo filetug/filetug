@@ -51,7 +51,7 @@ release:
     owner: datatug
     name: filetug
 
-homebrew_casks:
+homebrew:
   - name: filetug
     ids:
       - tarball
