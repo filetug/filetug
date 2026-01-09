@@ -8,10 +8,14 @@ import (
 
 func Main() {
 	app := tview.NewApplication()
-	app.EnableMouse(true)
-	app.SetRoot(NewNavigator(app), true)
+	SetupApp(app)
 	err := app.Run()
 	if err != nil {
 		fmt.Print(err)
 	}
+}
+
+func SetupApp(app *tview.Application) {
+	app.EnableMouse(true)
+	app.SetRoot(NewNavigator(app), true)
 }

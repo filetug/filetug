@@ -45,9 +45,16 @@ func newPreviewer(nav *Navigator) *previewer {
 		p.SetBorderColor(Style.FocusedBorderColor)
 		//nav.app.SetFocus(tv)
 	})
+	nav.previewerFocusFunc = func() {
+		nav.activeCol = 2
+		p.SetBorderColor(Style.FocusedBorderColor)
+	}
 	p.SetBlurFunc(func() {
 		p.SetBorderColor(Style.BlurBorderColor)
 	})
+	nav.previewerBlurFunc = func() {
+		p.SetBorderColor(Style.BlurBorderColor)
+	}
 
 	p.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {

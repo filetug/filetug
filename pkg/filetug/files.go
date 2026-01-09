@@ -48,9 +48,18 @@ func newFiles(nav *Navigator) *tview.Table {
 		files.SetBorderColor(Style.FocusedBorderColor)
 		nav.activeCol = 1
 	})
+	nav.filesFocusFunc = func() {
+		files.SetBorderColor(Style.FocusedBorderColor)
+		nav.activeCol = 1
+	}
+
 	files.SetBlurFunc(func() {
 		files.SetBorderColor(Style.BlurBorderColor)
 	})
+	nav.filesBlurFunc = func() {
+		files.SetBorderColor(Style.BlurBorderColor)
+	}
+
 	files.SetSelectionChangedFunc(func(row, column int) {
 		if row == 0 {
 			nav.previewer.textView.SetText("Selected dir: " + nav.currentDir)
@@ -62,5 +71,16 @@ func newFiles(nav *Navigator) *tview.Table {
 		fullName := filepath.Join(nav.currentDir, name)
 		nav.previewer.PreviewFile(name, fullName)
 	})
+	nav.filesSelectionChangedFunc = func(row, column int) {
+		if row == 0 {
+			nav.previewer.textView.SetText("Selected dir: " + nav.currentDir)
+			nav.previewer.textView.SetTextColor(tcell.ColorWhiteSmoke)
+			return
+		}
+		cell := files.GetCell(row, 0)
+		name := cell.Text[1:]
+		fullName := filepath.Join(nav.currentDir, name)
+		nav.previewer.PreviewFile(name, fullName)
+	}
 	return files
 }

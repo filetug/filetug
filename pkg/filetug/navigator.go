@@ -23,6 +23,22 @@ type Navigator struct {
 	activeCol   int
 	proportions []int
 
+	filesFocusFunc            func()
+	filesBlurFunc             func()
+	filesSelectionChangedFunc func(row, column int)
+
+	favoritesFocusFunc func()
+	favoritesBlurFunc  func()
+
+	dirsFocusFunc func()
+	dirsBlurFunc  func()
+
+	leftFocusFunc func()
+	leftBlurFunc  func()
+
+	previewerFocusFunc func()
+	previewerBlurFunc  func()
+
 	left      *tview.Flex
 	dirs      *Tree
 	favorites *favorites

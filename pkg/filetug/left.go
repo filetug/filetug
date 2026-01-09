@@ -78,10 +78,18 @@ func createLeft(nav *Navigator) {
 		nav.left.SetBorderColor(Style.FocusedBorderColor)
 		nav.app.SetFocus(nav.favorites.TreeView)
 	})
+	nav.leftFocusFunc = func() {
+		nav.activeCol = 0
+		nav.left.SetBorderColor(Style.FocusedBorderColor)
+		nav.app.SetFocus(nav.favorites.TreeView)
+	}
 
 	nav.left.SetBlurFunc(func() {
 		nav.left.SetBorderColor(Style.BlurBorderColor)
 	})
+	nav.leftBlurFunc = func() {
+		nav.left.SetBorderColor(Style.BlurBorderColor)
+	}
 
 	onLeftTreeViewFocus := func(t *tview.TreeView) {
 		nav.activeCol = 0
@@ -107,14 +115,31 @@ func createLeft(nav *Navigator) {
 		}
 		onLeftTreeViewFocus(nav.favorites.TreeView)
 	})
+	nav.favoritesFocusFunc = func() {
+		nav.activeCol = 0
+		if nav.favorites.GetCurrentNode() == nil {
+			nav.favorites.SetCurrentNode(nav.dirs.GetRoot().GetChildren()[0])
+		}
+		onLeftTreeViewFocus(nav.favorites.TreeView)
+	}
 	nav.dirs.SetFocusFunc(func() {
 		nav.activeCol = 0
 		onLeftTreeViewFocus(nav.dirs.TreeView)
 	})
+	nav.dirsFocusFunc = func() {
+		nav.activeCol = 0
+		onLeftTreeViewFocus(nav.dirs.TreeView)
+	}
 	nav.favorites.SetBlurFunc(func() {
 		onLeftTreeViewBlur(nav.favorites.TreeView)
 	})
+	nav.favoritesBlurFunc = func() {
+		onLeftTreeViewBlur(nav.favorites.TreeView)
+	}
 	nav.dirs.SetBlurFunc(func() {
 		onLeftTreeViewBlur(nav.dirs.TreeView)
 	})
+	nav.dirsBlurFunc = func() {
+		onLeftTreeViewBlur(nav.dirs.TreeView)
+	}
 }
