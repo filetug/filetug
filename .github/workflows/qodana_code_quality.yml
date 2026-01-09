@@ -6,6 +6,12 @@ on:
     branches: # Specify your branches here
       - main # The 'main' branch
       - 'releases/*' # The release branches
+    paths:
+      - 'go.*'
+      - '**/*.go'
+      - 'src/**'
+      - '.github/workflows/build.yml'
+      - '.github/workflows/qodana_code_quality.yml'
 
 jobs:
   qodana:
