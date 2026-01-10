@@ -11,6 +11,7 @@ import (
 
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/datatug/filetug/pkg/chroma2tcell"
+	"github.com/datatug/filetug/pkg/fileviewers/dsstore"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -72,6 +73,16 @@ func newPreviewer(nav *Navigator) *previewer {
 	return &p
 }
 
+func (p *previewer) SetErr(err error) {
+	p.textView.SetText(err.Error())
+	p.textView.SetTextColor(tcell.ColorRed)
+}
+
+func (p *previewer) SetText(text string) {
+	p.textView.SetText(text)
+	p.textView.SetTextColor(tcell.ColorWhiteSmoke)
+}
+
 func (p *previewer) PreviewFile(name, fullName string) {
 	data, err := os.ReadFile(fullName)
 	if err != nil {
@@ -82,19 +93,35 @@ func (p *previewer) PreviewFile(name, fullName string) {
 	if name == "" {
 		_, name = path.Split(fullName)
 	}
+	switch name {
+	case ".DS_Store":
+		bufferRead := bytes.NewBuffer(data)
+		var s dsstore.Store
+		err = s.Read(bufferRead)
+		if err != nil {
+			p.SetErr(err)
+			return
+		}
+		var sb strings.Builder
+		for _, r := range s.Records {
+			sb.WriteString(fmt.Sprintf("%s: %s\n", r.FileName, r.Type))
+		}
+		data = []byte(sb.String())
+	default:
+		ext := strings.ToLower(filepath.Ext(name))
+		if ext == ".json" {
+			str, err := prettyJSON(string(data))
+			if err == nil {
+				data = []byte(str)
+			}
+		}
+	}
 	lexer := lexers.Match(name)
 	if lexer == nil {
 		p.textView.SetWrap(false)
 		p.textView.SetText(string(data))
 		p.nav.previewer.textView.SetTextColor(tcell.ColorWhiteSmoke)
 		return
-	}
-	ext := strings.ToLower(filepath.Ext(name))
-	if ext == ".json" {
-		str, err := prettyJSON(string(data))
-		if err == nil {
-			data = []byte(str)
-		}
 	}
 	colorized, err := chroma2tcell.Colorize(string(data), "dracula", lexer)
 	if err != nil {

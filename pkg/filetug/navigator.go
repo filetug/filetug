@@ -5,12 +5,11 @@ import (
 	"os"
 	"path"
 	"sort"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/datatug/filetug/pkg/sneatv"
+	"github.com/datatug/filetug/pkg/sticky"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -45,7 +44,7 @@ type Navigator struct {
 	dirsTree  *Tree
 	favorites *favorites
 
-	files *tview.Table
+	files *sticky.Table
 
 	previewer *previewer
 }
@@ -238,7 +237,6 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 		parentNode.AddChild(tview.NewTreeNode(fmt.Sprintf("Error for %s: %s", nav.currentDir, err.Error())))
 		return
 	}
-	fileIndex := 0
 
 	if isTreeDirChanges {
 		nav.files.SetTitle(fmt.Sprintf(" Files: %s ", dir))
@@ -246,10 +244,10 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 		nav.files.SetTitle(dir)
 	}
 	nav.files.Clear()
-	nav.files.SetCell(0, 0, tview.NewTableCell("Name").SetTextColor(Style.TableHeaderColor).SetExpansion(1))
-	nav.files.SetCell(0, 1, tview.NewTableCell("Size").SetTextColor(Style.TableHeaderColor).SetAlign(tview.AlignRight))
-	nav.files.SetCell(0, 2, tview.NewTableCell("Modified").SetTextColor(Style.TableHeaderColor).SetAlign(tview.AlignRight))
-	nav.files.SetFixed(1, 0)
+	//nav.files.SetCell(0, 0, tview.NewTableCell("Name").SetTextColor(Style.TableHeaderColor).SetExpansion(1))
+	//nav.files.SetCell(0, 1, tview.NewTableCell("Size").SetTextColor(Style.TableHeaderColor).SetAlign(tview.AlignRight))
+	//nav.files.SetCell(0, 2, tview.NewTableCell("Modified").SetTextColor(Style.TableHeaderColor).SetAlign(tview.AlignRight))
+	//nav.files.SetFixed(1, 0)
 	nav.files.SetSelectable(true, false)
 	//nav.files.Select(1, 0)
 
@@ -262,51 +260,16 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 		return children[i].Name() < children[j].Name()
 	})
 
-	fileIndex++
-
-	td := func(col int, text string) {
-		nav.files.SetCell(fileIndex, col, tview.NewTableCell(text).SetTextColor(tcell.ColorLightBlue))
-	}
-	td(0, "..")
-	td(1, "")
-	td(2, "")
-	fileIndex++
+	nav.files.SetRecords(fsRecords{nodePath: nodePath, dirEntries: children})
 
 	for _, child := range children {
 		name := child.Name()
 		if strings.HasPrefix(name, ".") {
 			continue
 		}
-		if child.IsDir() {
-			if isTreeDirChanges {
-				n := tview.NewTreeNode("📁" + name).SetReference(path.Join(nodePath, name))
-				parentNode.AddChild(n)
-			} else {
-				td(0, " 📁"+name)
-				td(1, "")
-				td(2, "")
-				fileIndex++
-				continue
-			}
-		} else {
-			tdName := tview.NewTableCell("   " + name)
-			color := GetColorByFileName(name)
-			tdName.SetTextColor(color)
-			nav.files.SetCell(fileIndex, 0, tdName)
-			if fi, err := child.Info(); err == nil {
-				td := tview.NewTableCell(strconv.FormatInt(fi.Size(), 10)).SetAlign(tview.AlignRight).SetTextColor(color)
-				nav.files.SetCell(fileIndex, 1, td)
-				modTime := fi.ModTime()
-				var modStr string
-				if modTime.After(time.Now().Add(24 * time.Hour)) {
-					modStr = modTime.Format("15:04:05")
-				} else {
-					modStr = modTime.Format("2006-01-02")
-				}
-				td = tview.NewTableCell(modStr).SetAlign(tview.AlignRight).SetTextColor(color)
-				nav.files.SetCell(fileIndex, 2, td)
-			}
-			fileIndex++
+		if child.IsDir() && isTreeDirChanges {
+			n := tview.NewTreeNode("📁" + name).SetReference(path.Join(nodePath, name))
+			parentNode.AddChild(n)
 		}
 	}
 	if isTreeDirChanges {

@@ -24,14 +24,14 @@ func TestGetColorByFileName(t *testing.T) {
 		{"log", "app.log", tcell.ColorRosyBrown},
 		{"xls", "sheet.xls", tcell.ColorGreen},
 		{"doc", "word.doc", tcell.ColorBlue},
-		{"no_ext", "README", tcell.ColorWhite},
-		{"unknown_ext", "config.unknown", tcell.ColorWhite},
+		{"no_ext", "README", tcell.ColorWhiteSmoke},
+		{"unknown_ext", "config.unknown", tcell.ColorWhiteSmoke},
 		{"hidden_go", ".go", tcell.ColorAqua},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetColorByFileName(tt.fileName); got != tt.want {
-				t.Errorf("GetColorByFileName() = %v, want %v", got, tt.want)
+			if got := GetColorByFileExt(tt.fileName); got != tt.want {
+				t.Errorf("GetColorByFileExt() = %v, want %v", got, tt.want)
 			}
 		})
 	}

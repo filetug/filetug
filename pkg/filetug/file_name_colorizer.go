@@ -29,7 +29,7 @@ var fileColors = map[string]tcell.Color{
 	"php":  tcell.ColorPurple,
 	"rs":   tcell.ColorOrange,
 	"sh":   tcell.ColorGreen,
-	"bat":  tcell.ColorGreen,
+	"bat":  tcell.ColorDarkRed,
 	"txt":  tcell.ColorWhite,
 	"csv":  tcell.ColorLightGreen,
 	"jpg":  tcell.ColorMediumPurple,
@@ -46,10 +46,10 @@ var fileColors = map[string]tcell.Color{
 	"docx": tcell.ColorBlue,
 }
 
-func GetColorByFileName(name string) tcell.Color {
+func GetColorByFileExt(name string) tcell.Color {
 	ext := strings.TrimPrefix(filepath.Ext(name), ".")
 	if color, ok := fileColors[ext]; ok {
 		return color
 	}
-	return tcell.ColorWhite
+	return tcell.ColorWhiteSmoke
 }
