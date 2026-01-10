@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/blacktop/go-termimg"
 	"github.com/datatug/filetug/pkg/chroma2tcell"
 	"github.com/datatug/filetug/pkg/fileviewers/dsstore"
 	"github.com/gdamore/tcell/v2"
@@ -74,11 +75,15 @@ func newPreviewer(nav *Navigator) *previewer {
 }
 
 func (p *previewer) SetErr(err error) {
+	p.textView.Clear()
+	p.textView.SetDynamicColors(true)
 	p.textView.SetText(err.Error())
 	p.textView.SetTextColor(tcell.ColorRed)
 }
 
 func (p *previewer) SetText(text string) {
+	p.textView.Clear()
+	p.textView.SetDynamicColors(true)
 	p.textView.SetText(text)
 	p.textView.SetTextColor(tcell.ColorWhiteSmoke)
 }
@@ -109,15 +114,39 @@ func (p *previewer) PreviewFile(name, fullName string) {
 		data = []byte(sb.String())
 	default:
 		ext := strings.ToLower(filepath.Ext(name))
-		if ext == ".json" {
+		switch ext {
+		case ".json":
 			str, err := prettyJSON(string(data))
 			if err == nil {
 				data = []byte(str)
 			}
+		case ".png", ".jpg", ".jpeg", ".gif":
+			p.textView.Clear()
+			p.textView.SetDynamicColors(true)
+			_, _, w, h := p.textView.GetInnerRect()
+			if w == 0 || h == 0 {
+				w, h = 80, 40 // Fallback
+			}
+			img, err := termimg.Open(fullName)
+			if err != nil {
+				p.SetErr(err)
+				return
+			}
+			rendered, err := img.Width(w).Height(h).Render()
+			if err != nil {
+				p.SetErr(err)
+				return
+			}
+			p.textView.SetWrap(false)
+			writer := tview.ANSIWriter(p.textView)
+			_, _ = writer.Write([]byte(rendered))
+			return
 		}
 	}
 	lexer := lexers.Match(name)
 	if lexer == nil {
+		p.textView.Clear()
+		p.textView.SetDynamicColors(true)
 		p.textView.SetWrap(false)
 		p.textView.SetText(string(data))
 		p.nav.previewer.textView.SetTextColor(tcell.ColorWhiteSmoke)
@@ -125,10 +154,14 @@ func (p *previewer) PreviewFile(name, fullName string) {
 	}
 	colorized, err := chroma2tcell.Colorize(string(data), "dracula", lexer)
 	if err != nil {
+		p.textView.Clear()
+		p.textView.SetDynamicColors(true)
 		p.textView.SetText("Failed to format file: " + err.Error())
 		p.textView.SetTextColor(tcell.ColorRed)
 		return
 	}
+	p.textView.Clear()
+	p.textView.SetDynamicColors(true)
 	p.textView.SetText(colorized)
 	p.textView.SetWrap(true)
 	//p.textView.SetTextColor(tcell.ColorWhiteSmoke)
