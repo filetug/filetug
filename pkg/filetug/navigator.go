@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/datatug/filetug/pkg/fsutils"
+	"github.com/datatug/filetug/pkg/ftstate"
 	"github.com/datatug/filetug/pkg/gitutils"
 	"github.com/datatug/filetug/pkg/sneatv"
 	"github.com/datatug/filetug/pkg/sticky"
@@ -106,7 +107,11 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 
 	nav.createColumns()
 
-	nav.goDir("~")
+	currentDir := ftstate.GetCurrentDir()
+	if currentDir == "" {
+		currentDir = "~"
+	}
+	nav.goDir(currentDir)
 
 	return nav
 }
@@ -244,6 +249,8 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 		nav.dirsTree.selectedDirNode = selectedNode
 		parentNode = selectedNode
 	}
+
+	ftstate.SaveCurrentDir(dir)
 
 	if strings.HasPrefix(dir, "~") || strings.HasPrefix(dir, "/") {
 		nodePath = dir[:1]

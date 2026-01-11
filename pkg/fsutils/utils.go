@@ -21,6 +21,22 @@ func ReadJSONFile(filePath string, required bool, o interface{}) (err error) {
 	return ReadFile(filePath, required, o, jsonDecoderFactory)
 }
 
+func WriteJSONFile(filePath string, o interface{}) (err error) {
+	var file *os.File
+	file, err = os.Create(filePath)
+	if err != nil {
+		return
+	}
+	defer func() {
+		if file != nil {
+			_ = file.Close()
+		}
+	}()
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "\t")
+	return encoder.Encode(o)
+}
+
 func ReadFile(filePath string, required bool, o interface{}, newDecoder func(r io.Reader) Decoder) (err error) {
 	var file *os.File
 	if file, err = os.Open(filePath); err != nil {
