@@ -67,6 +67,8 @@ func GetRepositoryStatus(ctx context.Context, dir string) *RepoStatus {
 	// Quick check if .git exists to avoid expensive go-git calls for non-git dirs
 	dotGit := filepath.Join(dir, ".git")
 	if _, err := os.Stat(dotGit); os.IsNotExist(err) {
+		// Also check parent directories if this is a subdirectory of a repo
+		// but for now let's just optimize the current dir check
 		return nil
 	}
 
@@ -121,7 +123,16 @@ func GetRepositoryStatus(ctx context.Context, dir string) *RepoStatus {
 		return res
 	}
 
-	res.FilesChanged = len(status)
+	res.FilesChanged = 0
+	for _, s := range status {
+		if s.Worktree != git.Unmodified || s.Staging != git.Unmodified {
+			res.FilesChanged++
+		}
+	}
+
+	if res.FilesChanged == 0 {
+		return res
+	}
 
 	// To get insertions/deletions, we need to diff
 	if headCommit != nil {

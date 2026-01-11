@@ -200,29 +200,27 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, fullPath string, node
 		nav.app.QueueUpdateDraw(func() {
 			node.SetText(prefix + cachedStatus.String())
 		})
-		return // temp, TODO: remove
+		return
 	}
 
-	go func() {
-		status := gitutils.GetRepositoryStatus(ctx, fullPath)
-		if status == nil {
-			return
-		}
+	status := gitutils.GetRepositoryStatus(ctx, fullPath)
+	if status == nil {
+		return
+	}
 
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
 
-		nav.gitStatusCacheMu.Lock()
-		nav.gitStatusCache[fullPath] = status
-		nav.gitStatusCacheMu.Unlock()
+	nav.gitStatusCacheMu.Lock()
+	nav.gitStatusCache[fullPath] = status
+	nav.gitStatusCacheMu.Unlock()
 
-		nav.app.QueueUpdateDraw(func() {
-			node.SetText(prefix + status.String())
-		})
-	}()
+	nav.app.QueueUpdateDraw(func() {
+		node.SetText(prefix + status.String())
+	})
 }
 
 func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
@@ -257,7 +255,7 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 		if isTreeDirChanges {
 			fullPath := fsutils.ExpandHome(nodePath)
 			nav.dirsTree.currDirRoot.SetText(nodePath).SetReference(nodePath)
-			nav.updateGitStatus(ctx, fullPath, nav.dirsTree.currDirRoot, nodePath)
+			go nav.updateGitStatus(ctx, fullPath, nav.dirsTree.currDirRoot, nodePath)
 		}
 	}
 
@@ -275,7 +273,7 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 				fullPath := fsutils.ExpandHome(nodePath)
 				prefix := "📁" + p
 				n := tview.NewTreeNode(prefix).SetReference(nodePath)
-				nav.updateGitStatus(ctx, fullPath, n, prefix)
+				go nav.updateGitStatus(ctx, fullPath, n, prefix)
 				parentNode.AddChild(n)
 				parentNode = n
 			}
@@ -336,7 +334,7 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 				parentNode.AddChild(n)
 
 				fullPath := fsutils.ExpandHome(childPath)
-				nav.updateGitStatus(ctx, fullPath, n, prefix+" ")
+				go nav.updateGitStatus(ctx, fullPath, n, prefix+" ")
 			}
 		}
 		nav.dirsTree.SetCurrentNode(parentNode)
