@@ -150,8 +150,7 @@ func (nav *Navigator) createColumns() {
 			if event.Key() == tcell.KeyRune {
 				switch r := event.Rune(); r {
 				case 'f':
-					nav.left.SetContent(nav.favorites)
-					nav.app.SetFocus(nav.favorites)
+					nav.favorites.ShowFavorites()
 				case '0':
 					copy(nav.proportions, defaultProportions)
 					nav.createColumns()

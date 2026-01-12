@@ -49,7 +49,7 @@ func newFavorites(nav *Navigator) *favorites {
 		items: builtInFavorites(),
 		boxed: newBoxed(
 			flex,
-			WithLeftBorder(2, -1),
+			WithLeftBorder(1, -1),
 		),
 	}
 	f.AddItem(f.list, 0, 1, true)
@@ -67,6 +67,10 @@ func newFavorites(nav *Navigator) *favorites {
 		default:
 			return event
 		}
+	})
+	f.list.SetChangedFunc(func(index int, _ string, _ string, _ rune) {
+		item := f.items[index]
+		f.nav.goDir(item.path)
 	})
 	return f
 }
