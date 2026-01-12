@@ -61,9 +61,13 @@ func (t *Table) setHeader() {
 	for i, col := range t.columns {
 		th := tview.NewTableCell(col.Name)
 		th.SetTextColor(tcell.ColorDarkGray)
+		if i == 0 {
+			th.SetExpansion(9)
+		}
 		//th.SetBackgroundColor(tcell.ColorGray)
 		t.SetCell(0, i, th)
 	}
+
 }
 
 func (t *Table) render() {
@@ -104,11 +108,13 @@ func (t *Table) render() {
 	for row := t.topRowIndex; row < visibleRowsCount && t.topRowIndex+row < t.records.Count(); row++ {
 		for col, column := range t.columns {
 			td := t.records.GetCell(row, col, column.Name)
-			if maxWidth := maxColWidth[col]; maxWidth > 0 {
-				td.SetMaxWidth(maxWidth)
-			}
-			if column.Expansion > 0 {
-				td.SetExpansion(column.Expansion)
+			if td != nil {
+				if maxWidth := maxColWidth[col]; maxWidth > 0 {
+					td.SetMaxWidth(maxWidth)
+				}
+				if column.Expansion > 0 {
+					td.SetExpansion(column.Expansion)
+				}
 			}
 			t.SetCell(row+1, col, td)
 		}

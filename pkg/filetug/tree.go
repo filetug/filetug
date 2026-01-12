@@ -69,7 +69,11 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		t.SetSearch("")
 		return nil
 	case tcell.KeyRune:
-		t.SetSearch(t.search + strings.ToLower(string(event.Rune())))
+		s := string(event.Rune())
+		if t.search == "" && s == " " {
+			return event
+		}
+		t.SetSearch(t.search + strings.ToLower(s))
 		return nil
 	default:
 		return event
@@ -92,6 +96,8 @@ func (t *Tree) SetSearch(pattern string) {
 		t.SetCurrentNode(search.firstPrefixed)
 	} else if search.firstContains != nil {
 		t.SetCurrentNode(search.firstContains)
+	} else if len(t.search) > 0 {
+		t.SetSearch(t.search[:len(t.search)-1])
 	}
 }
 

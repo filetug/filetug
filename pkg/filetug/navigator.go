@@ -304,9 +304,13 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 	children, err := os.ReadDir(nav.currentDir)
 	if err != nil {
 		parentNode.ClearChildren()
-		parentNode.AddChild(tview.NewTreeNode(fmt.Sprintf("Error for %s: %s", nav.currentDir, err.Error())))
+		parentNode.SetColor(tcell.ColorOrangeRed)
+		dirRecords := NewDirRecords(nodePath, nil)
+		nav.files.SetRecords(dirRecords)
+		nav.previewer.textView.SetText(err.Error()).SetWrap(true).SetTextColor(tcell.ColorOrangeRed)
 		return
 	}
+	nav.previewer.textView.SetText("").SetTextColor(tcell.ColorWhiteSmoke)
 
 	if isTreeDirChanges {
 		nav.files.SetTitle(fmt.Sprintf(" Files: %s ", dir))
