@@ -13,7 +13,6 @@ type left struct {
 func (l *left) onFocus() {
 	l.nav.activeCol = 0
 	l.SetBorderColor(Style.FocusedBorderColor)
-	l.nav.app.SetFocus(l.nav.favorites.TreeView)
 }
 
 func (l *left) onBlur() {
@@ -61,17 +60,9 @@ func createLeft(nav *Navigator) {
 
 	nav.favorites.SetFocusFunc(func() {
 		nav.activeCol = 0
-		if nav.favorites.GetCurrentNode() == nil {
-			nav.favorites.SetCurrentNode(nav.dirsTree.GetRoot().GetChildren()[0])
-		}
-		onLeftTreeViewFocus(nav.favorites.TreeView)
 	})
 	nav.favoritesFocusFunc = func() {
 		nav.activeCol = 0
-		if nav.favorites.GetCurrentNode() == nil {
-			nav.favorites.SetCurrentNode(nav.dirsTree.GetRoot().GetChildren()[0])
-		}
-		onLeftTreeViewFocus(nav.favorites.TreeView)
 	}
 	nav.dirsTree.SetFocusFunc(func() {
 		nav.activeCol = 0
@@ -80,12 +71,6 @@ func createLeft(nav *Navigator) {
 	nav.dirsFocusFunc = func() {
 		nav.activeCol = 0
 		onLeftTreeViewFocus(nav.dirsTree.TreeView)
-	}
-	nav.favorites.SetBlurFunc(func() {
-		onLeftTreeViewBlur(nav.favorites.TreeView)
-	})
-	nav.favoritesBlurFunc = func() {
-		onLeftTreeViewBlur(nav.favorites.TreeView)
 	}
 	nav.dirsTree.SetBlurFunc(func() {
 		onLeftTreeViewBlur(nav.dirsTree.TreeView)

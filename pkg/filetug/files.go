@@ -37,7 +37,7 @@ func (f *files) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		f.nav.app.SetFocus(f.nav.dirsTree)
 		return nil
 	case tcell.KeyRight:
-		f.nav.app.SetFocus(f.nav.previewer)
+		f.nav.app.SetFocus(f.nav.right)
 		return nil
 	case tcell.KeyUp:
 		row, _ := table.GetSelection()

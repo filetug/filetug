@@ -15,11 +15,6 @@ func TestLeft(t *testing.T) {
 		nav.left.onFocus()
 	})
 
-	t.Run("FavoritesFocusBlur", func(t *testing.T) {
-		nav.favoritesFocusFunc()
-		nav.favoritesBlurFunc()
-	})
-
 	t.Run("DirsFocusBlur", func(t *testing.T) {
 		nav.dirsFocusFunc()
 		nav.dirsBlurFunc()
@@ -46,16 +41,6 @@ func TestLeft(t *testing.T) {
 		nav.dirsTree.GetInputCapture()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
 	})
 
-	t.Run("onLeftTreeViewFocus_NoChildren", func(t *testing.T) {
-		nav.favorites.GetRoot().SetChildren(nil)
-		nav.favoritesFocusFunc()
-	})
-
-	t.Run("onLeftTreeViewFocus_WithChildren", func(t *testing.T) {
-		nav.favorites.SetCurrentNode(nil)
-		nav.favoritesFocusFunc()
-	})
-
 	t.Run("NavigatorInputCapture_Enter", func(t *testing.T) {
 		nav.GetInputCapture()(tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone))
 	})
@@ -66,9 +51,5 @@ func TestLeft(t *testing.T) {
 
 	t.Run("Dirs_BlurFunc", func(t *testing.T) {
 		nav.dirsBlurFunc()
-	})
-
-	t.Run("Favorites_BlurFunc", func(t *testing.T) {
-		nav.favoritesBlurFunc()
 	})
 }

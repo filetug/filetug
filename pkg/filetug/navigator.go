@@ -34,7 +34,6 @@ type Navigator struct {
 	filesSelectionChangedFunc func(row, column int)
 
 	favoritesFocusFunc func()
-	favoritesBlurFunc  func()
 
 	dirsFocusFunc func()
 	dirsBlurFunc  func()
@@ -42,7 +41,9 @@ type Navigator struct {
 	previewerFocusFunc func()
 	previewerBlurFunc  func()
 
-	left      *left
+	left  *left
+	right *right
+
 	dirsTree  *Tree
 	favorites *favorites
 
@@ -85,11 +86,12 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 		),
 		Flex:           tview.NewFlex().SetDirection(tview.FlexRow),
 		main:           tview.NewFlex(),
-		favorites:      newFavorites(),
 		bottom:         newBottom(),
 		proportions:    make([]int, 3),
 		gitStatusCache: make(map[string]*gitutils.RepoStatus),
 	}
+	nav.right = newRight(nav)
+	nav.favorites = newFavorites(nav)
 	nav.dirsTree = NewTree(nav)
 	nav.AddItem(nav.breadcrumbs, 1, 0, false)
 
@@ -97,6 +99,7 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 
 	nav.files = newFiles(nav)
 	nav.previewer = newPreviewer(nav)
+	nav.right.SetContent(nav.previewer)
 
 	for _, option := range options {
 		option(&nav.o)
@@ -128,12 +131,15 @@ func (nav *Navigator) createColumns() {
 	nav.main.AddItem(nil, 1, 0, false)
 	nav.main.AddItem(nav.files, 0, nav.proportions[1], true)
 	nav.main.AddItem(nil, 1, 0, false)
-	nav.main.AddItem(nav.previewer, 0, nav.proportions[2], true)
+	nav.main.AddItem(nav.right, 0, nav.proportions[2], true)
 
 	nav.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Modifiers()&tcell.ModAlt != 0 {
 			if event.Key() == tcell.KeyRune {
 				switch r := event.Rune(); r {
+				case 'f':
+					nav.right.SetContent(nav.favorites)
+					nav.app.SetFocus(nav.favorites)
 				case '0':
 					copy(nav.proportions, defaultProportions)
 					nav.createColumns()
@@ -192,7 +198,6 @@ func (nav *Navigator) createColumns() {
 
 func (nav *Navigator) goDir(dir string) {
 	nav.dirsTree.SetSearch("")
-	nav.favorites.SetCurrentNode(nil)
 	nav.showDir(dir, nil)
 }
 
@@ -247,7 +252,6 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 	var nodePath string
 
 	if isTreeDirChanges {
-		nav.favorites.SetCurrentNode(nil)
 		nav.dirsTree.currDirRoot.ClearChildren()
 		parentNode = nav.dirsTree.currDirRoot
 	} else {

@@ -40,6 +40,12 @@ func WithLeftPadding(padding int) BoxOption {
 	}
 }
 
+//func WithRightPadding(padding int) BoxOption {
+//	return func(opts *boxOptions) {
+//		opts.rightPadding = padding
+//	}
+//}
+
 func WithLeftBorder(padding, offset int) BoxOption {
 	return func(opts *boxOptions) {
 		opts.leftBorder = true
