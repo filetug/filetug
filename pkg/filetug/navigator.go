@@ -180,6 +180,9 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 			case '~', 'h', 'H':
 				nav.goDir("~")
 				return nil
+			case 'x':
+				nav.app.Stop()
+				return nil
 			default:
 				return event
 			}
