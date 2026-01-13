@@ -73,7 +73,12 @@ func (r fsRecords) GetCell(row, _ int, colName string) *tview.TableCell {
 
 		switch colName {
 		case "Size":
-			cell = tview.NewTableCell(fsutils.GetSizeShortText(fi.Size())).SetAlign(tview.AlignRight)
+			var sizeText string
+			if !dirEntry.IsDir() {
+				size := fi.Size()
+				sizeText = fsutils.GetSizeShortText(size)
+			}
+			cell = tview.NewTableCell(sizeText).SetAlign(tview.AlignRight)
 		case "Modified":
 			var s string
 			if modTime := fi.ModTime(); fi.ModTime().After(time.Now().Add(24 * time.Hour)) {
