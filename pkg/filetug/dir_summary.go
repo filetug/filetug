@@ -81,16 +81,21 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 			countCell := tview.NewTableCell(countText).SetAlign(tview.AlignRight).SetTextColor(cellTextColor)
 			d.extTable.SetCell(row, 1, countCell)
 
-			sizeCell := tview.NewTableCell(fsutils.GetSizeShortText(ext.TotalSize)).SetAlign(tview.AlignRight)
-			if ext.TotalSize >= 1024*1024*102 {
-				sizeCell.SetTextColor(tcell.ColorRed)
-			} else if ext.TotalSize >= 1024*1024 {
+			sizeText := "  " + fsutils.GetSizeShortText(ext.TotalSize)
+			sizeCell := tview.NewTableCell(sizeText).SetAlign(tview.AlignRight)
+			if ext.TotalSize >= 1024*1024*1024*1024 { // TB
+				sizeCell.SetTextColor(tcell.ColorOrangeRed)
+			} else if ext.TotalSize >= 1024*1024*1024 { // GB
 				sizeCell.SetTextColor(tcell.ColorYellow)
-			} else if ext.TotalSize >= 1024 {
+			} else if ext.TotalSize >= 1024*1024 { // MB
 				sizeCell.SetTextColor(tcell.ColorGreen)
+			} else if ext.TotalSize >= 1024 { // KB
+				sizeCell.SetTextColor(tcell.ColorWhiteSmoke)
 			} else if ext.TotalSize > 0 {
-				sizeCell.SetTextColor(tcell.ColorWhite)
+				sizeCell.SetText(sizeText + " ")
+				sizeCell.SetTextColor(cellTextColor)
 			} else {
+				sizeCell.SetText(sizeText + " ")
 				sizeCell.SetTextColor(tcell.ColorLightBlue)
 			}
 			d.extTable.SetCell(row, 2, sizeCell)
