@@ -30,6 +30,13 @@ type extStats struct {
 	*groupStats
 }
 
+func (d *dirSummary) Focus(delegate func(p tview.Primitive)) {
+	//if row, _ := d.extTable.GetSelection(); row < 0 && d.extTable.GetRowCount() > 0 {
+	//	d.extTable.Select(0, 0)
+	//}
+	d.extTable.Focus(delegate)
+}
+
 func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 	flex.SetTitle("Dir Summary")
@@ -41,13 +48,16 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 			WithLeftBorder(0, -1),
 		),
 		flex:     flex,
-		extTable: tview.NewTable(),
+		extTable: tview.NewTable().SetSelectable(true, false),
 	}
 	flex.AddItem(tview.NewTextView().SetText("By extension").SetTextColor(tcell.ColorDarkGray), 1, 0, false)
 	flex.AddItem(d.extTable, 0, 1, false)
 	d.extStats = make(map[string]*groupStats)
 	extensions := make([]extStats, 0)
 	for _, entry := range dir.children {
+		if entry.IsDir() {
+			continue
+		}
 		name := entry.Name()
 		ext := path.Ext(name)
 		if ext == name {
@@ -69,7 +79,14 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 		d.extTable.Clear()
 		const cellTextColor = tcell.ColorLightGray
 		for row, ext := range extensions {
-			nameCell := tview.NewTableCell("*" + ext.Ext).SetExpansion(1).SetTextColor(cellTextColor)
+			nameText := "*" + ext.Ext
+			if nameText == "*" {
+				nameText = "<no extension>"
+			}
+			nameColor := GetColorByFileExt(nameText)
+			nameCell := tview.NewTableCell(nameText)
+			nameCell.SetExpansion(1)
+			nameCell.SetTextColor(nameColor)
 			d.extTable.SetCell(row, 0, nameCell)
 
 			var countText string
@@ -88,7 +105,7 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 			} else if ext.TotalSize >= 1024*1024*1024 { // GB
 				sizeCell.SetTextColor(tcell.ColorYellow)
 			} else if ext.TotalSize >= 1024*1024 { // MB
-				sizeCell.SetTextColor(tcell.ColorGreen)
+				sizeCell.SetTextColor(tcell.ColorLightGreen)
 			} else if ext.TotalSize >= 1024 { // KB
 				sizeCell.SetTextColor(tcell.ColorWhiteSmoke)
 			} else if ext.TotalSize > 0 {
@@ -112,6 +129,15 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 		}
 	}()
 
+	d.extTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyLeft:
+			d.nav.app.SetFocus(d.nav.files)
+			return nil
+		default:
+			return event
+		}
+	})
 	return d
 }
 
