@@ -1,6 +1,8 @@
 package filetug
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -32,6 +34,8 @@ type boxOptions struct {
 	rightBorder  bool
 	rightPadding int
 	rightOffset  int
+
+	tabs []Tab
 }
 
 type BoxOption func(*boxOptions)
@@ -62,6 +66,18 @@ func WithRightBorder(padding, offset int) BoxOption {
 		opts.rightPadding = padding
 		opts.rightOffset = offset
 	}
+}
+
+func WithTabs(tabs ...Tab) BoxOption {
+	return func(opts *boxOptions) {
+		opts.tabs = append(opts.tabs, tabs...)
+	}
+}
+
+type Tab struct {
+	ID     string
+	Title  string
+	Action func(tab string)
 }
 
 func newBoxed(inner boxedContent, o ...BoxOption) *boxed {
@@ -114,34 +130,49 @@ func (b boxed) drawBorders(screen tcell.Screen) {
 			}
 			return
 		}
-		leftLen := (horizontalLen - len(title)) / 2
+		titleWidth := tview.TaggedStringWidth(title)
+		leftLen := (horizontalLen - titleWidth) / 2
 		for i := 0; i < leftLen-1; i++ {
 			screen.SetContent(horizontalStart+i, y, topLineChar, nil, lineStyle)
 		}
-		titleStyle := tcell.StyleDefault.Background(tcell.ColorBlack)
 		if hasFocus {
 			screen.SetContent(horizontalStart+leftLen-1, y, '╡', nil, lineStyle)
-			titleStyle = titleStyle.Foreground(tcell.ColorGhostWhite)
 		} else {
 			screen.SetContent(horizontalStart+leftLen-1, y, '┤', nil, lineStyle)
-			titleStyle = titleStyle.Foreground(tcell.ColorWhiteSmoke)
 		}
-		for i, c := range title {
-			screen.SetContent(horizontalStart+leftLen+i, y, c, nil, titleStyle)
+
+		color := tcell.ColorGhostWhite
+		if !hasFocus {
+			color = tcell.ColorWhiteSmoke
 		}
-		rightStart := horizontalStart + leftLen + len(title)
+
+		tview.Print(screen, title, horizontalStart+leftLen, y, titleWidth, tview.AlignLeft, color)
+
+		rightStart := horizontalStart + leftLen + titleWidth
 		if hasFocus {
 			screen.SetContent(rightStart, y, '╞', nil, lineStyle)
 		} else {
 			screen.SetContent(rightStart, y, '├', nil, lineStyle)
 		}
-		rightLen := horizontalLen - leftLen - len(title)
+		rightLen := horizontalLen - leftLen - titleWidth
 		for i := 1; i < rightLen; i++ {
 			screen.SetContent(rightStart+i, y, topLineChar, nil, lineStyle)
 		}
 	}
 
-	title := b.GetTitle()
+	var title string
+	if len(b.o.tabs) == 0 {
+		title = b.GetTitle()
+	} else {
+		var sb strings.Builder
+		for i, tab := range b.o.tabs {
+			if i > 0 {
+				sb.WriteString("[gray]|[i]")
+			}
+			sb.WriteString(tab.Title)
+		}
+		title = sb.String()
+	}
 
 	horizontalBorder(y, title) // top line
 

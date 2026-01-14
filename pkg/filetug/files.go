@@ -117,6 +117,7 @@ func newFiles(nav *Navigator) *files {
 			flex,
 			WithLeftBorder(0, -1),
 			WithRightBorder(0, +1),
+			WithTabs(Tab{Title: "Files"}, Tab{Title: "Folders"}, Tab{Title: "Hidden"}, Tab{Title: "All"}),
 		),
 	}
 	table.SetSelectable(true, false)
