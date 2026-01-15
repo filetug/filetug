@@ -6,7 +6,13 @@ var fileExtTypes = map[string]string{
 	".jpeg": "Image",
 	".png":  "Image",
 	".gif":  "Image",
+	".bmp":  "Image",
+	".riff": "Image",
+	".tiff": "Image",
+	".vp8":  "Image",
+	".vp8l": "Image",
 	".webp": "Image",
+
 	// Video file extStats
 	".mov":  "Video",
 	".mp4":  "Video",

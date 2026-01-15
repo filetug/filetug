@@ -9,6 +9,10 @@ import (
 	"strconv"
 	"strings"
 
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/riff"
+	_ "golang.org/x/image/vp8"
+	_ "golang.org/x/image/vp8l"
 	_ "golang.org/x/image/webp"
 )
 
