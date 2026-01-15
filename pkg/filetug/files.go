@@ -13,10 +13,9 @@ import (
 
 type files struct {
 	*boxed
-	table *tview.Table
-	rows  *FileRows
-	nav   *Navigator
-
+	table           *tview.Table
+	rows            *FileRows
+	nav             *Navigator
 	currentFileName string
 }
 
@@ -37,11 +36,15 @@ func (f *files) SetRows(rows *FileRows) {
 	}
 }
 
+func (f *files) SetFilter(filter Filter) {
+	f.rows.SetFilter(filter)
+}
+
 func (f *files) selectCurrentFile() {
 	if f.currentFileName == "" || f.rows == nil {
 		return
 	}
-	for i, entry := range f.rows.Entries {
+	for i, entry := range f.rows.AllEntries {
 		if entry.Name() == f.currentFileName {
 			row, _ := f.table.GetSelection()
 			if row != i+1 {

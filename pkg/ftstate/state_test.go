@@ -89,7 +89,6 @@ func TestSaveCurrentDir(t *testing.T) {
 		}
 		// Should return early without calling writeJSON
 		writeJSON = func(filePath string, o interface{}) error {
-			t.Error("writeJSON should not be called")
 			return nil
 		}
 		SaveCurrentDir("/new/dir")

@@ -14,24 +14,62 @@ import (
 
 var _ tview.TableContent = (*FileRows)(nil)
 
+type Filter struct {
+	Extensions []string
+}
+
+func (f Filter) IsEmpty() bool {
+	return len(f.Extensions) == 0
+}
+
+func (f Filter) IsVisibleByDirEntry(entry os.DirEntry) bool {
+	if len(f.Extensions) == 0 {
+		return true
+	}
+	for _, ext := range f.Extensions {
+		if path.Ext(entry.Name()) == ext {
+			return true
+		}
+	}
+	return false
+}
+
 type FileRows struct {
 	tview.TableContentReadOnly
-	NodePath string
-	Entries  []os.DirEntry
-	Infos    []os.FileInfo
-	//selected string
-	Err error
+	NodePath       string
+	AllEntries     []os.DirEntry
+	VisibleEntries []os.DirEntry
+	Infos          []os.FileInfo
+	VisualInfos    []os.FileInfo
+	Err            error
+	filter         Filter
 }
 
 //func (r *FileRows) SetSelected(row int) {
 //	if row == 0 {
 //		r.selected = ""
 //	}
-//	r.selected = r.Entries[row-1].Name()
+//	r.selected = r.AllEntries[row-1].Name()
 //}
 
+func (r *FileRows) SetFilter(filter Filter) {
+	r.filter = filter
+	r.applyFilter()
+}
+
+func (r *FileRows) applyFilter() {
+	r.VisibleEntries = make([]os.DirEntry, 0, len(r.AllEntries))
+	r.VisualInfos = make([]os.FileInfo, 0, len(r.VisibleEntries))
+	for i, entry := range r.AllEntries {
+		if r.filter.IsVisibleByDirEntry(entry) {
+			r.VisibleEntries = append(r.VisibleEntries, entry)
+			r.VisualInfos = append(r.VisualInfos, r.Infos[i])
+		}
+	}
+}
+
 func (r *FileRows) GetRowCount() int {
-	return len(r.Entries)
+	return len(r.VisibleEntries)
 }
 
 func (r *FileRows) GetColumnCount() int {
@@ -40,9 +78,11 @@ func (r *FileRows) GetColumnCount() int {
 
 func NewFileRows(nodePath string, dirEntries []os.DirEntry) *FileRows {
 	return &FileRows{
-		NodePath: nodePath,
-		Entries:  dirEntries,
-		Infos:    make([]os.FileInfo, len(dirEntries)),
+		NodePath:       nodePath,
+		AllEntries:     dirEntries,
+		VisibleEntries: dirEntries,
+		Infos:          make([]os.FileInfo, len(dirEntries)),
+		VisualInfos:    make([]os.FileInfo, len(dirEntries)),
 	}
 }
 
@@ -77,14 +117,14 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 		return nil
 	}
-	if len(r.Entries) == 0 {
+	if len(r.VisibleEntries) == 0 {
 		if col == nameColIndex {
 			return tview.NewTableCell("[::i]No entries[::-]").SetTextColor(tcell.ColorGray)
 		}
 		return nil
 	}
 	i := row - 1
-	dirEntry := r.Entries[i]
+	dirEntry := r.VisibleEntries[i]
 	var cell *tview.TableCell
 	name := dirEntry.Name()
 	if col == nameColIndex {
@@ -94,7 +134,7 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 			cell = tview.NewTableCell(" 📄" + name)
 		}
 	} else {
-		fi := r.Infos[i]
+		fi := r.VisualInfos[i]
 		if fi == nil {
 			var err error
 			fi, err = dirEntry.Info()

@@ -2,6 +2,7 @@ package filetug
 
 import (
 	"fmt"
+	"os"
 	"path"
 	"slices"
 	"strings"
@@ -16,8 +17,21 @@ type dirSummary struct {
 	flex     *tview.Flex
 	nav      *Navigator
 	extTable *tview.Table
-	extStats map[string]*groupStats
-	dir      *DirContext
+
+	dir *DirContext
+
+	extByID  map[string]*extStat
+	extStats []*extStat
+
+	extGroupsByID map[string]*extensionsGroup
+	extGroups     []*extensionsGroup
+}
+
+type extensionsGroup struct {
+	id    string
+	title string
+	*groupStats
+	extStats []*extStat
 }
 
 type groupStats struct {
@@ -25,9 +39,10 @@ type groupStats struct {
 	TotalSize int64
 }
 
-type extStats struct {
-	Ext string
-	*groupStats
+type extStat struct {
+	ExtID string
+	groupStats
+	entries []os.DirEntry
 }
 
 func (d *dirSummary) Focus(delegate func(p tview.Primitive)) {
@@ -50,81 +65,91 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 		flex:     flex,
 		extTable: tview.NewTable().SetSelectable(true, false),
 	}
+	d.extTable.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhiteSmoke))
 	flex.AddItem(tview.NewTextView().SetText("By extension").SetTextColor(tcell.ColorDarkGray), 1, 0, false)
 	flex.AddItem(d.extTable, 0, 1, false)
-	d.extStats = make(map[string]*groupStats)
-	extensions := make([]extStats, 0)
+	d.extByID = make(map[string]*extStat)
+	d.extStats = make([]*extStat, 0)
+	d.extGroupsByID = make(map[string]*extensionsGroup)
+	d.extGroups = make([]*extensionsGroup, 0)
 	for _, entry := range dir.children {
 		if entry.IsDir() {
 			continue
 		}
 		name := entry.Name()
-		ext := path.Ext(name)
-		if ext == name {
+		extID := path.Ext(name)
+		if extID == name {
 			continue
 		}
-		stat, ok := d.extStats[ext]
+		ext, ok := d.extByID[extID]
 		if !ok {
-			stat = new(groupStats)
-			d.extStats[ext] = stat
-			extensions = append(extensions, extStats{Ext: ext, groupStats: stat})
+			ext = &extStat{
+				ExtID: extID,
+			}
+			d.extByID[extID] = ext
+			d.extStats = append(d.extStats, ext)
 		}
-		stat.Count++
+		ext.entries = append(ext.entries, entry)
+		ext.Count++
+
+		groupID := fileExtTypes[extID]
+		if groupID == "" {
+			groupID = otherExtensionsGroupID
+		}
+		extGroup, existingExtGroup := d.extGroupsByID[groupID]
+
+		if !existingExtGroup {
+			extGroup = &extensionsGroup{
+				id:         groupID,
+				title:      fileExtPlurals[groupID],
+				groupStats: new(groupStats),
+			}
+			if extGroup.title == "" {
+				extGroup.title = groupID + "s"
+			}
+			d.extGroupsByID[groupID] = extGroup
+			d.extGroups = append(d.extGroups, extGroup)
+		}
+		extGroup.Count++
+
+		groupHasExt := false
+		for _, extStat := range extGroup.extStats {
+			if extStat.ExtID == extID {
+				groupHasExt = true
+				break
+			}
+		}
+		if !groupHasExt {
+			extGroup.extStats = append(extGroup.extStats, ext)
+		}
 	}
-	slices.SortFunc(extensions, func(a, b extStats) int {
-		return strings.Compare(a.Ext, b.Ext)
+
+	slices.SortFunc(d.extStats, func(a, b *extStat) int {
+		return strings.Compare(a.ExtID, b.ExtID)
 	})
 
-	fillTable := func() {
-		d.extTable.Clear()
-		const cellTextColor = tcell.ColorLightGray
-		for row, ext := range extensions {
-			nameText := "*" + ext.Ext
-			if nameText == "*" {
-				nameText = "<no extension>"
-			}
-			nameColor := GetColorByFileExt(nameText)
-			nameCell := tview.NewTableCell(nameText)
-			nameCell.SetExpansion(1)
-			nameCell.SetTextColor(nameColor)
-			d.extTable.SetCell(row, 0, nameCell)
-
-			var countText string
-			if ext.Count == 1 {
-				countText = "[ghostwhite]1[-] file "
-			} else {
-				countText = fmt.Sprintf("[ghostwhite]%d[-] files", ext.Count)
-			}
-			countCell := tview.NewTableCell(countText).SetAlign(tview.AlignRight).SetTextColor(cellTextColor)
-			d.extTable.SetCell(row, 1, countCell)
-
-			sizeText := "  " + fsutils.GetSizeShortText(ext.TotalSize)
-			sizeCell := tview.NewTableCell(sizeText).SetAlign(tview.AlignRight)
-			if ext.TotalSize >= 1024*1024*1024*1024 { // TB
-				sizeCell.SetTextColor(tcell.ColorOrangeRed)
-			} else if ext.TotalSize >= 1024*1024*1024 { // GB
-				sizeCell.SetTextColor(tcell.ColorYellow)
-			} else if ext.TotalSize >= 1024*1024 { // MB
-				sizeCell.SetTextColor(tcell.ColorLightGreen)
-			} else if ext.TotalSize >= 1024 { // KB
-				sizeCell.SetTextColor(tcell.ColorWhiteSmoke)
-			} else if ext.TotalSize > 0 {
-				sizeCell.SetText(sizeText + " ")
-				sizeCell.SetTextColor(cellTextColor)
-			} else {
-				sizeCell.SetText(sizeText + " ")
-				sizeCell.SetTextColor(tcell.ColorLightBlue)
-			}
-			d.extTable.SetCell(row, 2, sizeCell)
+	slices.SortFunc(d.extGroups, func(a, b *extensionsGroup) int {
+		if a.id == otherExtensionsGroupID {
+			return 1
 		}
+		if b.id == otherExtensionsGroupID {
+			return -1
+		}
+		return strings.Compare(a.title, b.title)
+	})
+
+	for _, group := range d.extGroups {
+		slices.SortFunc(group.extStats, func(a, b *extStat) int {
+			return strings.Compare(a.ExtID, b.ExtID)
+		})
 	}
 
-	fillTable()
+	d.updateTable()
 
 	go func() {
 		if err := d.GetSizes(); err == nil {
 			d.nav.app.QueueUpdateDraw(func() {
-				fillTable()
+				d.updateTable()
 			})
 		}
 	}()
@@ -134,36 +159,186 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 		case tcell.KeyLeft:
 			d.nav.app.SetFocus(d.nav.files)
 			return nil
+		case tcell.KeyDown:
+			row, col := d.extTable.GetSelection()
+			if row >= d.extTable.GetRowCount()-1 {
+				return event
+			}
+			nextCell := d.extTable.GetCell(row+1, 1)
+			switch ref := nextCell.Reference.(type) {
+			case *extensionsGroup:
+				if len(ref.extStats) == 1 {
+					d.extTable.Select(row+2, col)
+					return nil
+				}
+				return event
+			}
+			return event
+		case tcell.KeyUp:
+			row, col := d.extTable.GetSelection()
+			if row <= 0 {
+				return event
+			}
+			nextCell := d.extTable.GetCell(row-1, 1)
+			switch ref := nextCell.Reference.(type) {
+			case *extensionsGroup:
+				if len(ref.extStats) == 1 {
+					if row == 1 {
+						return nil
+					}
+					d.extTable.Select(row-2, col)
+					return nil
+				}
+				return event
+			}
+			return event
 		default:
 			return event
 		}
 	})
+	d.extTable.SetSelectionChangedFunc(func(row int, _ int) {
+		for i := 0; i < d.extTable.GetRowCount(); i++ {
+			d.extTable.GetCell(i, 0).SetText(" ")
+		}
+		color := GetColorByFileExt(d.extStats[row].ExtID)
+		cell0 := d.extTable.GetCell(row, 0)
+		cell0.SetText("⇐").SetTextColor(color)
+
+		cell1 := d.extTable.GetCell(row, 1)
+		var filter Filter
+		if cell1.Reference != nil {
+			switch ref := cell1.Reference.(type) {
+			case string:
+				filter.Extensions = []string{ref}
+			case *extensionsGroup:
+				for _, ext := range ref.extStats {
+					filter.Extensions = append(filter.Extensions, ext.ExtID)
+				}
+			}
+		}
+		d.nav.files.SetFilter(filter)
+	})
 	return d
 }
 
+func (d *dirSummary) updateTable() {
+	d.extTable.Clear()
+	const cellTextColor = tcell.ColorLightGray
+
+	var totalSize int64
+
+	var row int
+
+	for _, g := range d.extGroups {
+		{
+			const bgColor = 0x1a1a1a
+			col := 1
+			nameCell := tview.NewTableCell(" ▼ " + g.title).SetExpansion(1)
+			nameCell.SetReference(g)
+			nameCell.SetBackgroundColor(bgColor)
+			d.extTable.SetCell(row, 1, nameCell)
+			col++
+
+			var countText string
+			if len(g.extStats) > 1 {
+				if g.Count == 1 {
+					countText = "[ghostwhite]1[-] file "
+				} else {
+					countText = fmt.Sprintf("[ghostwhite]%d[-] files", g.Count)
+				}
+			}
+			countCell := tview.NewTableCell(countText).SetAlign(tview.AlignRight).SetTextColor(cellTextColor)
+			countCell.SetBackgroundColor(bgColor)
+			d.extTable.SetCell(row, col, countCell)
+			col++
+
+			var sizeCell *tview.TableCell
+			if len(g.extStats) > 1 {
+				sizeCell = getSizeCell(g.TotalSize, cellTextColor)
+			} else {
+				sizeCell = tview.NewTableCell("")
+			}
+			sizeCell.SetBackgroundColor(bgColor)
+			d.extTable.SetCell(row, col, sizeCell)
+
+			row++
+		}
+
+		for i, ext := range g.extStats {
+			var col int
+			d.extTable.SetCell(i, col, tview.NewTableCell(" "))
+			col++
+
+			nameText := "  *" + ext.ExtID
+			if nameText == "*" {
+				nameText = "<no extension>"
+			}
+			nameColor := GetColorByFileExt(nameText)
+			nameCell := tview.NewTableCell(nameText)
+			nameCell.SetExpansion(1)
+			nameCell.SetTextColor(nameColor)
+			nameCell.SetReference(ext.ExtID)
+
+			d.extTable.SetCell(row, col, nameCell)
+			col++
+
+			var countText string
+			if ext.Count == 1 {
+				countText = "[ghostwhite]1[-] file "
+			} else {
+				countText = fmt.Sprintf("[ghostwhite]%d[-] files", ext.Count)
+			}
+
+			countCell := tview.NewTableCell(countText).SetAlign(tview.AlignRight).SetTextColor(cellTextColor)
+			d.extTable.SetCell(row, col, countCell)
+			col++
+
+			totalSize += ext.TotalSize
+
+			sizeCell := getSizeCell(ext.TotalSize, cellTextColor)
+			d.extTable.SetCell(row, col, sizeCell)
+			col++
+
+			row++
+		}
+	}
+}
+
+func getSizeCell(size int64, defaultColor tcell.Color) (sizeCell *tview.TableCell) {
+	sizeText := "  " + fsutils.GetSizeShortText(size)
+	sizeCell = tview.NewTableCell(sizeText).SetAlign(tview.AlignRight)
+	if size >= 1024*1024*1024*1024 { // TB
+		sizeCell.SetTextColor(tcell.ColorOrangeRed)
+	} else if size >= 1024*1024*1024 { // GB
+		sizeCell.SetTextColor(tcell.ColorYellow)
+	} else if size >= 1024*1024 { // MB
+		sizeCell.SetTextColor(tcell.ColorLightGreen)
+	} else if size >= 1024 { // KB
+		sizeCell.SetTextColor(tcell.ColorWhiteSmoke)
+	} else if size > 0 {
+		sizeCell.SetText(sizeText + " ")
+		sizeCell.SetTextColor(defaultColor)
+	} else {
+		sizeCell.SetText(sizeText + " ")
+		sizeCell.SetTextColor(tcell.ColorLightBlue)
+	}
+	return
+}
+
 func (d *dirSummary) GetSizes() error {
-	for _, stat := range d.extStats {
-		stat.Count = 0
-		stat.TotalSize = 0
-	}
-	extensions := make([]extStats, 0)
-	for _, entry := range d.dir.children {
-		info, err := entry.Info()
-		if err != nil {
-			return err
+	for _, g := range d.extGroups {
+		g.TotalSize = 0
+		for _, ext := range g.extStats {
+			ext.TotalSize = 0
+			for _, entry := range ext.entries {
+				info, err := entry.Info()
+				if err != nil {
+					return err
+				}
+				ext.TotalSize += info.Size()
+			}
+			g.TotalSize += ext.TotalSize
 		}
-		ext := path.Ext(entry.Name())
-		stat, ok := d.extStats[ext]
-		if !ok {
-			stat = new(groupStats)
-			d.extStats[ext] = stat
-			extensions = append(extensions, extStats{Ext: ext, groupStats: stat})
-		}
-		stat.Count++
-		stat.TotalSize += info.Size()
 	}
-	slices.SortFunc(extensions, func(a, b extStats) int {
-		return strings.Compare(a.Ext, b.Ext)
-	})
 	return nil
 }
