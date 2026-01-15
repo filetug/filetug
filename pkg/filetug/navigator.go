@@ -50,6 +50,8 @@ type Navigator struct {
 
 	files *files
 
+	dirSummary *dirSummary
+
 	previewer *previewer
 
 	bottom *bottom
@@ -111,7 +113,8 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 
 	nav.files = newFiles(nav)
 	nav.previewer = newPreviewer(nav)
-	nav.right.SetContent(nav.previewer)
+	nav.dirSummary = newDirSummary(nav)
+	nav.right.SetContent(nav.dirSummary)
 
 	for _, option := range options {
 		option(&nav.o)
@@ -346,9 +349,9 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 
 	children, err := os.ReadDir(nav.current.dir)
 	dirContext := newDirContext(nav.current.dir, children)
-	summary := newDirSummary(dirContext, nav)
 
-	nav.right.SetContent(summary)
+	nav.dirSummary.SetDir(dirContext)
+	nav.right.SetContent(nav.dirSummary)
 
 	if err != nil {
 		parentNode.ClearChildren()

@@ -35,6 +35,7 @@ func createLeft(nav *Navigator) {
 	nav.dirsTree.SetFocusFunc(func() {
 		nav.activeCol = 0
 		onLeftTreeViewFocus(nav.dirsTree.TreeView)
+		nav.right.SetContent(nav.dirSummary)
 	})
 	nav.dirsFocusFunc = func() {
 		nav.activeCol = 0

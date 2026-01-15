@@ -27,6 +27,28 @@ type dirSummary struct {
 	extGroups     []*extensionsGroup
 }
 
+func newDirSummary(nav *Navigator) *dirSummary {
+	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex.SetTitle("Dir Summary")
+	d := &dirSummary{
+		nav: nav,
+		boxed: newBoxed(
+			flex,
+			WithLeftBorder(0, -1),
+		),
+		flex:     flex,
+		extTable: tview.NewTable().SetSelectable(true, false),
+	}
+	d.extTable.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhiteSmoke))
+	//flex.AddItem(tview.NewTextView().SetText("By extension").SetTextColor(tcell.ColorDarkGray), 1, 0, false)
+	flex.AddItem(d.extTable, 0, 1, false)
+
+	d.extTable.SetInputCapture(d.inputCapture)
+	d.extTable.SetSelectionChangedFunc(d.selectionChanged)
+
+	return d
+}
+
 type extensionsGroup struct {
 	id    string
 	title string
@@ -52,22 +74,9 @@ func (d *dirSummary) Focus(delegate func(p tview.Primitive)) {
 	d.extTable.Focus(delegate)
 }
 
-func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
-	flex := tview.NewFlex().SetDirection(tview.FlexRow)
-	flex.SetTitle("Dir Summary")
-	d := &dirSummary{
-		nav: nav,
-		dir: dir,
-		boxed: newBoxed(
-			flex,
-			WithLeftBorder(0, -1),
-		),
-		flex:     flex,
-		extTable: tview.NewTable().SetSelectable(true, false),
-	}
-	d.extTable.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhiteSmoke))
-	flex.AddItem(tview.NewTextView().SetText("By extension").SetTextColor(tcell.ColorDarkGray), 1, 0, false)
-	flex.AddItem(d.extTable, 0, 1, false)
+func (d *dirSummary) SetDir(dir *DirContext) {
+	d.dir = dir
+
 	d.extByID = make(map[string]*extStat)
 	d.extStats = make([]*extStat, 0)
 	d.extGroupsByID = make(map[string]*extensionsGroup)
@@ -153,76 +162,76 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 			})
 		}
 	}()
+}
 
-	d.extTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyLeft:
-			d.nav.app.SetFocus(d.nav.files)
-			return nil
-		case tcell.KeyDown:
-			row, col := d.extTable.GetSelection()
-			if row >= d.extTable.GetRowCount()-1 {
-				return event
+func (d *dirSummary) inputCapture(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyLeft:
+		d.nav.app.SetFocus(d.nav.files)
+		return nil
+	case tcell.KeyDown:
+		row, col := d.extTable.GetSelection()
+		if row >= d.extTable.GetRowCount()-1 {
+			return event
+		}
+		nextCell := d.extTable.GetCell(row+1, 1)
+		switch ref := nextCell.Reference.(type) {
+		case *extensionsGroup:
+			if len(ref.extStats) == 1 {
+				d.extTable.Select(row+2, col)
+				return nil
 			}
-			nextCell := d.extTable.GetCell(row+1, 1)
-			switch ref := nextCell.Reference.(type) {
-			case *extensionsGroup:
-				if len(ref.extStats) == 1 {
-					d.extTable.Select(row+2, col)
+			return event
+		}
+		return event
+	case tcell.KeyUp:
+		row, col := d.extTable.GetSelection()
+		if row <= 0 {
+			return event
+		}
+		nextCell := d.extTable.GetCell(row-1, 1)
+		switch ref := nextCell.Reference.(type) {
+		case *extensionsGroup:
+			if len(ref.extStats) == 1 {
+				if row == 1 {
 					return nil
 				}
-				return event
+				d.extTable.Select(row-2, col)
+				return nil
 			}
 			return event
-		case tcell.KeyUp:
-			row, col := d.extTable.GetSelection()
-			if row <= 0 {
-				return event
-			}
-			nextCell := d.extTable.GetCell(row-1, 1)
-			switch ref := nextCell.Reference.(type) {
-			case *extensionsGroup:
-				if len(ref.extStats) == 1 {
-					if row == 1 {
-						return nil
-					}
-					d.extTable.Select(row-2, col)
-					return nil
-				}
-				return event
-			}
-			return event
-		default:
-			return event
 		}
-	})
-	d.extTable.SetSelectionChangedFunc(func(row int, _ int) {
-		for i := 0; i < d.extTable.GetRowCount(); i++ {
-			d.extTable.GetCell(i, 0).SetText(" ")
-		}
-		i := row - 1
-		if row < 0 {
-			return
-		}
+		return event
+	default:
+		return event
+	}
+}
 
-		cell1 := d.extTable.GetCell(row, 1)
-		var filter Filter
-		if cell1.Reference != nil {
-			switch ref := cell1.Reference.(type) {
-			case string:
-				filter.Extensions = []string{ref}
-				color := GetColorByFileExt(ref)
-				cell0 := d.extTable.GetCell(i, 0)
-				cell0.SetText("⇐").SetTextColor(color)
-			case *extensionsGroup:
-				for _, ext := range ref.extStats {
-					filter.Extensions = append(filter.Extensions, ext.id)
-				}
+func (d *dirSummary) selectionChanged(row int, _ int) {
+	for i := 0; i < d.extTable.GetRowCount(); i++ {
+		d.extTable.GetCell(i, 0).SetText(" ")
+	}
+	i := row - 1
+	if row < 0 {
+		return
+	}
+
+	cell1 := d.extTable.GetCell(row, 1)
+	var filter Filter
+	if cell1.Reference != nil {
+		switch ref := cell1.Reference.(type) {
+		case string:
+			filter.Extensions = []string{ref}
+			color := GetColorByFileExt(ref)
+			cell0 := d.extTable.GetCell(i, 0)
+			cell0.SetText("⇐").SetTextColor(color)
+		case *extensionsGroup:
+			for _, ext := range ref.extStats {
+				filter.Extensions = append(filter.Extensions, ext.id)
 			}
 		}
-		d.nav.files.SetFilter(filter)
-	})
-	return d
+	}
+	d.nav.files.SetFilter(filter)
 }
 
 func (d *dirSummary) updateTable() {

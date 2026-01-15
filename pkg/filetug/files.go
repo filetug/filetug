@@ -128,6 +128,7 @@ func newFiles(nav *Navigator) *files {
 	table.SetInputCapture(f.inputCapture)
 	table.SetFocusFunc(func() {
 		nav.activeCol = 1
+		nav.right.SetContent(nav.previewer)
 	})
 	nav.filesFocusFunc = func() {
 		nav.activeCol = 1
@@ -140,14 +141,10 @@ func newFiles(nav *Navigator) *files {
 
 // selectionChangedNavFunc: TODO: is it a duplicate of selectionChangedNavFunc?
 func (f *files) selectionChangedNavFunc(row, _ int) {
-	if row == 0 {
-		f.nav.previewer.textView.SetText("Selected dir: " + f.nav.current.dir)
-		f.nav.previewer.textView.SetTextColor(tcell.ColorWhiteSmoke)
-		return
-	}
 	cell := f.table.GetCell(row, 0)
 	name := cell.Text[1:]
 	fullName := filepath.Join(f.nav.current.dir, name)
+	f.nav.right.SetContent(f.nav.previewer)
 	f.nav.previewer.PreviewFile(name, fullName)
 }
 
