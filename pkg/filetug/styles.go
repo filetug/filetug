@@ -14,6 +14,8 @@ type Theme struct {
 	BlurredSelectedTextStyle tcell.Style
 
 	TableHeaderColor tcell.Color
+
+	HotkeyColor tcell.Color
 }
 
 var theme = Theme{
@@ -30,4 +32,5 @@ var theme = Theme{
 		Foreground(tcell.ColorWhite),
 
 	TableHeaderColor: tcell.ColorWhiteSmoke,
+	HotkeyColor:      tcell.ColorWhite,
 }

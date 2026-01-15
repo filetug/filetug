@@ -1,6 +1,7 @@
 package filetug
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -26,7 +27,7 @@ func newBottom() *bottom {
 
 	menuItems := []MenuItem{
 		{
-			Title:   "F1-ç≈Help",
+			Title:   "F1Help",
 			HotKeys: []string{"F1"},
 			Action:  func() {},
 		},
@@ -43,6 +44,11 @@ func newBottom() *bottom {
 		{
 			Title:   "Bookmarks",
 			HotKeys: []string{"B"},
+			Action:  func() {},
+		},
+		{
+			Title:   "Lists",
+			HotKeys: []string{"L"},
 			Action:  func() {},
 		},
 		{
@@ -82,12 +88,12 @@ func newBottom() *bottom {
 		},
 	}
 
-	const separator = " | "
+	const separator = "┊"
 	var sb strings.Builder
 	for _, mi := range menuItems {
 		title := mi.Title
 		for _, key := range mi.HotKeys {
-			title = strings.Replace(title, key, "[white]"+key+"[-]", 1)
+			title = strings.Replace(title, key, fmt.Sprintf("[%s]%s[-]", theme.HotkeyColor, key), 1)
 		}
 		sb.WriteString(title)
 		sb.WriteString(separator)

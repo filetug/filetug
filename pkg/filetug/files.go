@@ -106,9 +106,9 @@ type filterTabs struct {
 func newFilterTabs(nav *Navigator) filterTabs {
 	return filterTabs{
 		nav:       nav,
-		filesTab:  &Tab{Title: "Files", Checked: true},
-		dirsTab:   &Tab{Title: "Dirs", Checked: true},
-		hiddenTab: &Tab{Title: "Hidden", Checked: false},
+		filesTab:  &Tab{Title: "Files", Hotkey: 'e', Checked: true},
+		dirsTab:   &Tab{Title: "Dirs", Hotkey: 'r', Checked: true},
+		hiddenTab: &Tab{Title: "Hidden", Hotkey: 'H', Checked: false},
 	}
 }
 

@@ -1,6 +1,7 @@
 package filetug
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -77,6 +78,7 @@ func WithTabs(tabs ...*Tab) BoxOption {
 type Tab struct {
 	ID      string
 	Title   string
+	Hotkey  rune
 	Checked bool
 	Action  func(tab string)
 }
@@ -142,12 +144,7 @@ func (b boxed) drawBorders(screen tcell.Screen) {
 			screen.SetContent(horizontalStart+leftLen-1, y, '┤', nil, lineStyle)
 		}
 
-		color := tcell.ColorGhostWhite
-		if !hasFocus {
-			color = tcell.ColorWhiteSmoke
-		}
-
-		tview.Print(screen, title, horizontalStart+leftLen, y, titleWidth, tview.AlignLeft, color)
+		tview.Print(screen, title, horizontalStart+leftLen, y, titleWidth, tview.AlignLeft, tcell.ColorGhostWhite)
 
 		rightStart := horizontalStart + leftLen + titleWidth
 		if hasFocus {
@@ -168,14 +165,20 @@ func (b boxed) drawBorders(screen tcell.Screen) {
 		var sb strings.Builder
 		for i, tab := range b.o.tabs {
 			if i > 0 {
-				sb.WriteString("[gray]|[i]")
+				sb.WriteString("[gray]|[-]")
 			}
 			if tab.Checked {
 				sb.WriteString("☑️")
 			} else {
 				sb.WriteString("🔲")
 			}
-			sb.WriteString(tab.Title)
+			title = tab.Title
+			if tab.Hotkey != 0 {
+				title = strings.Replace(title, string(tab.Hotkey),
+					fmt.Sprintf("[%s]%c[-][DarkGray]", theme.HotkeyColor, tab.Hotkey), 1)
+			}
+			title = fmt.Sprintf("[DarkGray]%s[-]", title)
+			sb.WriteString(title)
 		}
 		title = sb.String()
 	}
