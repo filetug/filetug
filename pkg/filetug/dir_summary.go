@@ -40,7 +40,7 @@ type groupStats struct {
 }
 
 type extStat struct {
-	ExtID string
+	id string
 	groupStats
 	entries []os.DirEntry
 }
@@ -84,7 +84,7 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 		ext, ok := d.extByID[extID]
 		if !ok {
 			ext = &extStat{
-				ExtID: extID,
+				id: extID,
 			}
 			d.extByID[extID] = ext
 			d.extStats = append(d.extStats, ext)
@@ -114,7 +114,7 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 
 		groupHasExt := false
 		for _, extStat := range extGroup.extStats {
-			if extStat.ExtID == extID {
+			if extStat.id == extID {
 				groupHasExt = true
 				break
 			}
@@ -125,7 +125,7 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 	}
 
 	slices.SortFunc(d.extStats, func(a, b *extStat) int {
-		return strings.Compare(a.ExtID, b.ExtID)
+		return strings.Compare(a.id, b.id)
 	})
 
 	slices.SortFunc(d.extGroups, func(a, b *extensionsGroup) int {
@@ -140,7 +140,7 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 
 	for _, group := range d.extGroups {
 		slices.SortFunc(group.extStats, func(a, b *extStat) int {
-			return strings.Compare(a.ExtID, b.ExtID)
+			return strings.Compare(a.id, b.id)
 		})
 	}
 
@@ -200,9 +200,10 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 		for i := 0; i < d.extTable.GetRowCount(); i++ {
 			d.extTable.GetCell(i, 0).SetText(" ")
 		}
-		color := GetColorByFileExt(d.extStats[row].ExtID)
-		cell0 := d.extTable.GetCell(row, 0)
-		cell0.SetText("⇐").SetTextColor(color)
+		i := row - 1
+		if row < 0 {
+			return
+		}
 
 		cell1 := d.extTable.GetCell(row, 1)
 		var filter Filter
@@ -210,9 +211,12 @@ func newDirSummary(dir *DirContext, nav *Navigator) *dirSummary {
 			switch ref := cell1.Reference.(type) {
 			case string:
 				filter.Extensions = []string{ref}
+				color := GetColorByFileExt(ref)
+				cell0 := d.extTable.GetCell(i, 0)
+				cell0.SetText("⇐").SetTextColor(color)
 			case *extensionsGroup:
 				for _, ext := range ref.extStats {
-					filter.Extensions = append(filter.Extensions, ext.ExtID)
+					filter.Extensions = append(filter.Extensions, ext.id)
 				}
 			}
 		}
@@ -269,7 +273,7 @@ func (d *dirSummary) updateTable() {
 			d.extTable.SetCell(i, col, tview.NewTableCell(" "))
 			col++
 
-			nameText := "  *" + ext.ExtID
+			nameText := "  *" + ext.id
 			if nameText == "*" {
 				nameText = "<no extension>"
 			}
@@ -277,7 +281,7 @@ func (d *dirSummary) updateTable() {
 			nameCell := tview.NewTableCell(nameText)
 			nameCell.SetExpansion(1)
 			nameCell.SetTextColor(nameColor)
-			nameCell.SetReference(ext.ExtID)
+			nameCell.SetReference(ext.id)
 
 			d.extTable.SetCell(row, col, nameCell)
 			col++
