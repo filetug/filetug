@@ -16,6 +16,8 @@ import (
 var _ tview.TableContent = (*FileRows)(nil)
 
 type Filter struct {
+	ShowHidden bool
+	ShowDirs   bool
 	Extensions []string
 }
 
@@ -23,7 +25,13 @@ func (f Filter) IsEmpty() bool {
 	return len(f.Extensions) == 0
 }
 
-func (f Filter) IsVisibleByDirEntry(entry os.DirEntry) bool {
+func (f Filter) IsVisible(entry os.DirEntry) bool {
+	if !f.ShowHidden && strings.HasPrefix(entry.Name(), ".") {
+		return false
+	}
+	if entry.IsDir() && !f.ShowDirs {
+		return false
+	}
 	if len(f.Extensions) == 0 {
 		return true
 	}
@@ -47,6 +55,10 @@ type FileRows struct {
 	filter         Filter
 }
 
+func (r *FileRows) HideParent() bool {
+	return r.hideParent || r.Dir.Path == "/"
+}
+
 //func (r *FileRows) SetSelected(row int) {
 //	if row == 0 {
 //		r.selected = ""
@@ -63,7 +75,7 @@ func (r *FileRows) applyFilter() {
 	r.VisibleEntries = make([]os.DirEntry, 0, len(r.AllEntries))
 	r.VisualInfos = make([]os.FileInfo, 0, len(r.VisibleEntries))
 	for i, entry := range r.AllEntries {
-		if r.filter.IsVisibleByDirEntry(entry) {
+		if r.filter.IsVisible(entry) {
 			r.VisibleEntries = append(r.VisibleEntries, entry)
 			r.VisualInfos = append(r.VisualInfos, r.Infos[i])
 		}
@@ -71,7 +83,7 @@ func (r *FileRows) applyFilter() {
 }
 
 func (r *FileRows) GetRowCount() int {
-	if r.hideParent {
+	if r.HideParent() {
 		return len(r.VisualInfos)
 	}
 	return len(r.VisibleEntries) + 1
@@ -101,10 +113,7 @@ const (
 )
 
 func (r *FileRows) GetCell(row, col int) *tview.TableCell {
-	if row < 0 {
-		return nil
-	}
-	if !r.hideParent && row == 0 {
+	if !r.HideParent() && row == 0 {
 		th := func(text string) *tview.TableCell {
 			return tview.NewTableCell(text)
 		}
@@ -120,8 +129,8 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 			if parentDir != "/" {
 				parentDir = strings.TrimSuffix(parentDir, "/")
 			}
-			dirEntry := DirEntry{Path: parentDir}
-			return cell.SetReference(dirEntry)
+			ref := DirEntry{Path: parentDir}
+			return cell.SetReference(ref)
 		case sizeColIndex:
 			return th("")
 		case modifiedColIndex:
@@ -136,20 +145,21 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 		return nil
 	}
+	i := row
+	if !r.HideParent() {
+		i--
+	}
+	if i >= len(r.VisibleEntries) {
+		return nil
+	}
 	if len(r.VisibleEntries) == 0 {
 		if col == nameColIndex {
 			return tview.NewTableCell("[::i]No entries[::-]").SetTextColor(tcell.ColorGray)
 		}
 		return nil
 	}
-	i := row
-	if !r.hideParent {
-		i--
-	}
-	if i >= len(r.VisibleEntries) {
-		return nil
-	}
 	dirEntry := r.VisibleEntries[i]
+
 	var cell *tview.TableCell
 	name := dirEntry.Name()
 	if col == nameColIndex {

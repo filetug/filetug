@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/datatug/filetug/pkg/ftstate"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -88,17 +89,31 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyRight:
 		t.nav.app.SetFocus(t.nav.files)
 		return nil
+	case tcell.KeyLeft:
+		switch ref := tree.GetCurrentNode().GetReference().(type) {
+		case string:
+			parentDir, _ := path.Split(ref)
+			t.nav.goDir(parentDir)
+			return nil
+		}
+		return event
 	case tcell.KeyEnter:
-		ref := tree.GetCurrentNode().GetReference()
-		if ref != nil {
-			dir := ref.(string)
-			t.nav.goDir(dir)
+		switch ref := tree.GetCurrentNode().GetReference().(type) {
+		case string:
+			if ref != "/" {
+				ref = strings.TrimSuffix(ref, "/")
+			}
+			if t.GetCurrentNode() == t.GetRoot() {
+				ref, _ = path.Split(fsutils.ExpandHome(ref))
+			}
+			t.nav.goDir(ref)
 			return nil
 		}
 		return event
 	case tcell.KeyUp:
 		if tree.GetCurrentNode() == tree.GetRoot() {
 			nav.breadcrumbs.TakeFocus(tree)
+			nav.app.SetFocus(nav.breadcrumbs)
 			return nil
 		}
 		return event

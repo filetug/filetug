@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -260,6 +259,7 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, fullPath string, node
 var saveCurrentDir = ftstate.SaveCurrentDir
 
 func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
+	nav.current.dir = dir
 
 	isTreeDirChanges := selectedNode == nil
 
@@ -289,11 +289,10 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 			fullPath := fsutils.ExpandHome(nodePath)
 			rootNode := nav.dirsTree.currDirRoot
 			switch dir {
-			case "~", "/":
+			case "/":
 				rootNode.SetText(dir + strings.Repeat(" ", 10))
 			default:
-				_, name := filepath.Split(fullPath)
-				rootNode.SetText(name)
+				rootNode.SetText("..")
 			}
 
 			rootNode.SetReference(nodePath).SetColor(tcell.ColorWhite)

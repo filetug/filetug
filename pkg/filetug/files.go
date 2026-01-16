@@ -17,6 +17,7 @@ type files struct {
 	rows  *FileRows
 	nav   *Navigator
 	filterTabs
+	filter          Filter
 	currentFileName string
 }
 
@@ -31,11 +32,13 @@ type files struct {
 
 func (f *files) SetRows(rows *FileRows) {
 	f.table.Select(0, 0)
+	rows.SetFilter(f.filter)
 	f.rows = rows
 	f.table.SetContent(rows)
 	if f.currentFileName != "" {
 		f.selectCurrentFile()
 	}
+	f.table.ScrollToBeginning()
 }
 
 func (f *files) SetFilter(filter Filter) {
@@ -117,7 +120,7 @@ func newFilterTabs(nav *Navigator) filterTabs {
 	return filterTabs{
 		nav:       nav,
 		filesTab:  &Tab{Title: "Files", Hotkey: 'e', Checked: true},
-		dirsTab:   &Tab{Title: "Dirs", Hotkey: 'r', Checked: true},
+		dirsTab:   &Tab{Title: "Dirs", Hotkey: 'r', Checked: false},
 		hiddenTab: &Tab{Title: "Hidden", Hotkey: 'H', Checked: false},
 	}
 }
