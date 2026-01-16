@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/datatug/filetug/pkg/files"
+	"github.com/datatug/filetug/pkg/files/ftpfile"
 	"github.com/datatug/filetug/pkg/files/httpfile"
 	"github.com/datatug/filetug/pkg/files/osfile"
 	"github.com/datatug/filetug/pkg/fsutils"
@@ -309,12 +310,16 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 		if isTreeDirChanges {
 			fullPath := fsutils.ExpandHome(nodePath)
 			rootNode := nav.dirsTree.currDirRoot
-			switch dir {
-			case "/":
-				rootNode.SetText(dir + strings.Repeat(" ", 10))
+			var text string
+			switch store := nav.store.(type) {
+			case *httpfile.HttpStore:
+				text = strings.TrimSuffix(store.Root.Path, "/")
+			case *ftpfile.Store:
+				text = store.RootTitle()
 			default:
-				rootNode.SetText("..")
+				text = " " + ".."
 			}
+			rootNode.SetText(text)
 
 			rootNode.SetReference(nodePath).SetColor(tcell.ColorWhite)
 			go nav.updateGitStatus(ctx, fullPath, nav.dirsTree.currDirRoot, nodePath)
@@ -381,7 +386,7 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 			Path: nodePath,
 			//DirEntry: ,
 		}
-		dirRecords := NewFileRows(dirEntry, nil)
+		dirRecords := NewFileRows(nav.store, dirEntry, nil)
 		nav.files.SetRows(dirRecords)
 		nav.previewer.textView.SetText(err.Error()).SetWrap(true).SetTextColor(tcell.ColorOrangeRed)
 		return
@@ -408,7 +413,7 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 	dirEntry := DirEntry{
 		Path: nodePath,
 	}
-	dirRecords := NewFileRows(dirEntry, children)
+	dirRecords := NewFileRows(nav.store, dirEntry, children)
 	nav.files.SetRows(dirRecords)
 
 	if isTreeDirChanges {

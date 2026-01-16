@@ -6,6 +6,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/datatug/filetug/pkg/files"
+	"github.com/datatug/filetug/pkg/files/ftpfile"
+	"github.com/datatug/filetug/pkg/files/httpfile"
 	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -15,37 +18,24 @@ import (
 
 var _ tview.TableContent = (*FileRows)(nil)
 
-type Filter struct {
-	ShowHidden bool
-	ShowDirs   bool
-	Extensions []string
-}
-
-func (f Filter) IsEmpty() bool {
-	return len(f.Extensions) == 0
-}
-
-func (f Filter) IsVisible(entry os.DirEntry) bool {
-	if !f.ShowHidden && strings.HasPrefix(entry.Name(), ".") {
-		return false
+func NewFileRows(store files.Store, parent DirEntry, dirEntries []os.DirEntry) *FileRows {
+	if parent.Path != "/" {
+		parent.Path = strings.TrimSuffix(parent.Path, "/")
 	}
-	if entry.IsDir() && !f.ShowDirs {
-		return false
+	return &FileRows{
+		store:          store,
+		Dir:            parent,
+		AllEntries:     dirEntries,
+		VisibleEntries: dirEntries,
+		Infos:          make([]os.FileInfo, len(dirEntries)),
+		VisualInfos:    make([]os.FileInfo, len(dirEntries)),
 	}
-	if len(f.Extensions) == 0 {
-		return true
-	}
-	for _, ext := range f.Extensions {
-		if path.Ext(entry.Name()) == ext {
-			return true
-		}
-	}
-	return false
 }
 
 type FileRows struct {
 	tview.TableContentReadOnly
 	hideParent     bool
+	store          files.Store
 	Dir            DirEntry
 	AllEntries     []os.DirEntry
 	VisibleEntries []os.DirEntry
@@ -93,19 +83,6 @@ func (r *FileRows) GetColumnCount() int {
 	return 3
 }
 
-func NewFileRows(parent DirEntry, dirEntries []os.DirEntry) *FileRows {
-	if parent.Path != "/" {
-		parent.Path = strings.TrimSuffix(parent.Path, "/")
-	}
-	return &FileRows{
-		Dir:            parent,
-		AllEntries:     dirEntries,
-		VisibleEntries: dirEntries,
-		Infos:          make([]os.FileInfo, len(dirEntries)),
-		VisualInfos:    make([]os.FileInfo, len(dirEntries)),
-	}
-}
-
 const (
 	nameColIndex     = 0
 	sizeColIndex     = 1
@@ -119,7 +96,16 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 		switch col {
 		case nameColIndex:
-			cell := th(" " + "..").SetExpansion(1)
+			var cellText string
+			switch store := r.store.(type) {
+			case *httpfile.HttpStore:
+				cellText = store.Root.String()
+			case *ftpfile.Store:
+				cellText = store.RootTitle()
+			default:
+				cellText = " " + ".."
+			}
+			cell := th(cellText).SetExpansion(1)
 			var parentDir string
 			if r.Dir.Path == "~" {
 				parentDir = fsutils.ExpandHome("~")

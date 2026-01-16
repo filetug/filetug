@@ -76,7 +76,6 @@ func (f *favorites) changed(index int, _ string, _ string, _ rune) {
 	if strings.HasPrefix(item.path, "https://") {
 		root, _ := url.Parse(item.path)
 		dirPath = root.Path
-		root.Path = "/"
 		f.nav.store = httpfile.NewStore(*root)
 	} else if strings.HasPrefix(item.path, "ftp://") {
 		u, _ := url.Parse(item.path)

@@ -24,6 +24,7 @@ type HttpStore struct {
 
 func (h HttpStore) RootTitle() string {
 	root := h.Root
+	root.Path = ""
 	root.User = nil
 	return root.String()
 }
