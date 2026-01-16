@@ -135,6 +135,9 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 	if !r.HideParent() {
 		i--
 	}
+	if i < 0 {
+		return nil
+	}
 	if i >= len(r.VisibleEntries) {
 		return nil
 	}
