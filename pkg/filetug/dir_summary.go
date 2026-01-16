@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -348,7 +349,11 @@ func (d *dirSummary) GetSizes() error {
 				if err != nil {
 					return err
 				}
-				ext.TotalSize += info.Size()
+				if info == nil || reflect.ValueOf(info).IsNil() {
+					continue
+				}
+				size := info.Size()
+				ext.TotalSize += size
 			}
 			g.TotalSize += ext.TotalSize
 		}

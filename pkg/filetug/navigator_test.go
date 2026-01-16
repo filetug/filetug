@@ -71,6 +71,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 
 	t.Run("goDir_NonExistent", func(t *testing.T) {
-		nav.goDir("/non-existent-path-12345")
+		nav.goDir("/non-existent-Path-12345")
 	})
 }

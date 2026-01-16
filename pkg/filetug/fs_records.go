@@ -3,6 +3,7 @@ package filetug
 import (
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"time"
 
@@ -160,7 +161,7 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 	} else {
 		fi := r.VisualInfos[i]
-		if fi == nil {
+		if fi == nil || reflect.ValueOf(fi).IsNil() {
 			var err error
 			fi, err = dirEntry.Info()
 			if err != nil {
@@ -173,18 +174,22 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		case sizeColIndex:
 			var sizeText string
 			if !dirEntry.IsDir() {
-				size := fi.Size()
-				sizeText = fsutils.GetSizeShortText(size)
+				if fi != nil && !reflect.ValueOf(fi).IsNil() {
+					size := fi.Size()
+					sizeText = fsutils.GetSizeShortText(size)
+				}
 			}
 			cell = tview.NewTableCell(sizeText).
 				SetAlign(tview.AlignRight).
 				SetExpansion(1)
 		case modifiedColIndex:
 			var s string
-			if modTime := fi.ModTime(); fi.ModTime().After(time.Now().Add(24 * time.Hour)) {
-				s = modTime.Format("15:04:05")
-			} else {
-				s = modTime.Format("2006-01-02")
+			if fi != nil && !reflect.ValueOf(fi).IsNil() {
+				if modTime := fi.ModTime(); fi.ModTime().After(time.Now().Add(24 * time.Hour)) {
+					s = modTime.Format("15:04:05")
+				} else {
+					s = modTime.Format("2006-01-02")
+				}
 			}
 			cell = tview.NewTableCell(s)
 		default:

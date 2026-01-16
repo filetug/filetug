@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/datatug/filetug/pkg/files"
+	"github.com/datatug/filetug/pkg/files/ftpfile"
 	"github.com/datatug/filetug/pkg/files/httpfile"
 	"github.com/datatug/filetug/pkg/files/osfile"
 	"github.com/datatug/filetug/pkg/fsutils"
@@ -131,6 +132,22 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 	nav.createColumns()
 
 	if state, stateErr := ftstate.GetState(); state != nil {
+		if state.Store == "" {
+			state.Store = "file:"
+		}
+		var schema string
+		if i := strings.Index(state.Store, ":"); i < 0 {
+			schema = state.Store
+		}
+		switch schema {
+		case "http", "https":
+			root, _ := url.Parse(state.Store)
+			nav.store = httpfile.NewStore(*root)
+		case "ftp":
+			root, _ := url.Parse(state.Store)
+			nav.store = ftpfile.NewStore(*root)
+		}
+
 		if state.CurrentDir == "" {
 			state.CurrentDir = "~"
 		}
@@ -314,7 +331,14 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 			var text string
 			if store, ok := nav.store.(interface{ RootURL() url.URL }); ok {
 				rootUrl := store.RootURL()
-				text = strings.TrimSuffix(rootUrl.Path, "/")
+				if rootUrl.Path == "" {
+					rootUrl.Path = "/"
+				}
+				if rootUrl.Path == "/" {
+					text = "/"
+				} else {
+					text = strings.TrimSuffix(rootUrl.Path, "/")
+				}
 			} else if dir == "/" {
 				text = "/"
 			} else {

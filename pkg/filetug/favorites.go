@@ -13,9 +13,10 @@ import (
 )
 
 type favorite struct {
-	path        string
-	shortcut    rune
-	description string
+	Store       string `json:"Store,omitempty" yaml:"Store,omitempty"`
+	Path        string `json:"path" yaml:"path"`
+	Shortcut    rune   `json:"Shortcut" yaml:"Shortcut"`
+	Description string `json:"Description" yaml:"Description"`
 }
 
 type favorites struct {
@@ -39,13 +40,13 @@ func (f *favorites) ShowFavorites() {
 
 func builtInFavorites() []favorite {
 	return []favorite{
-		{path: "/", shortcut: '/', description: "root"},
-		{path: "~", shortcut: 'h', description: "User's home directory"},
-		{path: "~/Documents", description: "Documents"},
-		{path: "~/projects", description: "Projects"},
-		{path: "~/.filetug", description: "FileTug settings dir"},
-		{path: "https://www.kernel.org/pub/", description: "The Linux Kernel Archives"},
-		{path: "ftp://demo:password@test.rebex.net/", description: "The Linux Kernel Archives"},
+		{Store: "file:", Path: "/", Shortcut: '/', Description: "root"},
+		{Store: "file:", Path: "~", Shortcut: 'h', Description: "User's home directory"},
+		{Store: "file:", Path: "~/Documents", Description: "Documents"},
+		{Store: "file:", Path: "~/projects", Description: "Projects"},
+		{Store: "file:", Path: "~/.filetug", Description: "FileTug settings dir"},
+		{Store: "https://www.kernel.org/pub/", Path: "/pub", Description: "The Linux Kernel Archives"},
+		{Store: "ftp://demo:password@test.rebex.net/", Path: "/", Description: "The Linux Kernel Archives"},
 	}
 }
 func newFavorites(nav *Navigator) *favorites {
@@ -72,16 +73,14 @@ func newFavorites(nav *Navigator) *favorites {
 
 func (f *favorites) changed(index int, _ string, _ string, _ rune) {
 	item := f.items[index]
-	dirPath := item.path
-	if strings.HasPrefix(item.path, "https://") {
-		root, _ := url.Parse(item.path)
+	dirPath := item.Path
+	if strings.HasPrefix(item.Store, "https://") {
+		root, _ := url.Parse(item.Store)
 		dirPath = root.Path
 		f.nav.store = httpfile.NewStore(*root)
-	} else if strings.HasPrefix(item.path, "ftp://") {
-		u, _ := url.Parse(item.path)
-		dirPath = u.Path
-		password, _ := u.User.Password()
-		f.nav.store = ftpfile.NewStore(u.Host, u.User.Username(), password)
+	} else if strings.HasPrefix(item.Store, "ftp://") {
+		address, _ := url.Parse(item.Store)
+		f.nav.store = ftpfile.NewStore(*address)
 	} else {
 		switch f.nav.store.(type) {
 		case *osfile.Store: // No change needed
@@ -111,25 +110,39 @@ func (f *favorites) setItems() {
 	f.list.Clear()
 	i := 0
 	for _, item := range f.items {
-		if item.path != "~" && item.path != "/" {
+		if item.Store == "" {
+			item.Store = "file:"
+		}
+		if !strings.HasPrefix(item.Store, "file:") || (item.Path != "~" && item.Path != "/") {
 			i++
 		}
 		var mainText string
-		switch item.path {
-		case "/":
-			mainText = "/ [darkgray::i] root"
-		case "~":
-			mainText = "~ [darkgray::i] User's home directory"
-		default:
-			mainText = item.path
+
+		if strings.HasPrefix(item.Store, "file:") {
+			switch item.Path {
+			case "/":
+				mainText = "/ [darkgray::i] root"
+			case "~":
+				mainText = "~ [darkgray::i] User's home directory"
+			default:
+				mainText = item.Path
+			}
+		} else {
+			storeURL, _ := url.Parse(item.Store)
+			if item.Path[0] == '/' {
+				storeURL.Path = item.Path
+			} else {
+				storeURL = storeURL.JoinPath(storeURL.String(), item.Path)
+			}
+			mainText = storeURL.String()
 		}
 
-		//mainText += " - [::i]" + item.description + "[-:-:I]"
-		secondText := item.description
-		if item.path == "~" {
+		//mainText += " - [::i]" + item.Description + "[-:-:I]"
+		secondText := item.Description
+		if item.Path == "~" {
 			secondText = fsutils.ExpandHome("~")
 		}
-		shortcut := item.shortcut
+		shortcut := item.Shortcut
 		if shortcut == 0 {
 			shortcut = '0' + rune(i)
 		}
@@ -140,7 +153,7 @@ func (f *favorites) setItems() {
 }
 
 func (f *favorites) selected(item favorite) {
-	f.nav.goDir(item.path)
+	f.nav.goDir(item.Path)
 	f.nav.left.SetContent(f.nav.dirsTree)
 	f.nav.app.SetFocus(f.nav.dirsTree)
 }

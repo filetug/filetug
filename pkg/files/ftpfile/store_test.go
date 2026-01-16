@@ -1,30 +1,43 @@
 package ftpfile
 
 import (
+	"fmt"
+	"net/url"
 	"testing"
 )
 
 func TestStore_ReadDir(t *testing.T) {
-	t.Run("plain", func(t *testing.T) {
-		s := NewStore("test.rebex.net:21", "demo", "password")
+	const host = "test.rebex.net"
+	const port = 21
+	root := url.URL{
+		Scheme: "ftp",
+		Host:   fmt.Sprintf("%s:%d", host, port),
+		User:   url.UserPassword("demo", "password"),
+	}
+	t.Run("host_with_port", func(t *testing.T) {
+		root := root
+		root.Host = fmt.Sprintf("%s:%d", host, port)
+		s := NewStore(root)
 		testReadDir(t, s)
 	})
 
 	t.Run("plain_default_port", func(t *testing.T) {
-		s := NewStore("test.rebex.net", "demo", "password")
+		root := root
+		root.Host = host
+		s := NewStore(root)
 		testReadDir(t, s)
 	})
 
 	t.Run("explicit_TLS", func(t *testing.T) {
 		t.Skip("test.rebex.net requires TLS session resumption which github.com/jlaffaye/ftp might not support or needs more config")
-		s := NewStore("test.rebex.net:21", "demo", "password")
+		s := NewStore(root)
 		s.SetTLS(true, false)
 		testReadDir(t, s)
 	})
 
 	t.Run("implicit_TLS", func(t *testing.T) {
 		t.Skip("test.rebex.net requires TLS session resumption which github.com/jlaffaye/ftp might not support or needs more config")
-		s := NewStore("test.rebex.net:990", "demo", "password")
+		s := NewStore(root)
 		s.SetTLS(false, true)
 		testReadDir(t, s)
 	})

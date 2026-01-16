@@ -2,8 +2,8 @@ package ftpfile
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
-	"net"
 	"net/url"
 	"os"
 	"time"
@@ -12,38 +12,33 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
-const schema = "ftp"
-
 var _ files.Store = (*Store)(nil)
 
 type Store struct {
-	host     string
-	path     string
-	user     string
-	password string
+	root     url.URL
 	explicit bool
 	implicit bool
 }
 
 func (s *Store) RootURL() url.URL {
-	u := url.URL{
-		Scheme: schema,
-		Host:   s.host,
-		Path:   s.path,
-	}
-	return u
+	root := s.root
+	root.User = nil
+	return root
 }
 
 func (s *Store) RootTitle() string {
-	return schema + "://" + s.host
+	root := s.RootURL()
+	return root.String()
 }
 
-func NewStore(addr, user, password string) *Store {
-	return &Store{
-		host:     addr,
-		user:     user,
-		password: password,
+func NewStore(root url.URL) *Store {
+	if root.Scheme != "ftp" {
+		panic(fmt.Errorf("schema should be 'ftp', got '%s'", root.Scheme))
 	}
+	store := &Store{
+		root: root,
+	}
+	return store
 }
 
 func (s *Store) SetTLS(explicit, implicit bool) {
@@ -52,12 +47,13 @@ func (s *Store) SetTLS(explicit, implicit bool) {
 }
 
 func (s *Store) ReadDir(name string) ([]os.DirEntry, error) {
-	host, port, err := net.SplitHostPort(s.host)
-	if err != nil {
-		host = s.host
-		port = "21"
+	root := s.root
+	host := root.Hostname()
+	if port := root.Port(); port == "" {
+		root.Host = host + ":21"
 	}
-	addr := net.JoinHostPort(host, port)
+	addr := root.Host
+	//addr := net.JoinHostPort(host, port)
 	options := []ftp.DialOption{
 		ftp.DialWithTimeout(5 * time.Second),
 	}
@@ -76,8 +72,13 @@ func (s *Store) ReadDir(name string) ([]os.DirEntry, error) {
 		_ = c.Quit()
 	}()
 
-	if s.user != "" {
-		err = c.Login(s.user, s.password)
+	if root.User != nil {
+		username := root.User.Username()
+		password, hasPassword := root.User.Password()
+		if !hasPassword {
+			return nil, errors.New("missing password")
+		}
+		err = c.Login(username, password)
 		if err != nil {
 			return nil, fmt.Errorf("failed to login to ftp server: %w", err)
 		}
@@ -93,42 +94,14 @@ func (s *Store) ReadDir(name string) ([]os.DirEntry, error) {
 		if entry.Name == "." || entry.Name == ".." {
 			continue
 		}
-		result = append(result, &ftpDirEntry{entry: entry})
+		dirEntry := files.NewDirEntry(
+			entry.Name,
+			entry.Type == ftp.EntryTypeFolder,
+			files.Size(int64(entry.Size)),
+			files.ModTime(entry.Time),
+		)
+		result = append(result, dirEntry)
 	}
 
 	return result, nil
 }
-
-type ftpDirEntry struct {
-	entry *ftp.Entry
-}
-
-func (e *ftpDirEntry) Name() string {
-	return e.entry.Name
-}
-
-func (e *ftpDirEntry) IsDir() bool {
-	return e.entry.Type == ftp.EntryTypeFolder
-}
-
-func (e *ftpDirEntry) Type() os.FileMode {
-	if e.IsDir() {
-		return os.ModeDir
-	}
-	return 0
-}
-
-func (e *ftpDirEntry) Info() (os.FileInfo, error) {
-	return &ftpFileInfo{entry: e.entry}, nil
-}
-
-type ftpFileInfo struct {
-	entry *ftp.Entry
-}
-
-func (f *ftpFileInfo) Name() string       { return f.entry.Name }
-func (f *ftpFileInfo) Size() int64        { return int64(f.entry.Size) }
-func (f *ftpFileInfo) Mode() os.FileMode  { return (&ftpDirEntry{entry: f.entry}).Type() }
-func (f *ftpFileInfo) ModTime() time.Time { return f.entry.Time }
-func (f *ftpFileInfo) IsDir() bool        { return f.entry.Type == ftp.EntryTypeFolder }
-func (f *ftpFileInfo) Sys() any           { return f.entry }
