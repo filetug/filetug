@@ -37,13 +37,13 @@ func newBottom() *bottom {
 			Action:  func() {},
 		},
 		{
-			Title:   "/",
+			Title:   "/root˙",
 			HotKeys: []string{"/"},
 			Action:  func() {},
 		},
 		{
-			Title:   "Home",
-			HotKeys: []string{"H"},
+			Title:   "~Home",
+			HotKeys: []string{"H", "~"},
 			Action:  func() {},
 		},
 		{
