@@ -62,7 +62,7 @@ func TestNavigator(t *testing.T) {
 }
 
 func TestNavigator_goDir(t *testing.T) {
-	saveCurrentDir = func(string) {}
+	saveCurrentDir = func(string, string) {}
 	app := tview.NewApplication()
 	nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
 

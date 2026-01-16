@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/datatug/filetug/pkg/files"
-	"github.com/datatug/filetug/pkg/files/ftpfile"
 	"github.com/datatug/filetug/pkg/files/httpfile"
 	"github.com/datatug/filetug/pkg/files/osfile"
 	"github.com/datatug/filetug/pkg/fsutils"
@@ -241,9 +240,11 @@ func (nav *Navigator) goDir(dir string) {
 	nav.showDir(dir, nil)
 	stateDir := dir
 	if httpStore, ok := nav.store.(*httpfile.HttpStore); ok {
-		stateDir, _ = url.JoinPath(httpStore.Root.String(), dir)
+		rootUrl := httpStore.RootURL()
+		stateDir, _ = url.JoinPath(rootUrl.String(), dir)
 	}
-	saveCurrentDir(stateDir)
+	storeRootURL := nav.store.RootURL()
+	saveCurrentDir(storeRootURL.String(), stateDir)
 }
 
 func (nav *Navigator) updateGitStatus(ctx context.Context, fullPath string, node *tview.TreeNode, prefix string) {
@@ -311,18 +312,15 @@ func (nav *Navigator) showDir(dir string, selectedNode *tview.TreeNode) {
 			fullPath := fsutils.ExpandHome(nodePath)
 			rootNode := nav.dirsTree.currDirRoot
 			var text string
-			switch store := nav.store.(type) {
-			case *httpfile.HttpStore:
-				text = strings.TrimSuffix(store.Root.Path, "/")
-			case *ftpfile.Store:
-				text = store.RootTitle()
-			default:
-				if dir == "/" {
-					text = "/"
-				} else {
-					text = ".."
-				}
+			if store, ok := nav.store.(interface{ RootURL() url.URL }); ok {
+				rootUrl := store.RootURL()
+				text = strings.TrimSuffix(rootUrl.Path, "/")
+			} else if dir == "/" {
+				text = "/"
+			} else {
+				text = ".."
 			}
+
 			rootNode.SetText(text)
 
 			rootNode.SetReference(nodePath).SetColor(tcell.ColorWhite)

@@ -80,7 +80,7 @@ func TestSaveCurrentDir(t *testing.T) {
 			}
 			return nil
 		}
-		SaveCurrentDir("/new/dir")
+		SaveCurrentDir("file://", "/new/dir")
 	})
 
 	t.Run("read_error", func(t *testing.T) {
@@ -91,7 +91,7 @@ func TestSaveCurrentDir(t *testing.T) {
 		writeJSON = func(filePath string, o interface{}) error {
 			return nil
 		}
-		SaveCurrentDir("/new/dir")
+		SaveCurrentDir("file://", "/new/dir")
 	})
 
 	t.Run("mkdir_error", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestSaveCurrentDir(t *testing.T) {
 		settingsDirPath = "/root/noaccess/dir"
 		defer func() { settingsDirPath = oldDirPath }()
 
-		SaveCurrentDir("/new/dir")
+		SaveCurrentDir("fs", "/new/dir")
 		// TODO: Assert error has been logged
 	})
 
@@ -125,7 +125,7 @@ func TestSaveCurrentDir(t *testing.T) {
 			logCalled = true
 		}
 
-		SaveCurrentDir("/new/dir")
+		SaveCurrentDir("file://", "/new/dir")
 		if !logCalled {
 			t.Error("expected logErr to be called when settingsDirPath is a file")
 		}
@@ -149,7 +149,7 @@ func TestSaveCurrentDir(t *testing.T) {
 			logCalled = true
 		}
 
-		SaveCurrentDir("/new/dir")
+		SaveCurrentDir("file://", "/new/dir")
 		if !logCalled {
 			t.Error("expected logErr to be called for writeJSON failure")
 		}

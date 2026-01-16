@@ -22,6 +22,10 @@ type HttpStore struct {
 	Root url.URL
 }
 
+func (h HttpStore) RootURL() url.URL {
+	return h.Root
+}
+
 func (h HttpStore) RootTitle() string {
 	root := h.Root
 	root.Path = ""

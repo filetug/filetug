@@ -1,6 +1,7 @@
 package osfile
 
 import (
+	"net/url"
 	"os"
 	"strings"
 
@@ -14,6 +15,12 @@ var _ files.Store = (*Store)(nil)
 type Store struct {
 	title string
 	root  string
+}
+
+func (s Store) RootURL() url.URL {
+	return url.URL{
+		Scheme: "file",
+	}
 }
 
 func (s Store) RootTitle() string {

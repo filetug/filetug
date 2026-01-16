@@ -99,7 +99,8 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 			var cellText string
 			switch store := r.store.(type) {
 			case *httpfile.HttpStore:
-				cellText = store.Root.String()
+				rootUrl := store.RootURL()
+				cellText = rootUrl.String()
 			case *ftpfile.Store:
 				cellText = store.RootTitle()
 			default:

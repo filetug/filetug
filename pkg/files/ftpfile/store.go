@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"time"
 
@@ -11,23 +12,35 @@ import (
 	"github.com/jlaffaye/ftp"
 )
 
+const schema = "ftp"
+
 var _ files.Store = (*Store)(nil)
 
 type Store struct {
-	addr     string
+	host     string
+	path     string
 	user     string
 	password string
 	explicit bool
 	implicit bool
 }
 
+func (s *Store) RootURL() url.URL {
+	u := url.URL{
+		Scheme: schema,
+		Host:   s.host,
+		Path:   s.path,
+	}
+	return u
+}
+
 func (s *Store) RootTitle() string {
-	return "ftp://" + s.addr
+	return schema + "://" + s.host
 }
 
 func NewStore(addr, user, password string) *Store {
 	return &Store{
-		addr:     addr,
+		host:     addr,
 		user:     user,
 		password: password,
 	}
@@ -39,9 +52,9 @@ func (s *Store) SetTLS(explicit, implicit bool) {
 }
 
 func (s *Store) ReadDir(name string) ([]os.DirEntry, error) {
-	host, port, err := net.SplitHostPort(s.addr)
+	host, port, err := net.SplitHostPort(s.host)
 	if err != nil {
-		host = s.addr
+		host = s.host
 		port = "21"
 	}
 	addr := net.JoinHostPort(host, port)

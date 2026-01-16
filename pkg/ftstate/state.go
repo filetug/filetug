@@ -14,6 +14,7 @@ var settingsDir = defaultSettingsDir
 var settingsDirPath = fsutils.ExpandHome(settingsDir)
 
 type State struct {
+	Store           string `json:"store,omitempty"`
 	CurrentDir      string `json:"current_dir,omitempty"`
 	SelectedTreeDir string `json:"selected_tree_dir,omitempty"`
 	CurrentFileName string `json:"current_file_name,omitempty"`
@@ -40,8 +41,9 @@ func GetCurrentDir() string {
 	return state.CurrentDir
 }
 
-func SaveCurrentDir(currentDir string) {
+func SaveCurrentDir(store, currentDir string) {
 	saveSettingValue(func(state *State) {
+		state.Store = store
 		state.CurrentDir = currentDir
 	})
 }
