@@ -64,6 +64,9 @@ func (t *Tree) focus() {
 	t.nav.left.SetBorderColor(theme.FocusedBorderColor)
 	t.nav.activeCol = 0
 	t.nav.right.SetContent(t.nav.dirSummary)
+	t.nav.dirSummary.Blur()
+	t.nav.right.Blur()
+	t.nav.files.blur()
 	currentNode := t.GetCurrentNode()
 	if currentNode == nil {
 		currentNode = t.GetRoot()
