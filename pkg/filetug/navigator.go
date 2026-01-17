@@ -255,7 +255,7 @@ func (nav *Navigator) resize(mode resizeMode) {
 func (nav *Navigator) goDir(dir string) {
 	ctx := context.Background()
 	nav.dirsTree.setCurrentDir(dir)
-	nav.showDir(ctx, nav.dirsTree.rootNode, dir)
+	nav.showDir(ctx, nav.dirsTree.rootNode, dir, true)
 	root := nav.store.RootURL()
 	saveCurrentDir(root.String(), dir)
 }
@@ -294,7 +294,10 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, fullPath string, node
 
 var saveCurrentDir = ftstate.SaveCurrentDir
 
-func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir string) {
+// showDir updates all panels.
+// The `isTreeRootChanged bool` argument is needed do distinguish root dir change from
+// the case we simply select the root node in the tree.
+func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir string, isTreeRootChanged bool) {
 
 	nav.current.dir = fsutils.ExpandHome(dir)
 	node.SetReference(nav.current.dir)
@@ -314,12 +317,12 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir str
 				nav.showNodeError(node, err)
 				return
 			}
-			nav.onDataLoaded(node, dirContext)
+			nav.onDataLoaded(node, dirContext, isTreeRootChanged)
 		})
 	}()
 }
 
-func (nav *Navigator) onDataLoaded(node *tview.TreeNode, dirContext *DirContext) {
+func (nav *Navigator) onDataLoaded(node *tview.TreeNode, dirContext *DirContext, isTreeRootChanged bool) {
 	nav.dirSummary.SetDir(dirContext)
 
 	//nav.filesPanel.Clear()
@@ -329,7 +332,7 @@ func (nav *Navigator) onDataLoaded(node *tview.TreeNode, dirContext *DirContext)
 	nav.files.SetRows(dirRecords, node != nav.dirsTree.rootNode)
 
 	ctx := context.Background() // TODO: use a cancelable context
-	if node == nav.dirsTree.rootNode {
+	if isTreeRootChanged {
 		nav.dirsTree.setDirContext(ctx, node, dirContext)
 	}
 }

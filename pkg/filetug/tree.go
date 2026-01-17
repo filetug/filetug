@@ -55,7 +55,7 @@ func (t *Tree) changed(node *tview.TreeNode) {
 	if dir, ok := ref.(string); ok {
 		var ctx context.Context
 		ctx, t.nav.cancel = context.WithCancel(context.Background())
-		t.nav.showDir(ctx, node, dir)
+		t.nav.showDir(ctx, node, dir, false)
 		ftstate.SaveSelectedTreeDir(dir)
 	}
 }
