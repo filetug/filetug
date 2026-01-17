@@ -5,6 +5,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/datatug/filetug/pkg/ftstate"
 	"github.com/gdamore/tcell/v2"
@@ -39,7 +40,13 @@ func (f *filesPanel) SetRows(rows *FileRows, showDirs bool) {
 	if f.currentFileName != "" {
 		f.selectCurrentFile()
 	}
-	f.table.ScrollToBeginning()
+	go func() {
+		time.Sleep(time.Millisecond)
+		f.nav.app.QueueUpdateDraw(func() {
+			f.table.ScrollToBeginning()
+		})
+	}()
+
 }
 
 func (f *filesPanel) SetFilter(filter Filter) {

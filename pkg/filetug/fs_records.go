@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/datatug/filetug/pkg/files"
-	"github.com/datatug/filetug/pkg/files/ftpfile"
-	"github.com/datatug/filetug/pkg/files/httpfile"
 	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -92,40 +90,7 @@ const (
 
 func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 	if !r.HideParent() && row == 0 {
-		th := func(text string) *tview.TableCell {
-			return tview.NewTableCell(text)
-		}
-		switch col {
-		case nameColIndex:
-			var cellText string
-			switch store := r.store.(type) {
-			case *httpfile.HttpStore:
-				rootUrl := store.RootURL()
-				cellText = rootUrl.String()
-			case *ftpfile.Store:
-				cellText = store.RootTitle()
-			default:
-				cellText = " " + ".."
-			}
-			cell := th(cellText).SetExpansion(1)
-			var parentDir string
-			if r.Dir.Path == "~" {
-				parentDir = fsutils.ExpandHome("~")
-			} else {
-				parentDir, _ = path.Split(r.Dir.Path)
-			}
-			if parentDir != "/" {
-				parentDir = strings.TrimSuffix(parentDir, "/")
-			}
-			ref := DirEntry{Path: parentDir}
-			return cell.SetReference(ref)
-		case sizeColIndex:
-			return th("")
-		case modifiedColIndex:
-			return th("")
-		default:
-			return nil
-		}
+		return r.getTopRow(col)
 	}
 	if r.Err != nil {
 		if col == nameColIndex {
@@ -204,6 +169,44 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 	}
 	cell.SetReference(ref)
 	return cell
+}
+
+func (r *FileRows) getTopRow(col int) *tview.TableCell {
+	th := func(text string) *tview.TableCell {
+		return tview.NewTableCell(text)
+	}
+	switch col {
+	case nameColIndex:
+		return r.getTopRowName()
+	case sizeColIndex:
+		return th("")
+	case modifiedColIndex:
+		return th("")
+	default:
+		return nil
+	}
+}
+
+func (r *FileRows) getTopRowName() *tview.TableCell {
+	var cellText string
+	rootPath := r.store.RootURL().Path
+	if r.Dir.Path == rootPath {
+		cellText = "."
+	} else {
+		cellText = " " + ".."
+	}
+	cell := tview.NewTableCell(cellText).SetExpansion(1)
+	var parentDir string
+	if r.Dir.Path == "~" {
+		parentDir = fsutils.ExpandHome("~")
+	} else {
+		parentDir, _ = path.Split(r.Dir.Path)
+	}
+	if parentDir != "/" {
+		parentDir = strings.TrimSuffix(parentDir, "/")
+	}
+	ref := DirEntry{Path: parentDir}
+	return cell.SetReference(ref)
 }
 
 type DirEntry struct {
