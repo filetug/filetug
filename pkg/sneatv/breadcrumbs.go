@@ -87,7 +87,7 @@ func (b *Breadcrumbs) Draw(screen tcell.Screen) {
 		}
 		title := strings.TrimSuffix(item.GetTitle(), b.separator)
 		var isURL bool
-		if _, err := url.Parse(title); err == nil {
+		if u, err := url.Parse(title); err == nil && u.Scheme != "" {
 			isURL = true
 		}
 		label := tview.Escape(title)
