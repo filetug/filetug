@@ -1,6 +1,7 @@
 package filetug
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -52,9 +53,11 @@ func builtInFavorites() []favorite {
 func newFavorites(nav *Navigator) *favorites {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 	flex.SetTitle(" Favorites ")
+	list := tview.NewList()
+	list.SetSecondaryTextColor(tcell.ColorGray)
 	f := &favorites{
 		Flex:  flex,
-		list:  tview.NewList().SetSecondaryTextColor(tcell.ColorGray),
+		list:  list,
 		nav:   nav,
 		items: builtInFavorites(),
 		boxed: newBoxed(
@@ -69,21 +72,6 @@ func newFavorites(nav *Navigator) *favorites {
 	f.list.SetInputCapture(f.inputCapture)
 	f.list.SetChangedFunc(f.changed)
 	return f
-}
-
-func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
-	switch event.Key() {
-	case tcell.KeyEscape:
-		f.nav.goDir(f.prev.dir)
-		f.nav.left.SetContent(f.nav.dirsTree)
-		f.nav.app.SetFocus(f.nav.dirsTree)
-		return nil
-	case tcell.KeyLeft:
-		f.nav.app.SetFocus(f.nav.files.table)
-		return nil
-	default:
-		return event
-	}
 }
 
 func (f *favorites) setItems() {
@@ -109,12 +97,13 @@ func (f *favorites) setItems() {
 			}
 		} else {
 			storeURL, _ := url.Parse(item.Store)
-			if item.Path != "" && item.Path[0] == '/' {
-				storeURL.Path = item.Path
-			} else {
-				storeURL = storeURL.JoinPath(storeURL.String(), item.Path)
-			}
+			storeURL.User = nil
+			scheme := storeURL.Scheme
+			storeURL.Scheme = ""
 			mainText = storeURL.String()
+			mainText = strings.TrimPrefix(mainText, "//")
+			mainText = strings.TrimPrefix(mainText, "www.")
+			mainText = strings.ToUpper(scheme) + ": " + mainText
 		}
 
 		//mainText += " - [::i]" + item.Description + "[-:-:I]"
@@ -126,6 +115,7 @@ func (f *favorites) setItems() {
 		if shortcut == 0 {
 			shortcut = '0' + rune(i)
 		}
+		secondText = tview.Escape(secondText)
 		f.list.AddItem(mainText, secondText, shortcut, func() {
 			f.selected(item)
 		})
@@ -141,23 +131,51 @@ func (f *favorites) changed(index int, _ string, _ string, _ rune) {
 	f.activateFavorite(item)
 }
 
-func (f *favorites) activateFavorite(item favorite) {
-	dirPath := item.Path
-	if strings.HasPrefix(item.Store, "https://") {
-		root, _ := url.Parse(item.Store)
-		dirPath = root.Path
-		f.nav.store = httpfile.NewStore(*root)
-	} else if strings.HasPrefix(item.Store, "ftp://") {
-		address, _ := url.Parse(item.Store)
-		f.nav.store = ftpfile.NewStore(*address)
-	} else {
-		switch f.nav.store.(type) {
-		case *osfile.Store: // No change needed
-		default:
-			f.nav.store = osfile.NewStore("/")
-		}
+func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyEnter:
+		currentFav := f.items[f.list.GetCurrentItem()]
+		dirPath := f.setStore(currentFav)
+		f.nav.goDir(dirPath)
+		f.nav.left.SetContent(f.nav.dirsTree)
+		f.nav.app.SetFocus(f.nav.dirsTree)
+		return nil
+	case tcell.KeyEscape:
+		f.nav.goDir(f.prev.dir)
+		f.nav.left.SetContent(f.nav.dirsTree)
+		f.nav.app.SetFocus(f.nav.dirsTree)
+		return nil
+	case tcell.KeyLeft:
+		f.nav.app.SetFocus(f.nav.files.table)
+		return nil
+	default:
+		return event
 	}
-	f.nav.goDir(dirPath)
-	f.nav.left.SetContent(f.nav.dirsTree)
-	f.nav.app.SetFocus(f.nav.dirsTree)
+}
+
+func (f *favorites) activateFavorite(item favorite) {
+	dirPath := f.setStore(item)
+	ctx := context.Background()
+	f.nav.showDir(ctx, nil, dirPath, false)
+}
+
+func (f *favorites) setStore(item favorite) (dirPath string) {
+	dirPath = item.Path
+	root, err := url.Parse(item.Store)
+	if err != nil {
+		panic(err)
+	}
+
+	switch root.Scheme {
+	case "http", "https":
+		f.nav.store = httpfile.NewStore(*root)
+	case "ftp", "ftps":
+		f.nav.store = ftpfile.NewStore(*root)
+	case "file":
+		if root.Path == "" {
+			root.Path = "/"
+		}
+		f.nav.store = osfile.NewStore(root.Path)
+	}
+	return
 }

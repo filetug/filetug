@@ -265,7 +265,7 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, fullPath string, node
 	cachedStatus, ok := nav.gitStatusCache[fullPath]
 	nav.gitStatusCacheMu.RUnlock()
 
-	if ok {
+	if ok && node != nil {
 		nav.app.QueueUpdateDraw(func() {
 			node.SetText(prefix + cachedStatus.String())
 		})
@@ -300,7 +300,9 @@ var saveCurrentDir = ftstate.SaveCurrentDir
 func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir string, isTreeRootChanged bool) {
 
 	nav.current.dir = fsutils.ExpandHome(dir)
-	node.SetReference(nav.current.dir)
+	if node != nil {
+		node.SetReference(nav.current.dir)
+	}
 	if nav.store.RootURL().Scheme == "file" {
 		name, _ := path.Split(dir)
 		go nav.updateGitStatus(ctx, nav.current.dir, node, name)
