@@ -31,6 +31,15 @@ type filesPanel struct {
 //	f.boxed.Draw(screen)
 //}
 
+func (f *filesPanel) onStoreChange() {
+	f.table.SetContent(nil)
+	f.table.Clear()
+	loadingCell := tview.NewTableCell("Loading...")
+	loadingCell = loadingCell.SetTextColor(tcell.ColorGray)
+	f.table.SetCell(0, 0, loadingCell)
+	f.table.SetSelectable(false, false)
+}
+
 func (f *filesPanel) SetRows(rows *FileRows, showDirs bool) {
 	f.table.Select(0, 0)
 	f.filter.ShowDirs = showDirs

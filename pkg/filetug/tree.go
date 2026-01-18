@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/datatug/filetug/pkg/ftstate"
@@ -17,9 +18,40 @@ const dirEmoji = "📁"
 type Tree struct {
 	boxed *boxed
 	*tview.TreeView
-	nav      *Navigator
-	rootNode *tview.TreeNode
-	search   string
+	nav             *Navigator
+	rootNode        *tview.TreeNode
+	search          string
+	loadingProgress int
+}
+
+func (t *Tree) onStoreChange() {
+	t.rootNode.ClearChildren()
+	rootPath := t.nav.store.RootURL().Path
+	if rootPath == "" {
+		rootPath = "/"
+	}
+	t.rootNode.SetText(rootPath)
+	loadingNode := tview.NewTreeNode(" Loading...")
+	loadingNode.SetColor(tcell.ColorGray)
+	t.rootNode.AddChild(loadingNode)
+	go func() {
+		t.doLoadingAnimation(loadingNode)
+	}()
+}
+
+func (t *Tree) doLoadingAnimation(loading *tview.TreeNode) {
+	time.Sleep(200 * time.Millisecond)
+	if children := t.rootNode.GetChildren(); len(children) == 1 && children[0] == loading {
+		const spinner = "▏▎▍▌▋▊▉█▉▊▋▌▍▎▏"
+		steps := len(spinner)
+		q, r := t.loadingProgress/steps, t.loadingProgress%steps
+		progressBar := strings.Repeat("█", r) + string(spinner[q])
+		t.nav.app.QueueUpdateDraw(func() {
+			loading.SetText(" Loading... " + progressBar)
+		})
+		t.loadingProgress += 1
+		t.doLoadingAnimation(loading)
+	}
 }
 
 func (t *Tree) Draw(screen tcell.Screen) {

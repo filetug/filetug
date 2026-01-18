@@ -62,6 +62,12 @@ type Navigator struct {
 	cancel           context.CancelFunc
 }
 
+func (nav *Navigator) SetStore(store files.Store) {
+	nav.store = store
+	nav.dirsTree.onStoreChange()
+	nav.files.onStoreChange()
+}
+
 func (nav *Navigator) SetFocus() {
 	nav.app.SetFocus(nav.dirsTree.TreeView)
 }

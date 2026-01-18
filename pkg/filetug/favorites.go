@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/datatug/filetug/pkg/files"
 	"github.com/datatug/filetug/pkg/files/ftpfile"
 	"github.com/datatug/filetug/pkg/files/httpfile"
 	"github.com/datatug/filetug/pkg/files/osfile"
@@ -171,16 +172,20 @@ func (f *favorites) setStore(item favorite) (dirPath string) {
 		panic(err)
 	}
 	if storeRootUrl := f.nav.store.RootURL(); storeRootUrl.String() != root.String() {
+		var store files.Store
 		switch strings.ToLower(root.Scheme) {
 		case "http", "https":
-			f.nav.store = httpfile.NewStore(*root)
+			store = httpfile.NewStore(*root)
 		case "ftp", "ftps":
-			f.nav.store = ftpfile.NewStore(*root)
+			store = ftpfile.NewStore(*root)
 		case "file":
 			if root.Path == "" {
 				root.Path = "/"
 			}
-			f.nav.store = osfile.NewStore(root.Path)
+			store = osfile.NewStore(root.Path)
+		}
+		if store != nil {
+			f.nav.SetStore(store)
 		}
 	}
 	return
