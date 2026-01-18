@@ -20,6 +20,7 @@ type filesPanel struct {
 	filterTabs
 	filter          Filter
 	currentFileName string
+	loadingProgress int
 }
 
 //func (f *filesPanel) Clear() {
@@ -32,12 +33,34 @@ type filesPanel struct {
 //}
 
 func (f *filesPanel) onStoreChange() {
+	f.loadingProgress = 0
 	f.table.SetContent(nil)
 	f.table.Clear()
 	loadingCell := tview.NewTableCell("Loading...")
-	loadingCell = loadingCell.SetTextColor(tcell.ColorGray)
+	loadingCell = loadingCell.SetTextColor(tcell.ColorLightGray)
+	progressCell := tview.NewTableCell("")
+	progressCell = progressCell.SetTextColor(tcell.ColorDarkGrey)
 	f.table.SetCell(0, 0, loadingCell)
+	f.table.SetCell(1, 0, progressCell)
 	f.table.SetSelectable(false, false)
+	go func() {
+		go f.doLoadingAnimation(progressCell)
+	}()
+}
+
+func (f *filesPanel) doLoadingAnimation(loading *tview.TableCell) {
+	time.Sleep(50 * time.Millisecond)
+	if f.table.GetCell(1, 0) == loading {
+		const spinner = "▏▎▍▌▋▊▉█▉▊▋▌▍▎▏"
+		steps := len(spinner)
+		q, r := f.loadingProgress/steps, f.loadingProgress%steps
+		progressBar := strings.Repeat("█", r) + string(spinner[q])
+		f.nav.app.QueueUpdateDraw(func() {
+			loading.SetText(" Loading... " + progressBar)
+		})
+		f.loadingProgress += 1
+		f.doLoadingAnimation(loading)
+	}
 }
 
 func (f *filesPanel) SetRows(rows *FileRows, showDirs bool) {

@@ -40,6 +40,7 @@ func (t *Tree) onStoreChange() {
 }
 
 func (t *Tree) doLoadingAnimation(loading *tview.TreeNode) {
+	t.loadingProgress = 0
 	time.Sleep(200 * time.Millisecond)
 	if children := t.rootNode.GetChildren(); len(children) == 1 && children[0] == loading {
 		const spinner = "▏▎▍▌▋▊▉█▉▊▋▌▍▎▏"
