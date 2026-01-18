@@ -171,7 +171,7 @@ func (f *favorites) setStore(item favorite) (dirPath string) {
 		panic(err)
 	}
 	if storeRootUrl := f.nav.store.RootURL(); storeRootUrl.String() != root.String() {
-		switch root.Scheme {
+		switch strings.ToLower(root.Scheme) {
 		case "http", "https":
 			f.nav.store = httpfile.NewStore(*root)
 		case "ftp", "ftps":
