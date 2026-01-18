@@ -20,7 +20,10 @@ others:
 
 - Caching of network resources
 - pre-fetching of data
-- Quick select with a collection of file masks.
+- Quick bulk-select using sets of matching patterns.
+    - Example:
+        - Coding files: *.(cpp|cs|js|ts)
+        - Data files: *.(csv|dbf|json|xml|yaml)
 - Tagging files & directories.
 - Curated lists of files and directories with predefined filters.
 - Bookmarks – quick jumps between multiple locations.
