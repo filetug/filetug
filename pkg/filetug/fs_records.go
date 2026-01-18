@@ -120,9 +120,9 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 	name := dirEntry.Name()
 	if col == nameColIndex {
 		if dirEntry.IsDir() {
-			cell = tview.NewTableCell(" 📁" + name)
+			cell = tview.NewTableCell(dirEmoji + name)
 		} else {
-			cell = tview.NewTableCell(" 📄" + name)
+			cell = tview.NewTableCell("📄" + name)
 		}
 	} else {
 		fi := r.VisualInfos[i]
@@ -193,7 +193,7 @@ func (r *FileRows) getTopRowName() *tview.TableCell {
 	if r.Dir.Path == rootPath {
 		cellText = "."
 	} else {
-		cellText = " " + ".."
+		cellText = ".."
 	}
 	cell := tview.NewTableCell(cellText).SetExpansion(1)
 	var parentDir string
