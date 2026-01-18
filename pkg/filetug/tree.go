@@ -25,6 +25,7 @@ type Tree struct {
 }
 
 func (t *Tree) onStoreChange() {
+	t.loadingProgress = 0
 	t.rootNode.ClearChildren()
 	rootPath := t.nav.store.RootURL().Path
 	if rootPath == "" {
@@ -39,14 +40,13 @@ func (t *Tree) onStoreChange() {
 	}()
 }
 
+var spinner = []rune("▏▎▍▌▋▊▉█")
+
 func (t *Tree) doLoadingAnimation(loading *tview.TreeNode) {
-	t.loadingProgress = 0
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	if children := t.rootNode.GetChildren(); len(children) == 1 && children[0] == loading {
-		const spinner = "▏▎▍▌▋▊▉█▉▊▋▌▍▎▏"
-		steps := len(spinner)
-		q, r := t.loadingProgress/steps, t.loadingProgress%steps
-		progressBar := strings.Repeat("█", r) + string(spinner[q])
+		q, r := t.loadingProgress/len(spinner), t.loadingProgress%len(spinner)
+		progressBar := strings.Repeat("█", q) + string(spinner[r])
 		t.nav.app.QueueUpdateDraw(func() {
 			loading.SetText(" Loading... " + progressBar)
 		})

@@ -49,14 +49,12 @@ func (f *filesPanel) onStoreChange() {
 }
 
 func (f *filesPanel) doLoadingAnimation(loading *tview.TableCell) {
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	if f.table.GetCell(1, 0) == loading {
-		const spinner = "▏▎▍▌▋▊▉█▉▊▋▌▍▎▏"
-		steps := len(spinner)
-		q, r := f.loadingProgress/steps, f.loadingProgress%steps
-		progressBar := strings.Repeat("█", r) + string(spinner[q])
+		q, r := f.loadingProgress/len(spinner), f.loadingProgress%len(spinner)
+		progressBar := strings.Repeat("█", q) + string(spinner[r])
 		f.nav.app.QueueUpdateDraw(func() {
-			loading.SetText(" Loading... " + progressBar)
+			loading.SetText(progressBar)
 		})
 		f.loadingProgress += 1
 		f.doLoadingAnimation(loading)
