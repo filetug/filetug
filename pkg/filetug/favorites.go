@@ -46,7 +46,7 @@ func builtInFavorites() []favorite {
 		{Store: "file:", Path: "~/Documents", Description: "Documents"},
 		{Store: "file:", Path: "~/projects", Description: "Projects"},
 		{Store: "file:", Path: "~/.filetug", Description: "FileTug settings dir"},
-		{Store: "https://www.kernel.org/pub/", Path: "/pub", Description: "The Linux Kernel Archives"},
+		{Store: "https://www.kernel.org/pub/", Path: "/pub/", Description: "The Linux Kernel Archives"},
 		{Store: "ftp://demo:password@test.rebex.net", Description: "The Linux Kernel Archives"},
 	}
 }
@@ -123,22 +123,19 @@ func (f *favorites) setItems() {
 }
 
 func (f *favorites) selected(item favorite) {
-	f.activateFavorite(item)
+	f.activateFavorite(item, false)
 }
 
 func (f *favorites) changed(index int, _ string, _ string, _ rune) {
 	item := f.items[index]
-	f.activateFavorite(item)
+	f.activateFavorite(item, true)
 }
 
 func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyEnter:
 		currentFav := f.items[f.list.GetCurrentItem()]
-		dirPath := f.setStore(currentFav)
-		f.nav.goDir(dirPath)
-		f.nav.left.SetContent(f.nav.dirsTree)
-		f.nav.app.SetFocus(f.nav.dirsTree)
+		f.activateFavorite(currentFav, false)
 		return nil
 	case tcell.KeyEscape:
 		f.nav.goDir(f.prev.dir)
@@ -148,15 +145,23 @@ func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyLeft:
 		f.nav.app.SetFocus(f.nav.files.table)
 		return nil
+	case tcell.KeyUp, tcell.KeyDown:
+		return event
 	default:
 		return event
 	}
 }
 
-func (f *favorites) activateFavorite(item favorite) {
+func (f *favorites) activateFavorite(item favorite, previewMode bool) {
 	dirPath := f.setStore(item)
-	ctx := context.Background()
-	f.nav.showDir(ctx, nil, dirPath, false)
+	if previewMode {
+		ctx := context.Background()
+		f.nav.showDir(ctx, nil, dirPath, false)
+	} else {
+		f.nav.goDir(dirPath)
+		f.nav.left.SetContent(f.nav.dirsTree)
+		f.nav.app.SetFocus(f.nav.dirsTree)
+	}
 }
 
 func (f *favorites) setStore(item favorite) (dirPath string) {
@@ -165,17 +170,18 @@ func (f *favorites) setStore(item favorite) (dirPath string) {
 	if err != nil {
 		panic(err)
 	}
-
-	switch root.Scheme {
-	case "http", "https":
-		f.nav.store = httpfile.NewStore(*root)
-	case "ftp", "ftps":
-		f.nav.store = ftpfile.NewStore(*root)
-	case "file":
-		if root.Path == "" {
-			root.Path = "/"
+	if storeRootUrl := f.nav.store.RootURL(); storeRootUrl.String() != root.String() {
+		switch root.Scheme {
+		case "http", "https":
+			f.nav.store = httpfile.NewStore(*root)
+		case "ftp", "ftps":
+			f.nav.store = ftpfile.NewStore(*root)
+		case "file":
+			if root.Path == "" {
+				root.Path = "/"
+			}
+			f.nav.store = osfile.NewStore(root.Path)
 		}
-		f.nav.store = osfile.NewStore(root.Path)
 	}
 	return
 }

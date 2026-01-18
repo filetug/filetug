@@ -37,7 +37,7 @@ func newBottom() *bottom {
 			Action:  func() {},
 		},
 		{
-			Title:   "/root˙",
+			Title:   "/root",
 			HotKeys: []string{"/"},
 			Action:  func() {},
 		},
