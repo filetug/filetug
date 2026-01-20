@@ -156,6 +156,96 @@ func TestSaveCurrentDir(t *testing.T) {
 	})
 }
 
+func TestGetState(t *testing.T) {
+	origReadJSON := readJSON
+	defer func() { readJSON = origReadJSON }()
+
+	t.Run("success", func(t *testing.T) {
+		readJSON = func(filePath string, required bool, o interface{}) error {
+			s := o.(*State)
+			s.CurrentDir = "/test/dir"
+			return nil
+		}
+		state, err := GetState()
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if state.CurrentDir != "/test/dir" {
+			t.Errorf("expected /test/dir, got %s", state.CurrentDir)
+		}
+	})
+
+	t.Run("error", func(t *testing.T) {
+		readJSON = func(filePath string, required bool, o interface{}) error {
+			return errors.New("read error")
+		}
+		_, err := GetState()
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
+	})
+}
+
+func TestSaveSelectedTreeDir(t *testing.T) {
+	origReadJSON := readJSON
+	origWriteJSON := writeJSON
+	defer func() {
+		readJSON = origReadJSON
+		writeJSON = origWriteJSON
+	}()
+
+	readJSON = func(filePath string, required bool, o interface{}) error {
+		return nil
+	}
+
+	var savedState State
+	writeJSON = func(filePath string, o interface{}) error {
+		savedState = o.(State)
+		return nil
+	}
+
+	SaveSelectedTreeDir("/some/path/to/dir/")
+	// path.Split("/a/b/c/") -> "/a/b/c/", ""
+	// In state.go: name, _ := path.Split(dir) -> state.SelectedTreeDir = name
+
+	if savedState.SelectedTreeDir != "/some/path/to/dir/" {
+		t.Errorf("expected /some/path/to/dir/, got %s", savedState.SelectedTreeDir)
+	}
+}
+
+func TestSaveCurrentFileName(t *testing.T) {
+	origReadJSON := readJSON
+	origWriteJSON := writeJSON
+	defer func() {
+		readJSON = origReadJSON
+		writeJSON = origWriteJSON
+	}()
+
+	readJSON = func(filePath string, required bool, o interface{}) error {
+		return nil
+	}
+
+	var savedState State
+	writeJSON = func(filePath string, o interface{}) error {
+		savedState = o.(State)
+		return nil
+	}
+
+	SaveCurrentFileName("file.txt")
+	if savedState.CurrentDirEntry != "file.txt" {
+		t.Errorf("expected file.txt, got %s", savedState.CurrentDirEntry)
+	}
+}
+
+func TestSaveCurrentDir_Panic(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("expected panic for invalid URL")
+		}
+	}()
+	SaveCurrentDir(":", "/dir")
+}
+
 func TestGetStateFilePath(t *testing.T) {
 	oldDirPath := settingsDirPath
 	settingsDirPath = "/tmp/test"
