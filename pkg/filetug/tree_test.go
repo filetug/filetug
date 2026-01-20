@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTree(t *testing.T) {
@@ -35,11 +37,27 @@ func TestTree(t *testing.T) {
 		tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
 
+		// Mock app and queue
+		app := tview.NewApplication()
+		tree.nav.app = app
+
 		// We need to avoid infinite recursion and hangs.
-		// One way is to ensure rootNode.ClearChildren() is called before doLoadingAnimation checks children.
-		tree.rootNode.ClearChildren()
-		tree.doLoadingAnimation(loading)
-		// Since we cleared children, it should return immediately without recursing.
+		// We want to test at least one iteration.
+		// We can use a channel to signal when SetText is called, but SetText doesn't have a callback.
+		// However, we can check if the text changed after a short delay.
+
+		drawUpdatesCount := 0
+		tree.queueUpdateDraw = func(f func()) *tview.Application {
+			drawUpdatesCount++
+			return app
+		}
+
+		go func() {
+			tree.doLoadingAnimation(loading)
+		}()
+		time.Sleep(110 * time.Millisecond)
+		assert.Equal(t, drawUpdatesCount, 2)
+		// Since we cleared children in a goroutine, it should have iterated a few times then stopped.
 	})
 
 	t.Run("changed", func(t *testing.T) {
