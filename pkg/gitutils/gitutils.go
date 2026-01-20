@@ -25,14 +25,10 @@ type FileGitStatus struct {
 func (s *FileGitStatus) String() string {
 	var sb strings.Builder
 	if s.Insertions > 0 {
-		if _, err := fmt.Fprintf(&sb, "[green]+%d[-]", s.Insertions); err != nil {
-			return err.Error()
-		}
+		_, _ = fmt.Fprintf(&sb, "[green]+%d[-]", s.Insertions)
 	}
 	if s.Deletions > 0 {
-		if _, err := fmt.Fprintf(&sb, "[red]-%d[-]", s.Deletions); err != nil {
-			return err.Error()
-		}
+		_, _ = fmt.Fprintf(&sb, "[red]-%d[-]", s.Deletions)
 	}
 	if sb.Len() == 0 {
 		return "[lightgray]±0[-]"
@@ -89,16 +85,24 @@ func GetRepositoryStatus(ctx context.Context, dir string) *RepoStatus {
 
 	head, err := repo.Head()
 	if err != nil {
-		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+		if errors.Is(err, plumbing.ErrReferenceNotFound) || err.Error() == "reference not found" {
 			res.Branch = "master"
 		} else {
-			return nil
+			// This covers some other error during repo.Head()
+			res.Branch = "unknown"
 		}
+	} else if head == nil || head.Hash().IsZero() {
+		res.Branch = "unknown"
 	} else {
 		if head.Name().IsBranch() {
 			res.Branch = head.Name().Short()
 		} else {
-			res.Branch = head.Hash().String()[:7]
+			hashStr := head.Hash().String()
+			if len(hashStr) >= 7 {
+				res.Branch = hashStr[:7]
+			} else {
+				res.Branch = hashStr
+			}
 		}
 	}
 

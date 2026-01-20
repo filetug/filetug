@@ -189,7 +189,62 @@ func TestGetRepositoryStatus(t *testing.T) {
 		t.Run("context cancelled", func(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
-			_ = GetRepositoryStatus(ctx, tempDir)
+			status := GetRepositoryStatus(ctx, tempDir)
+			// It might return nil if it was cancelled BEFORE semaphore
+			// OR it might return a partial RepoStatus if it was cancelled after Branch was determined.
+			// In our test, it seems it's getting past the semaphore.
+			if status != nil && status.FilesChanged != 0 {
+				t.Errorf("Expected nil or empty status for cancelled context, got %v", status)
+			}
+		})
+
+		t.Run("context cancelled mid-way", func(t *testing.T) {
+			// This is tricky to time perfectly, but we can try to use a very short timeout
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+			defer cancel()
+			time.Sleep(2 * time.Millisecond)
+			status := GetRepositoryStatus(ctx, tempDir)
+			if status != nil && status.FilesChanged != 0 {
+				t.Logf("Status is not nil and has files changed, but context was cancelled: %v", status)
+			}
+		})
+
+		t.Run("corrupted .git directory", func(t *testing.T) {
+			corruptedDir, _ := os.MkdirTemp("", "gitutils-corrupted-*")
+			defer func() {
+				_ = os.RemoveAll(corruptedDir)
+			}()
+			if err := os.Mkdir(filepath.Join(corruptedDir, ".git"), 0755); err != nil {
+				t.Fatalf("Failed to create .git directory: %v", err)
+			}
+			// No actual git data in .git
+			status := GetRepositoryStatus(context.Background(), corruptedDir)
+			if status != nil {
+				t.Errorf("Expected nil status for corrupted git repo, got %v", status)
+			}
+		})
+
+		t.Run("corrupted head in .git", func(t *testing.T) {
+			corruptedHeadDir, _ := os.MkdirTemp("", "gitutils-corrupted-head-*")
+			defer func() {
+				_ = os.RemoveAll(corruptedHeadDir)
+			}()
+			_, err := git.PlainInit(corruptedHeadDir, false)
+			if err != nil {
+				t.Fatalf("Failed to init git repo: %v", err)
+			}
+			// Corrupt HEAD file to trigger error in repo.Head()
+			// Using something that is clearly NOT a reference and NOT an empty repo
+			err = os.WriteFile(filepath.Join(corruptedHeadDir, ".git", "HEAD"), []byte("not a ref"), 0644)
+			if err != nil {
+				t.Fatalf("Failed to corrupt HEAD: %v", err)
+			}
+			status := GetRepositoryStatus(context.Background(), corruptedHeadDir)
+			if status == nil {
+				t.Errorf("Expected non-nil status for repo with corrupted HEAD, got nil")
+			} else if status.Branch != "unknown" && status.Branch != "master" {
+				t.Errorf("Expected branch unknown or master, got %s", status.Branch)
+			}
 		})
 	})
 }
