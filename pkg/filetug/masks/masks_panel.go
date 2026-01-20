@@ -6,11 +6,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-type Selected struct {
-	Mask     *Mask
-	Patterns []*Pattern
-}
-
 type Panel struct {
 	*tview.Table
 	boxed *sneatv.Boxed
