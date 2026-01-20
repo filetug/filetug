@@ -5,7 +5,8 @@ go 1.25.5
 require (
 	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alecthomas/chroma/v2 v2.22.0
-	github.com/gdamore/tcell/v2 v2.13.7
+	github.com/gdamore/tcell/v2 v2.8.1
+	github.com/gdamore/tcell/v3 v3.1.1
 	github.com/go-git/go-git/v5 v5.16.4
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/rivo/tview v0.42.0
@@ -35,6 +36,7 @@ require (
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
+	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
