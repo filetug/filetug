@@ -28,10 +28,15 @@ type mockDirEntry struct {
 	isDir bool
 }
 
-func (m mockDirEntry) Name() string               { return m.name }
-func (m mockDirEntry) IsDir() bool                { return m.isDir }
-func (m mockDirEntry) Type() os.FileMode          { return 0 }
-func (m mockDirEntry) Info() (os.FileInfo, error) { return nil, nil }
+func (m mockDirEntry) Name() string      { return m.name }
+func (m mockDirEntry) IsDir() bool       { return m.isDir }
+func (m mockDirEntry) Type() os.FileMode { return 0 }
+func (m mockDirEntry) Info() (os.FileInfo, error) {
+	if m.name == "error.txt" {
+		return nil, assert.AnError
+	}
+	return nil, nil
+}
 
 func TestNewFileRows(t *testing.T) {
 	dir := &DirContext{Path: "/test"}
@@ -147,6 +152,10 @@ func TestFileRows_Extra(t *testing.T) {
 		cell = fr.getTopRow(0)
 		assert.Equal(t, ".", cell.Text)
 
+		fr.Dir.Path = "~"
+		cell = fr.getTopRow(0)
+		assert.Equal(t, "..", cell.Text)
+
 		cell = fr.getTopRow(1)
 		assert.Equal(t, "", cell.Text)
 
@@ -155,5 +164,56 @@ func TestFileRows_Extra(t *testing.T) {
 
 		cell = fr.getTopRow(3)
 		assert.Nil(t, cell)
+	})
+
+	t.Run("GetCell_Coverage_Gap", func(t *testing.T) {
+		fr.Dir.Path = "/"
+		fr.hideParent = true // So HideParent() returns true
+
+		// i < 0
+		assert.Nil(t, fr.GetCell(-1, 0))
+
+		// i >= len(r.VisibleEntries)
+		fr.VisibleEntries = []os.DirEntry{mockDirEntry{name: "f1"}}
+		assert.Nil(t, fr.GetCell(2, 0))
+
+		// Err != nil and col != nameColIndex
+		fr.Err = assert.AnError
+		assert.Nil(t, fr.GetCell(0, 1))
+		fr.Err = nil
+
+		// len(VisibleEntries) == 0 and col != nameColIndex
+		fr.VisibleEntries = nil
+		assert.Nil(t, fr.GetCell(0, 1))
+
+		// dirEntry.IsDir() true for column 0
+		fr.VisibleEntries = []os.DirEntry{mockDirEntry{name: "my_dir", isDir: true}}
+		fr.VisualInfos = make([]os.FileInfo, 1)
+		cell := fr.GetCell(0, 0)
+		assert.Contains(t, cell.Text, "📁")
+
+		// fi == nil or reflect.ValueOf(fi).IsNil() -> triggers Info()
+		fr.VisualInfos = make([]os.FileInfo, 1)
+		fr.Infos = make([]os.FileInfo, 1)
+		cell = fr.GetCell(0, 1) // Column 1 triggers fi check
+		assert.NotNil(t, cell)
+
+		// dirEntry.Info() error
+		fr.VisibleEntries = []os.DirEntry{mockDirEntry{name: "error.txt"}}
+		fr.VisualInfos = make([]os.FileInfo, 1)
+		cell = fr.GetCell(0, 1)
+		assert.NotNil(t, cell)
+
+		// fi.ModTime() in the future
+		fr.VisibleEntries = []os.DirEntry{mockDirEntry{name: "future.txt"}}
+		futureTime := time.Now().Add(48 * time.Hour)
+		fr.VisualInfos = []os.FileInfo{
+			files.NewFileInfo(files.NewDirEntry("future.txt", false), files.ModTime(futureTime)),
+		}
+		cell = fr.GetCell(0, 2)
+		assert.Equal(t, futureTime.Format("15:04:05"), cell.Text)
+
+		// col out of range
+		assert.Nil(t, fr.GetCell(0, 10))
 	})
 }
