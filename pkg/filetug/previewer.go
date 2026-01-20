@@ -13,10 +13,10 @@ import (
 	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/datatug/filetug/pkg/sneatv"
 	"github.com/datatug/filetug/pkg/viewers"
-	"github.com/datatug/filetug/pkg/viewers/dsstoreviewer"
 	"github.com/datatug/filetug/pkg/viewers/imageviewer"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/dsstore"
 )
 
 type previewer struct {
@@ -123,7 +123,7 @@ func (p *previewer) PreviewFile(name, fullName string) {
 			return
 		}
 		bufferRead := bytes.NewBuffer(data)
-		var s dsstoreviewer.Store
+		var s dsstore.Store
 		err = s.Read(bufferRead)
 		if err != nil {
 			p.SetErr(err)

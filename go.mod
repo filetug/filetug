@@ -7,10 +7,11 @@ require (
 	github.com/alecthomas/chroma/v2 v2.22.0
 	github.com/gdamore/tcell/v2 v2.13.7
 	github.com/go-git/go-git/v5 v5.16.4
+	github.com/jlaffaye/ftp v0.2.0
 	github.com/rivo/tview v0.42.0
 	github.com/stretchr/testify v1.11.1
+	github.com/strongo/dsstore v0.0.1
 	golang.org/x/image v0.35.0
-	golang.org/x/text v0.33.0
 )
 
 require (
@@ -31,7 +32,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jlaffaye/ftp v0.2.0 // indirect
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
@@ -45,6 +45,7 @@ require (
 	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/term v0.39.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
