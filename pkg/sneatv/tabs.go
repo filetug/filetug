@@ -49,10 +49,11 @@ type Tabs struct {
 }
 
 type tabsOptions struct {
-	label     string
-	focusDown func(current tview.Primitive)
-	focusLeft func(current tview.Primitive)
-	focusUp   func(current tview.Primitive)
+	label      string
+	focusDown  func(current tview.Primitive)
+	focusLeft  func(current tview.Primitive)
+	focusRight func(current tview.Primitive)
+	focusUp    func(current tview.Primitive)
 }
 
 type TabsOption func(*tabsOptions)
@@ -66,6 +67,12 @@ func WithLabel(label string) TabsOption {
 func FocusDown(f func(current tview.Primitive)) TabsOption {
 	return func(o *tabsOptions) {
 		o.focusDown = f
+	}
+}
+
+func FocusRight(f func(current tview.Primitive)) TabsOption {
+	return func(o *tabsOptions) {
+		o.focusRight = f
 	}
 }
 
@@ -306,20 +313,32 @@ func (t *Tabs) updateTextView() {
 func (t *Tabs) handleInput(ev *tcell.EventKey) *tcell.EventKey {
 	switch ev.Key() {
 	case tcell.KeyRight:
+		if t.active == len(t.tabs)-1 {
+			if t.focusRight != nil {
+				t.focusRight(t.TextView)
+			}
+			return nil
+		}
 		t.SwitchTo((t.active + 1) % len(t.tabs))
 		return nil
 	case tcell.KeyLeft:
 		if t.active == 0 {
-			t.focusLeft(t.TextView)
+			if t.focusLeft != nil {
+				t.focusLeft(t.TextView)
+			}
 			return nil
 		}
 		t.SwitchTo((t.active - 1 + len(t.tabs)) % len(t.tabs))
 		return nil
 	case tcell.KeyUp:
-		t.focusUp(t.TextView)
+		if t.focusUp != nil {
+			t.focusUp(t.TextView)
+		}
 		return nil
 	case tcell.KeyDown:
-		t.focusDown(t.TextView)
+		if t.focusDown != nil {
+			t.focusDown(t.TextView)
+		}
 		return nil
 	default:
 		if ev.Modifiers() == tcell.ModAlt {

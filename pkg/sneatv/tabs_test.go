@@ -32,7 +32,9 @@ func TestTabs_AddAndSwitch(t *testing.T) {
 
 func TestTabs_Navigation(t *testing.T) {
 	tabs := NewTabs(nil, UnderlineTabsStyle,
+		WithLabel("Tabs:"),
 		FocusLeft(func(current tview.Primitive) {}),
+		FocusRight(func(current tview.Primitive) {}),
 		FocusUp(func(current tview.Primitive) {}),
 		FocusDown(func(current tview.Primitive) {}),
 	)
@@ -46,6 +48,12 @@ func TestTabs_Navigation(t *testing.T) {
 	res := tabs.handleInput(event)
 	assert.Nil(t, res)
 	assert.Equal(t, 1, tabs.active)
+
+	// Right again (at last tab)
+	rightCalled := false
+	tabs.focusRight = func(current tview.Primitive) { rightCalled = true }
+	tabs.handleInput(event)
+	assert.True(t, rightCalled)
 
 	// Left
 	event = tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
@@ -65,6 +73,13 @@ func TestTabs_Navigation(t *testing.T) {
 	event = tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 	tabs.handleInput(event)
 	assert.True(t, upCalled)
+
+	// FocusDown
+	downCalled := false
+	tabs.focusDown = func(current tview.Primitive) { downCalled = true }
+	event = tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
+	tabs.handleInput(event)
+	assert.True(t, downCalled)
 
 	// Alt+1
 	event = tcell.NewEventKey(tcell.KeyRune, '1', tcell.ModAlt)
