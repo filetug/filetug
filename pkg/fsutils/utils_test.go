@@ -130,6 +130,30 @@ func TestReadJSONFile(t *testing.T) {
 		_ = ReadJSONFile(tmpFile.Name(), true, &a)
 	})
 
+	t.Run("WriteJSONFile", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "test_write")
+		assert.NoError(t, err)
+		defer func() {
+			_ = os.RemoveAll(tmpDir)
+		}()
+
+		filePath := filepath.Join(tmpDir, "test.json")
+		data := A{B: "write_test"}
+
+		err = WriteJSONFile(filePath, data)
+		assert.NoError(t, err)
+
+		var readData A
+		err = ReadJSONFile(filePath, true, &readData)
+		assert.NoError(t, err)
+		assert.Equal(t, data, readData)
+	})
+
+	t.Run("WriteJSONFile_Error", func(t *testing.T) {
+		err := WriteJSONFile("/non_existent_directory/test.json", map[string]string{"a": "b"})
+		assert.Error(t, err)
+	})
+
 	t.Run("ReadFile_OpenError_Required", func(t *testing.T) {
 		var a A
 		err := ReadFile("non_existent.json", true, &a, nil)
