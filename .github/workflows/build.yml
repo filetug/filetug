@@ -31,4 +31,4 @@ jobs:
     with:
       disable-version-bumping: true
       code_coverage: true
-      min_test_coverage_percent: 91
+      min_test_coverage_percent: 95
