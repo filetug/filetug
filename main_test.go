@@ -78,3 +78,49 @@ func Test_run(t *testing.T) {
 		t.Errorf("expected stderr to contain %q, got %q", expectedErr.Error(), output)
 	}
 }
+
+func Test_newFileTugApp(t *testing.T) {
+	oldNewApp := newApp
+	defer func() {
+		newApp = oldNewApp
+	}()
+	newApp = func() *tview.Application {
+		return tview.NewApplication()
+	}
+
+	t.Run("default", func(t *testing.T) {
+		app := newFileTugApp()
+		if app == nil {
+			t.Error("newFileTugApp() returned nil")
+		}
+	})
+
+	t.Run("with_pprof", func(t *testing.T) {
+		*pprofAddr = "localhost:0" // Use port 0 for random available port
+		defer func() { *pprofAddr = "" }()
+		app := newFileTugApp()
+		if app == nil {
+			t.Error("newFileTugApp() returned nil")
+		}
+	})
+
+	t.Run("with_cpuprofile", func(t *testing.T) {
+		*cpuprofile = "cpuprofile"
+		defer func() { *cpuprofile = "" }()
+
+		app := newFileTugApp()
+		if app == nil {
+			t.Error("newFileTugApp() returned nil")
+		}
+	})
+
+	t.Run("with_memprofile", func(t *testing.T) {
+		*memprofile = "memprofile"
+		defer func() { *memprofile = "" }()
+
+		app := newFileTugApp()
+		if app == nil {
+			t.Error("newFileTugApp() returned nil")
+		}
+	})
+}

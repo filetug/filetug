@@ -22,6 +22,11 @@ var (
 )
 
 func main() {
+	app := newFileTugApp()
+	run(app)
+}
+
+func newFileTugApp() (app *tview.Application) {
 	flag.Parse()
 
 	if *pprofAddr != "" {
@@ -44,7 +49,7 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	app := newApp()
+	app = newApp()
 	if *memprofile != "" {
 		go func() {
 			writeMemProfile := func() {
@@ -73,8 +78,7 @@ func main() {
 			panic(r)
 		}
 	}()
-	run(app)
-
+	return
 }
 
 var setupApp = filetug.SetupApp
