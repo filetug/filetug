@@ -31,13 +31,18 @@ type Tab struct {
 	tview.Primitive
 }
 
+type tabsApp interface {
+	QueueUpdateDraw(f func()) *tview.Application
+	SetFocus(p tview.Primitive) *tview.Application
+}
+
 // Tabs is a tab container implemented using tview.Pages.
 type Tabs struct {
 	*tview.Flex
 	tabsOptions
 	TabsStyle
 
-	app *tview.Application
+	app tabsApp
 
 	TextView *tview.TextView // TODO(help-wanted): exported as a workaround to set focus - needs fix!
 	pages    *tview.Pages
@@ -136,7 +141,7 @@ var RadioTabsStyle = TabsStyle{
 //}
 
 // NewTabs creates a new tab container.
-func NewTabs(app *tview.Application, style TabsStyle, options ...TabsOption) *Tabs {
+func NewTabs(app tabsApp, style TabsStyle, options ...TabsOption) *Tabs {
 	pages := tview.NewPages()
 
 	t := &Tabs{
@@ -162,24 +167,13 @@ func NewTabs(app *tview.Application, style TabsStyle, options ...TabsOption) *Ta
 
 	t.TextView.SetInputCapture(t.handleInput)
 
-	setIsFocused := func(isFocused bool) {
-		t.isFocused = isFocused
-		if t.app != nil {
-			go app.QueueUpdateDraw(func() {
-				t.updateTextView()
-			})
-		} else {
-			t.updateTextView()
-		}
-	}
-
 	t.textViewFocusFunc = func() {
-		setIsFocused(true)
+		t.setIsFocused(true)
 	}
 	t.TextView.SetFocusFunc(t.textViewFocusFunc)
 
 	t.textViewBlurFunc = func() {
-		setIsFocused(false)
+		t.setIsFocused(false)
 	}
 	t.TextView.SetBlurFunc(t.textViewBlurFunc)
 
@@ -204,6 +198,17 @@ func NewTabs(app *tview.Application, style TabsStyle, options ...TabsOption) *Ta
 		AddItem(pages, 0, 1, true)
 
 	return t
+}
+
+func (t *Tabs) setIsFocused(isFocused bool) {
+	t.isFocused = isFocused
+	if t.app != nil {
+		go t.app.QueueUpdateDraw(func() {
+			t.updateTextView()
+		})
+	} else {
+		t.updateTextView()
+	}
 }
 
 // AddTabs adds new tabs.
