@@ -6,6 +6,11 @@ import (
 )
 
 func showHelpModal(nav *Navigator) {
+	modal, _, _ := createHelpModal(nav, nav.Flex)
+	nav.app.SetRoot(modal, true)
+}
+
+func createHelpModal(nav *Navigator, root tview.Primitive) (modal tview.Primitive, helpView *tview.TextView, button *tview.Button) {
 	const helpText = `F1 - Help
 Alt+F - Favorites
 Alt+G - Go to...
@@ -17,7 +22,7 @@ Alt+V - View file
 Alt+E - Edit file
 Alt+X - Exit the app`
 
-	helpView := tview.NewTextView().
+	helpView = tview.NewTextView().
 		SetDynamicColors(true).
 		SetText(helpText).
 		SetTextAlign(tview.AlignCenter)
@@ -30,7 +35,7 @@ Alt+X - Exit the app`
 	// Create a modal-like layout using a Grid to center the helpView
 	// Close function
 	closeHelp := func() {
-		nav.app.SetRoot(nav.Flex, true)
+		nav.app.SetRoot(root, true)
 		nav.app.SetFocus(nav.dirsTree.TreeView)
 	}
 
@@ -43,7 +48,7 @@ Alt+X - Exit the app`
 	})
 
 	// Add a button to close
-	button := tview.NewButton("Close").SetSelectedFunc(closeHelp)
+	button = tview.NewButton("Close").SetSelectedFunc(closeHelp)
 	button.SetBackgroundColor(tcell.ColorDarkBlue)
 	button.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyF1 {
@@ -66,10 +71,10 @@ Alt+X - Exit the app`
 	helpView.SetBorder(false) // Border is now on helpFlex
 
 	// Update modal to use helpFlex
-	modal := tview.NewGrid().
+	modal = tview.NewGrid().
 		SetColumns(0, 40, 0).
 		SetRows(0, 13, 0).
 		AddItem(helpFlex, 1, 1, 1, 1, 0, 0, true)
 
-	nav.app.SetRoot(modal, true)
+	return modal, helpView, button
 }
