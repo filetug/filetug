@@ -39,7 +39,7 @@ func TestBreadcrumbs_PushAndClear(t *testing.T) {
 func TestBreadcrumbs_Draw_SingleLineNoBorder(t *testing.T) {
 	width := 40
 	height := 1
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("DataTug", nil))
@@ -60,7 +60,7 @@ func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
 	// Box with border: inner Y should be 1. Height must be at least 3 for border.
 	width := 20
 	height := 3
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("A", nil))
@@ -94,7 +94,7 @@ func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
 func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
 	width := 10 // small width to force truncation
 	height := 1
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("ABCDEFGHI", nil), WithSeparator("/"))
@@ -116,7 +116,7 @@ func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
 func TestBreadcrumbs_Draw_UnfocusedDim(t *testing.T) {
 	width := 80
 	height := 1
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("DataTug", nil))
@@ -136,7 +136,7 @@ func TestBreadcrumbs_Draw_UnfocusedDim(t *testing.T) {
 func TestBreadcrumbs_Navigation_ThreeItems(t *testing.T) {
 	width := 80
 	height := 1
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	mk := func() *Breadcrumbs {
@@ -225,7 +225,7 @@ func TestBreadcrumbs_Navigation_ThreeItems(t *testing.T) {
 func TestBreadcrumbs_AngleBracketNavigation(t *testing.T) {
 	width := 80
 	height := 1
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("Alpha", nil))

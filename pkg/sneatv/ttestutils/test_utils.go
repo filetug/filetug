@@ -23,9 +23,9 @@ func ReadLine(screen tcell.Screen, y, width int) string {
 }
 
 // NewSimScreen creates a new simulation screen for testing
-func NewSimScreen(t *testing.T, width, height int) tcell.Screen {
+func NewSimScreen(t *testing.T, charset string, width, height int) tcell.Screen {
 	t.Helper()
-	s := tcell.NewSimulationScreen("UTF-8")
+	s := tcell.NewSimulationScreen(charset)
 	if err := s.Init(); err != nil {
 		t.Fatalf("failed to init simulation screen: %v", err)
 	}

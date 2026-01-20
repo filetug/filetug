@@ -26,7 +26,7 @@ func TestButtonWithShortcut_SetShortcutStyle(t *testing.T) {
 func TestButtonWithShortcut_Draw(t *testing.T) {
 	width := 20
 	height := 3
-	s := ttestutils.NewSimScreen(t, width, height)
+	s := ttestutils.NewSimScreen(t, "", width, height)
 	defer s.Fini()
 
 	btn := NewButtonWithShortcut("Save", 's')
