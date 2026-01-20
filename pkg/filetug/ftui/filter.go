@@ -26,14 +26,16 @@ func (f Filter) IsVisible(entry os.DirEntry) (isVisible bool) {
 	if entry.IsDir() && !f.ShowDirs {
 		return false
 	}
-	for _, ext := range f.Extensions {
-		if path.Ext(entry.Name()) == ext {
-			isVisible = true
-			break
+	if len(f.Extensions) > 0 {
+		for _, ext := range f.Extensions {
+			if path.Ext(entry.Name()) == ext {
+				isVisible = true
+				break
+			}
 		}
-	}
-	if !isVisible {
-		return false
+		if !isVisible {
+			return false
+		}
 	}
 	if f.MaskFilter != nil {
 		if !f.MaskFilter(entry) {
