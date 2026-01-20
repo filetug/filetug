@@ -139,7 +139,9 @@ func NewTabs(app *tview.Application, style TabsStyle, options ...TabsOption) *Ta
 			SetWrap(false),
 	}
 	t.SetFocusFunc(func() {
-		t.app.SetFocus(t.TextView)
+		if t.app != nil {
+			t.app.SetFocus(t.TextView)
+		}
 	})
 	for _, set := range options {
 		set(&t.tabsOptions)
@@ -149,9 +151,13 @@ func NewTabs(app *tview.Application, style TabsStyle, options ...TabsOption) *Ta
 
 	setIsFocused := func(isFocused bool) {
 		t.isFocused = isFocused
-		go app.QueueUpdateDraw(func() {
+		if t.app != nil {
+			go app.QueueUpdateDraw(func() {
+				t.updateTextView()
+			})
+		} else {
 			t.updateTextView()
-		})
+		}
 	}
 
 	t.TextView.SetFocusFunc(func() {

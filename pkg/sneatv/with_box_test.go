@@ -45,3 +45,9 @@ func TestWithBoxWithoutBorder(t *testing.T) {
 	assert.Equal(t, inner, wb.GetPrimitive())
 	assert.Equal(t, box, wb.GetBox())
 }
+
+func TestSetPanelTitle(t *testing.T) {
+	box := tview.NewBox()
+	SetPanelTitle(box, "Test Title")
+	assert.Equal(t, "Test Title", box.GetTitle())
+}
