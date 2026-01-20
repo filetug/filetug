@@ -39,6 +39,7 @@ func Test_NewStore(t *testing.T) {
 type errorReader struct{}
 
 func (e errorReader) Read(p []byte) (n int, err error) {
+	_ = p
 	return 0, fmt.Errorf("mock read error")
 }
 

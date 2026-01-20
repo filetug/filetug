@@ -231,6 +231,7 @@ func (m *mockNilRecords) RecordsCount() int {
 }
 
 func (m *mockNilRecords) GetCell(row, col int) *tview.TableCell {
+	_, _ = row, col
 	return nil
 }
 
