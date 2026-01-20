@@ -351,7 +351,11 @@ func (d *dirSummary) GetSizes() error {
 				if err != nil {
 					return err
 				}
-				if info == nil || reflect.ValueOf(info).IsNil() {
+				if info == nil {
+					continue
+				}
+				rv := reflect.ValueOf(info)
+				if (rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Chan || rv.Kind() == reflect.Func) && rv.IsNil() {
 					continue
 				}
 				size := info.Size()
