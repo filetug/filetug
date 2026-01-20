@@ -10,6 +10,7 @@ import (
 )
 
 var osReadDir = os.ReadDir
+var osHostname = os.Hostname
 
 var _ files.Store = (*Store)(nil)
 
@@ -41,7 +42,7 @@ func NewStore(root string) *Store {
 	}
 	store := Store{root: root}
 	var err error
-	if store.title, err = os.Hostname(); err != nil {
+	if store.title, err = osHostname(); err != nil {
 		store.title = err.Error()
 	}
 	store.title = "🖥️" + store.title
