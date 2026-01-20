@@ -295,12 +295,21 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository,
 	nav.gitStatusCacheMu.RUnlock()
 
 	if ok && node != nil {
+		repoRoot := gitutils.GetRepositoryRoot(fullPath)
+		isRepoRoot := repoRoot != "" && (fullPath == repoRoot || fullPath == repoRoot+"/")
+
+		hasChanges := cachedStatus.FilesChanged > 0 || cachedStatus.Insertions > 0 || cachedStatus.Deletions > 0
+		statusText := ""
+		if hasChanges || isRepoRoot {
+			statusText = cachedStatus.String()
+		}
+
 		if nav.app != nil {
 			nav.queueUpdateDraw(func() {
-				node.SetText(prefix + cachedStatus.String())
+				node.SetText(prefix + statusText)
 			})
 		} else {
-			node.SetText(prefix + cachedStatus.String())
+			node.SetText(prefix + statusText)
 		}
 		return
 	}
@@ -329,16 +338,25 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository,
 	default:
 	}
 
+	repoRoot := gitutils.GetRepositoryRoot(fullPath)
+	isRepoRoot := repoRoot != "" && (fullPath == repoRoot || fullPath == repoRoot+"/")
+
+	hasChanges := status.FilesChanged > 0 || status.Insertions > 0 || status.Deletions > 0
+	statusText := ""
+	if hasChanges || isRepoRoot {
+		statusText = status.String()
+	}
+
 	nav.gitStatusCacheMu.Lock()
 	nav.gitStatusCache[fullPath] = status
 	nav.gitStatusCacheMu.Unlock()
 
 	if nav.app != nil {
 		nav.queueUpdateDraw(func() {
-			node.SetText(prefix + status.String())
+			node.SetText(prefix + statusText)
 		})
 	} else {
-		node.SetText(prefix + status.String())
+		node.SetText(prefix + statusText)
 	}
 }
 
