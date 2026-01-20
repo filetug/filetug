@@ -149,10 +149,12 @@ func (p *previewer) PreviewFile(name, fullName string) {
 		case ".log":
 			data, err = p.readFile(fullName, -1024)
 		case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".riff", ".tiff", ".vp8", ".webp":
-			metaTable := viewers.NewMetaTable()
 			meta := imageviewer.ImagePreviewer{}.GetMeta(fullName)
-			metaTable.SetMeta(meta)
-			p.nav.right.SetContent(metaTable)
+			if meta != nil {
+				metaTable := viewers.NewMetaTable()
+				metaTable.SetMeta(meta)
+				p.nav.right.SetContent(metaTable)
+			}
 			return
 		}
 	}

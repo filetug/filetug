@@ -70,6 +70,9 @@ func (b *bottom) highlighted(added, _, _ []string) {
 	}
 }
 
+var archiveAction = func() {
+}
+
 func (b *bottom) getCtrlMenuItems() []ftui.MenuItem {
 	// Unfortunately, most terminals do not send standalone CTRL key event,
 	// so we can't handle it to show an alternative menu when CTRL is pressed.
@@ -77,6 +80,7 @@ func (b *bottom) getCtrlMenuItems() []ftui.MenuItem {
 		{
 			Title:   "Archive",
 			HotKeys: []string{"A"},
+			Action:  archiveAction,
 		},
 		{
 			Title:   "Stage",
@@ -95,88 +99,21 @@ func (b *bottom) getCtrlMenuItems() []ftui.MenuItem {
 
 func (b *bottom) getAltMenuItems() []ftui.MenuItem {
 	return []ftui.MenuItem{
-		{
-			Title:   "F1Help",
-			HotKeys: []string{"F1"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Exit",
-			HotKeys: []string{"x"},
-			Action: func() {
-				b.nav.app.Stop()
-				os.Exit(0)
-			},
-		},
-		{
-			Title:   "Go",
-			HotKeys: []string{"o"},
-			Action:  func() {},
-		},
-		{
-			Title:   "/root",
-			HotKeys: []string{"/"},
-			Action:  func() {},
-		},
-		{
-			Title:   "~Home",
-			HotKeys: []string{"H", "~"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Favorites",
-			HotKeys: []string{"F"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Bookmarks",
-			HotKeys: []string{"B"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Lists",
-			HotKeys: []string{"L"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Previewer",
-			HotKeys: []string{"P"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Masks",
-			HotKeys: []string{"M"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Git",
-			HotKeys: []string{"G"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Copy",
-			HotKeys: []string{"F5", "C"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Rename",
-			HotKeys: []string{"F6", "R"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Delete",
-			HotKeys: []string{"F8", "D"},
-			Action:  func() {},
-		},
-		{
-			Title:   "View",
-			HotKeys: []string{"V"},
-			Action:  func() {},
-		},
-		{
-			Title:   "Edit",
-			HotKeys: []string{"E"},
-			Action:  func() {},
-		},
+		{Title: "F1Help", HotKeys: []string{"F1"}, Action: func() {}},
+		{Title: "Exit", HotKeys: []string{"x"}, Action: func() { b.nav.app.Stop(); os.Exit(0) }},
+		{Title: "Go", HotKeys: []string{"o"}, Action: func() {}},
+		{Title: "/root", HotKeys: []string{"/"}, Action: func() {}},
+		{Title: "~Home", HotKeys: []string{"H", "~"}, Action: func() {}},
+		{Title: "Favorites", HotKeys: []string{"F"}, Action: func() {}},
+		{Title: "Bookmarks", HotKeys: []string{"B"}, Action: func() {}},
+		{Title: "Lists", HotKeys: []string{"L"}, Action: func() {}},
+		{Title: "Previewer", HotKeys: []string{"P"}, Action: func() {}},
+		{Title: "Masks", HotKeys: []string{"M"}, Action: func() {}},
+		{Title: "Git", HotKeys: []string{"G"}, Action: func() {}},
+		{Title: "Copy", HotKeys: []string{"F5", "C"}, Action: func() {}},
+		{Title: "Rename", HotKeys: []string{"F6", "R"}, Action: func() {}},
+		{Title: "Delete", HotKeys: []string{"F8", "D"}, Action: func() {}},
+		{Title: "View", HotKeys: []string{"V"}, Action: func() {}},
+		{Title: "Edit", HotKeys: []string{"E"}, Action: func() {}},
 	}
 }

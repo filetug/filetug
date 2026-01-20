@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/alecthomas/assert/v2"
+	"github.com/datatug/filetug/pkg/sneatv/ttestutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -13,7 +14,15 @@ import (
 func TestPreviewer(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
+	if nav == nil {
+		t.Fatal("navigator is nil")
+	}
 	p := nav.previewer
+
+	t.Run("Draw", func(t *testing.T) {
+		s := ttestutils.NewSimScreen(t, "UTF-8", 80, 24)
+		p.Draw(s)
+	})
 
 	t.Run("FocusBlur", func(t *testing.T) {
 		nav.previewerFocusFunc()
@@ -103,6 +112,42 @@ func TestPreviewer(t *testing.T) {
 	t.Run("prettyJSON_Error", func(t *testing.T) {
 		_, err := prettyJSON("{invalid}")
 		assert.Error(t, err)
+	})
+
+	t.Run("PreviewFile_Image", func(t *testing.T) {
+		tmpFile, _ := os.CreateTemp("", "test*.png")
+		defer func() {
+			_ = os.Remove(tmpFile.Name())
+		}()
+		// Just an empty file might not work if imageviewer checks for headers, but let's see
+		err := os.WriteFile(tmpFile.Name(), []byte("not an image but .png extension"), 0644)
+		assert.NoError(t, err)
+
+		p.PreviewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
+	})
+
+	t.Run("PreviewFile_Log", func(t *testing.T) {
+		tmpFile, _ := os.CreateTemp("", "test*.log")
+		defer func() {
+			_ = os.Remove(tmpFile.Name())
+		}()
+		err := os.WriteFile(tmpFile.Name(), []byte("log line"), 0644)
+		assert.NoError(t, err)
+
+		p.PreviewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
+		assert.Contains(t, p.textView.GetText(false), "log line")
+	})
+
+	t.Run("PreviewFile_DSStore", func(t *testing.T) {
+		// Mocking a .DS_Store is hard, let's just try to call it with an empty file
+		tmpFile, _ := os.CreateTemp("", ".DS_Store")
+		defer func() {
+			_ = os.Remove(tmpFile.Name())
+		}()
+		_ = os.WriteFile(tmpFile.Name(), []byte("invalid ds_store"), 0644)
+
+		p.PreviewFile(".DS_Store", tmpFile.Name())
+		assert.Contains(t, p.textView.GetText(false), "invalid file header")
 	})
 
 	t.Run("readFile", func(t *testing.T) {

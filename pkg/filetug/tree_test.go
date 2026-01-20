@@ -2,6 +2,7 @@ package filetug
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -22,11 +23,37 @@ func TestTree(t *testing.T) {
 		screen := tcell.NewSimulationScreen("")
 		_ = screen.Init()
 		tree.Draw(screen)
+
+		// Test Draw with suffix space
+		root := tree.GetRoot()
+		root.SetText("root ")
+		tree.Draw(screen)
+	})
+
+	t.Run("doLoadingAnimation", func(t *testing.T) {
+		loading := tview.NewTreeNode(" Loading...")
+		tree.rootNode.ClearChildren()
+		tree.rootNode.AddChild(loading)
+
+		// We need to avoid infinite recursion and hangs.
+		// One way is to ensure rootNode.ClearChildren() is called before doLoadingAnimation checks children.
+		tree.rootNode.ClearChildren()
+		tree.doLoadingAnimation(loading)
+		// Since we cleared children, it should return immediately without recursing.
 	})
 
 	t.Run("changed", func(t *testing.T) {
 		root := tree.GetRoot()
 		tree.changed(root)
+
+		// Test with string reference
+		node := tview.NewTreeNode("test").SetReference("/test")
+		tree.changed(node)
+	})
+
+	t.Run("setError", func(t *testing.T) {
+		node := tview.NewTreeNode("test").SetReference("/test")
+		tree.setError(node, fmt.Errorf("test error"))
 	})
 
 	t.Run("focus_blur", func(t *testing.T) {
