@@ -57,7 +57,7 @@ func newPreviewer(nav *Navigator) *previewer {
 	p.SetFocusFunc(func() {
 		nav.activeCol = 2
 		p.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
-		//nav.app.SetFocus(tv)
+		//nav.setAppFocus(tv)
 	})
 	nav.previewerFocusFunc = func() {
 		nav.activeCol = 2
@@ -73,7 +73,7 @@ func newPreviewer(nav *Navigator) *previewer {
 	p.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyLeft:
-			nav.app.SetFocus(nav.files)
+			nav.setAppFocus(nav.files)
 			return nil
 		case tcell.KeyUp:
 			nav.o.moveFocusUp(p.textView)

@@ -147,7 +147,7 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	nav := t.nav
 	switch event.Key() {
 	case tcell.KeyRight:
-		t.nav.app.SetFocus(t.nav.files)
+		t.nav.setAppFocus(t.nav.files)
 		return nil
 	case tcell.KeyLeft:
 		switch ref := tree.GetCurrentNode().GetReference().(type) {
@@ -173,7 +173,7 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyUp:
 		if tree.GetCurrentNode() == tree.GetRoot() {
 			nav.breadcrumbs.TakeFocus(tree)
-			nav.app.SetFocus(nav.breadcrumbs)
+			nav.setAppFocus(nav.breadcrumbs)
 			return nil
 		}
 		return event

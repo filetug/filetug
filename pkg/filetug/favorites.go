@@ -38,7 +38,7 @@ func (f *favorites) Draw(screen tcell.Screen) {
 func (f *favorites) ShowFavorites() {
 	f.prev = f.nav.current
 	f.nav.left.SetContent(f)
-	f.nav.app.SetFocus(f.list)
+	f.nav.setAppFocus(f.list)
 }
 
 func builtInFavorites() []favorite {
@@ -142,10 +142,10 @@ func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyEscape:
 		f.nav.goDir(f.prev.dir)
 		f.nav.left.SetContent(f.nav.dirsTree)
-		f.nav.app.SetFocus(f.nav.dirsTree)
+		f.nav.setAppFocus(f.nav.dirsTree)
 		return nil
 	case tcell.KeyLeft:
-		f.nav.app.SetFocus(f.nav.files.table)
+		f.nav.setAppFocus(f.nav.files.table)
 		return nil
 	case tcell.KeyUp, tcell.KeyDown:
 		return event
@@ -162,7 +162,7 @@ func (f *favorites) activateFavorite(item favorite, previewMode bool) {
 	} else {
 		f.nav.goDir(dirPath)
 		f.nav.left.SetContent(f.nav.dirsTree)
-		f.nav.app.SetFocus(f.nav.dirsTree)
+		f.nav.setAppFocus(f.nav.dirsTree)
 	}
 }
 

@@ -126,10 +126,10 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	}
 	switch event.Key() {
 	case tcell.KeyLeft:
-		f.nav.app.SetFocus(f.nav.dirsTree)
+		f.nav.setAppFocus(f.nav.dirsTree)
 		return nil
 	case tcell.KeyRight:
-		f.nav.app.SetFocus(f.nav.right)
+		f.nav.setAppFocus(f.nav.right)
 		return nil
 	case tcell.KeyUp:
 		row, _ := table.GetSelection()

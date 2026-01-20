@@ -56,7 +56,12 @@ func TestContainer_SetContent(t *testing.T) {
 
 func TestContainer_Focus(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
+	nav := &Navigator{
+		app: app,
+		setAppFocus: func(p tview.Primitive) {
+			app.SetFocus(p)
+		},
+	}
 	c := newContainer(1, nav)
 
 	p := tview.NewBox()

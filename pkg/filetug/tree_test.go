@@ -51,9 +51,8 @@ func TestTree(t *testing.T) {
 		defer func() {
 			nav.queueUpdateDraw = oldQueueUpdateDraw
 		}()
-		tree.nav.queueUpdateDraw = func(f func()) *tview.Application {
+		tree.nav.queueUpdateDraw = func(f func()) {
 			drawUpdatesCount++
-			return app
 		}
 
 		go func() {

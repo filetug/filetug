@@ -94,9 +94,8 @@ func TestNavigator_GitStatus(t *testing.T) {
 	defer func() {
 		nav.queueUpdateDraw = oldQueueUpdateDraw
 	}()
-	nav.queueUpdateDraw = func(f func()) *tview.Application {
+	nav.queueUpdateDraw = func(f func()) {
 		drawUpdatesCount++
-		return app
 	}
 
 	// Use background context for tests
@@ -291,9 +290,8 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	t.Run("WithAppCached", func(t *testing.T) {
 		nav.app = app
 		oldQueueUpdateDraw := nav.queueUpdateDraw
-		nav.queueUpdateDraw = func(f func()) *tview.Application {
+		nav.queueUpdateDraw = func(f func()) {
 			f()
-			return app
 		}
 		defer func() { nav.queueUpdateDraw = oldQueueUpdateDraw }()
 
@@ -310,9 +308,8 @@ func TestNavigator_showDir_FileScheme(t *testing.T) {
 	if nav == nil {
 		t.Fatal("navigator is nil")
 	}
-	nav.queueUpdateDraw = func(f func()) *tview.Application {
+	nav.queueUpdateDraw = func(f func()) {
 		f()
-		return app
 	}
 	node := tview.NewTreeNode("test")
 

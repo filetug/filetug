@@ -23,9 +23,13 @@ import (
 )
 
 type Navigator struct {
-	app             *tview.Application
-	queueUpdateDraw func(f func()) *tview.Application
-	o               navigatorOptions
+	app             *tview.Application                          // Should we get rid of it?
+	queueUpdateDraw func(f func())                              // replaced with mock in tests
+	setAppFocus     func(p tview.Primitive)                     // replaced with mock in tests
+	setAppRoot      func(root tview.Primitive, fullscreen bool) // replaced with mock in tests
+	stopApp         func()
+
+	o navigatorOptions
 
 	store files.Store
 
@@ -72,17 +76,17 @@ func (nav *Navigator) SetStore(store files.Store) {
 }
 
 func (nav *Navigator) SetFocus() {
-	nav.app.SetFocus(nav.dirsTree.TreeView)
+	nav.setAppFocus(nav.dirsTree.TreeView)
 }
 
 func (nav *Navigator) SetFocusToContainer(index int) {
 	switch index {
 	case nav.left.index:
-		nav.app.SetFocus(nav.left.Flex)
+		nav.setAppFocus(nav.left.Flex)
 	case nav.right.index:
-		nav.app.SetFocus(nav.right.Flex)
+		nav.setAppFocus(nav.right.Flex)
 	case 1:
-		nav.app.SetFocus(nav.files.Boxed)
+		nav.setAppFocus(nav.files.Boxed)
 	}
 }
 
@@ -103,9 +107,18 @@ var getState = ftstate.GetState
 func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator {
 
 	nav := &Navigator{
-		app:             app,
-		queueUpdateDraw: app.QueueUpdateDraw,
-		store:           osfile.NewStore("/"),
+		app: app,
+		queueUpdateDraw: func(f func()) {
+			app.QueueUpdateDraw(f)
+		},
+		setAppFocus: func(p tview.Primitive) {
+			app.SetFocus(p)
+		},
+		setAppRoot: func(root tview.Primitive, fullscreen bool) {
+			app.SetRoot(root, fullscreen)
+		},
+		stopApp: app.Stop,
+		store:   osfile.NewStore("/"),
 		breadcrumbs: crumbs.NewBreadcrumbs(
 			crumbs.NewBreadcrumb("FileTug: ", func() error {
 				return nil
@@ -234,7 +247,7 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 				nav.goDir("~")
 				return nil
 			case 'x':
-				nav.app.Stop()
+				nav.stopApp()
 				return nil
 			default:
 				return event

@@ -170,7 +170,7 @@ func (d *dirSummary) SetDir(dir *DirContext) {
 func (d *dirSummary) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	switch event.Key() {
 	case tcell.KeyLeft:
-		d.nav.app.SetFocus(d.nav.files)
+		d.nav.setAppFocus(d.nav.files)
 		return nil
 	case tcell.KeyDown:
 		row, col := d.extTable.GetSelection()

@@ -7,7 +7,7 @@ import (
 
 func showHelpModal(nav *Navigator) {
 	modal, _, _ := createHelpModal(nav, nav.Flex)
-	nav.app.SetRoot(modal, true)
+	nav.setAppRoot(modal, true)
 }
 
 func createHelpModal(nav *Navigator, root tview.Primitive) (modal tview.Primitive, helpView *tview.TextView, button *tview.Button) {
@@ -35,8 +35,8 @@ Alt+X - Exit the app`
 	// Create a modal-like layout using a Grid to center the helpView
 	// Close function
 	closeHelp := func() {
-		nav.app.SetRoot(root, true)
-		nav.app.SetFocus(nav.dirsTree.TreeView)
+		nav.setAppRoot(root, true)
+		nav.setAppFocus(nav.dirsTree.TreeView)
 	}
 
 	helpView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

@@ -12,11 +12,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewFiles(t *testing.T) {
-	app := tview.NewApplication()
-	nav := &Navigator{app: app}
+func setupNavigatorForFilesTest(app *tview.Application) *Navigator {
+	nav := &Navigator{
+		app: app,
+		setAppFocus: func(p tview.Primitive) {
+			app.SetFocus(p)
+		},
+	}
 	nav.right = newContainer(2, nav)
 	nav.previewer = &previewer{textView: tview.NewTextView()}
+	nav.dirsTree = &Tree{TreeView: tview.NewTreeView()}
+	return nav
+}
+
+func TestNewFiles(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
 
 	fp := newFiles(nav)
 	assert.NotNil(t, fp)
@@ -26,9 +37,7 @@ func TestNewFiles(t *testing.T) {
 
 func TestFilesPanel_SetRows(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
-	nav.right = newContainer(2, nav)
-	nav.previewer = &previewer{textView: tview.NewTextView()}
+	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 
 	dir := &DirContext{Path: "/test"}
@@ -42,9 +51,7 @@ func TestFilesPanel_SetRows(t *testing.T) {
 
 func TestFilesPanel_SetFilter(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
-	nav.right = newContainer(2, nav)
-	nav.previewer = &previewer{textView: tview.NewTextView()}
+	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 	fp.rows = NewFileRows(&DirContext{})
 
@@ -54,9 +61,7 @@ func TestFilesPanel_SetFilter(t *testing.T) {
 
 func TestFilesPanel_Selection(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
-	nav.right = newContainer(2, nav)
-	nav.previewer = &previewer{textView: tview.NewTextView()}
+	nav := setupNavigatorForFilesTest(app)
 	nav.current.dir = "/test"
 	fp := newFiles(nav)
 
@@ -90,10 +95,7 @@ func TestFilesPanel_Selection(t *testing.T) {
 
 func TestFilesPanel_InputCapture(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
-	nav.right = newContainer(2, nav)
-	nav.previewer = &previewer{textView: tview.NewTextView()}
-	nav.dirsTree = &Tree{TreeView: tview.NewTreeView()}
+	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 
 	t.Run("Space_Toggle", func(t *testing.T) {
@@ -170,9 +172,7 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 
 func TestFilesPanel_SelectionChanged(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
-	nav.right = newContainer(2, nav)
-	nav.previewer = &previewer{textView: tview.NewTextView()}
+	nav := setupNavigatorForFilesTest(app)
 	nav.current.dir = "/test"
 	fp := newFiles(nav)
 
@@ -197,7 +197,12 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 
 func TestFilesPanel_OnStoreChange(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
+	nav := &Navigator{
+		app: app,
+		setAppFocus: func(p tview.Primitive) {
+			app.SetFocus(p)
+		},
+	}
 	fp := newFiles(nav)
 
 	fp.onStoreChange()
@@ -207,9 +212,7 @@ func TestFilesPanel_OnStoreChange(t *testing.T) {
 
 func TestFilesPanel_selectionChangedNavFunc(t *testing.T) {
 	app := tview.NewApplication()
-	nav := &Navigator{app: app}
-	nav.right = newContainer(2, nav)
-	nav.previewer = &previewer{textView: tview.NewTextView()}
+	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 
 	fp.table.SetCell(1, 0, tview.NewTableCell(" file1.txt"))
