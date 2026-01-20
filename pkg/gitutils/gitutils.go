@@ -108,7 +108,11 @@ func GetRepositoryStatus(ctx context.Context, dir string) *RepoStatus {
 	default:
 	}
 
-	headCommit, _ := repo.CommitObject(head.Hash())
+	var headHash plumbing.Hash
+	if head != nil {
+		headHash = head.Hash()
+	}
+	headCommit, _ := repo.CommitObject(headHash)
 
 	worktree, err := repo.Worktree()
 	if err != nil {
