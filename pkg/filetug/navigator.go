@@ -17,7 +17,7 @@ import (
 	"github.com/datatug/filetug/pkg/fsutils"
 	"github.com/datatug/filetug/pkg/ftstate"
 	"github.com/datatug/filetug/pkg/gitutils"
-	"github.com/datatug/filetug/pkg/sneatv"
+	"github.com/datatug/filetug/pkg/sneatv/crumbs"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -28,7 +28,7 @@ type Navigator struct {
 
 	store files.Store
 
-	breadcrumbs *sneatv.Breadcrumbs
+	breadcrumbs *crumbs.Breadcrumbs
 
 	*tview.Flex
 	main *tview.Flex
@@ -102,12 +102,12 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 	nav := &Navigator{
 		app:   app,
 		store: osfile.NewStore("/"),
-		breadcrumbs: sneatv.NewBreadcrumbs(
-			sneatv.NewBreadcrumb("FileTug: ", func() error {
+		breadcrumbs: crumbs.NewBreadcrumbs(
+			crumbs.NewBreadcrumb("FileTug: ", func() error {
 				return nil
 			}).SetColor(tcell.ColorWhiteSmoke),
-			sneatv.WithSeparator("/"),
-			sneatv.WithSeparatorStartIndex(1),
+			crumbs.WithSeparator("/"),
+			crumbs.WithSeparatorStartIndex(1),
 		),
 		Flex:           tview.NewFlex().SetDirection(tview.FlexRow),
 		main:           tview.NewFlex(),
@@ -372,7 +372,7 @@ func (nav *Navigator) setBreadcrumbs() {
 	{
 		rootTitle := nav.store.RootTitle()
 		rootTitle = strings.TrimSuffix(rootTitle, "/")
-		rootBreadcrumb := sneatv.NewBreadcrumb(rootTitle, func() error {
+		rootBreadcrumb := crumbs.NewBreadcrumb(rootTitle, func() error {
 			nav.goDir(rootPath)
 			return nil
 		})
@@ -392,7 +392,7 @@ func (nav *Navigator) setBreadcrumbs() {
 		}
 		breadPaths = append(breadPaths, p)
 		breadPath := path.Join(breadPaths...)
-		nav.breadcrumbs.Push(sneatv.NewBreadcrumb(p, func() error {
+		nav.breadcrumbs.Push(crumbs.NewBreadcrumb(p, func() error {
 			nav.goDir(breadPath)
 			return nil
 		}))

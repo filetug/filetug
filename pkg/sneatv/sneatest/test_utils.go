@@ -1,4 +1,4 @@
-package sneatv
+package sneatest
 
 import (
 	"strings"
@@ -8,7 +8,7 @@ import (
 )
 
 // helper to read a full line from the screen
-func readLine(screen tcell.Screen, y, width int) string {
+func ReadLine(screen tcell.Screen, y, width int) string {
 	var b strings.Builder
 	for x := 0; x < width; x++ {
 		str, _, _ := screen.Get(x, y)
@@ -22,7 +22,7 @@ func readLine(screen tcell.Screen, y, width int) string {
 	return b.String()
 }
 
-func newSimScreen(t *testing.T, width, height int) tcell.Screen {
+func NewSimScreen(t *testing.T, width, height int) tcell.Screen {
 	t.Helper()
 	s := tcell.NewSimulationScreen("UTF-8")
 	if err := s.Init(); err != nil {

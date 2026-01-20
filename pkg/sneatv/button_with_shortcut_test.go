@@ -3,6 +3,7 @@ package sneatv
 import (
 	"testing"
 
+	"github.com/datatug/filetug/pkg/sneatv/sneatest"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
@@ -25,7 +26,7 @@ func TestButtonWithShortcut_SetShortcutStyle(t *testing.T) {
 func TestButtonWithShortcut_Draw(t *testing.T) {
 	width := 20
 	height := 3
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	btn := NewButtonWithShortcut("Save", 's')
@@ -36,14 +37,14 @@ func TestButtonWithShortcut_Draw(t *testing.T) {
 	// Label "Save" + shortcut "(s)" -> "(s) Save"
 	// Total length: 3 (shortcut) + 1 (space) + 4 (Save) = 8
 	// Center row is y=1
-	line := readLine(s, 1, width)
+	line := sneatest.ReadLine(s, 1, width)
 	assert.Contains(t, line, "(s) Save")
 
 	// Test disabled state
 	s.Clear()
 	btn.SetDisabled(true)
 	btn.Draw(s)
-	line = readLine(s, 1, width)
+	line = sneatest.ReadLine(s, 1, width)
 	assert.Contains(t, line, "(s) Save")
 	// We can't easily check colors here without more complex logic,
 	// but we verified it doesn't crash and renders the text.
@@ -53,6 +54,6 @@ func TestButtonWithShortcut_Draw(t *testing.T) {
 	btn.SetDisabled(false)
 	btn.Focus(func(p tview.Primitive) {})
 	btn.Draw(s)
-	line = readLine(s, 1, width)
+	line = sneatest.ReadLine(s, 1, width)
 	assert.Contains(t, line, "(s) Save")
 }

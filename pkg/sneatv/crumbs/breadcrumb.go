@@ -1,4 +1,4 @@
-package sneatv
+package crumbs
 
 import "github.com/gdamore/tcell/v2"
 

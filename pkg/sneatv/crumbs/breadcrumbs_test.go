@@ -1,9 +1,10 @@
-package sneatv
+package crumbs
 
 import (
 	"strings"
 	"testing"
 
+	"github.com/datatug/filetug/pkg/sneatv/sneatest"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -38,7 +39,7 @@ func TestBreadcrumbs_PushAndClear(t *testing.T) {
 func TestBreadcrumbs_Draw_SingleLineNoBorder(t *testing.T) {
 	width := 40
 	height := 1
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("DataTug", nil))
@@ -48,7 +49,7 @@ func TestBreadcrumbs_Draw_SingleLineNoBorder(t *testing.T) {
 
 	bc.Draw(s)
 
-	line := readLine(s, 0, width)
+	line := sneatest.ReadLine(s, 0, width)
 	expected := "DataTug > Projects > Demo"
 	if got := strings.TrimRight(line, " "); !strings.HasPrefix(got, expected) {
 		t.Fatalf("drawn line prefix mismatch:\n got: %q\nwant: %q", got, expected)
@@ -59,7 +60,7 @@ func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
 	// Box with border: inner Y should be 1. Height must be at least 3 for border.
 	width := 20
 	height := 3
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("A", nil))
@@ -69,7 +70,7 @@ func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
 	bc.Draw(s)
 
 	// y=0 is border row, ensure no content there
-	line0 := readLine(s, 0, width)
+	line0 := sneatest.ReadLine(s, 0, width)
 	if strings.Contains(line0, "A > B") {
 		t.Fatalf("content drawn on border row (y=0): %q", strings.TrimRight(line0, " "))
 	}
@@ -93,7 +94,7 @@ func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
 func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
 	width := 10 // small width to force truncation
 	height := 1
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("ABCDEFGHI", nil), WithSeparator("/"))
@@ -101,7 +102,7 @@ func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
 	bc.SetRect(0, 0, width, height)
 	bc.Draw(s)
 
-	line := readLine(s, 0, width)
+	line := sneatest.ReadLine(s, 0, width)
 	// Expected to start with the first title and possibly part of separator/title, but never exceed width
 	if len([]rune(line)) != width {
 		t.Fatalf("line width %d != expected %d", len([]rune(line)), width)
@@ -115,7 +116,7 @@ func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
 func TestBreadcrumbs_Draw_UnfocusedDim(t *testing.T) {
 	width := 80
 	height := 1
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("DataTug", nil))
@@ -135,7 +136,7 @@ func TestBreadcrumbs_Draw_UnfocusedDim(t *testing.T) {
 func TestBreadcrumbs_Navigation_ThreeItems(t *testing.T) {
 	width := 80
 	height := 1
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	mk := func() *Breadcrumbs {
@@ -224,7 +225,7 @@ func TestBreadcrumbs_Navigation_ThreeItems(t *testing.T) {
 func TestBreadcrumbs_AngleBracketNavigation(t *testing.T) {
 	width := 80
 	height := 1
-	s := newSimScreen(t, width, height)
+	s := sneatest.NewSimScreen(t, width, height)
 	defer s.Fini()
 
 	bc := NewBreadcrumbs(NewBreadcrumb("Alpha", nil))

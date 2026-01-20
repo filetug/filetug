@@ -1,4 +1,4 @@
-package sneatv
+package crumbs
 
 import (
 	"testing"
