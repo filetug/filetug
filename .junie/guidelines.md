@@ -1,3 +1,3 @@
 # Guidelines for Junie AI
 
-Use [common guidelines for AI agents](../AI.md) and humans
+Use [common guidelines](../docs/GUIDELINES.md) and humans.
