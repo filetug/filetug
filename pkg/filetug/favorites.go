@@ -5,12 +5,12 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/datatug/filetug/pkg/files"
-	"github.com/datatug/filetug/pkg/files/ftpfile"
-	"github.com/datatug/filetug/pkg/files/httpfile"
-	"github.com/datatug/filetug/pkg/files/osfile"
-	"github.com/datatug/filetug/pkg/fsutils"
-	"github.com/datatug/filetug/pkg/sneatv"
+	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files/ftpfile"
+	"github.com/filetug/filetug/pkg/files/httpfile"
+	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/fsutils"
+	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

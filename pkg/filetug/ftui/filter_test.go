@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/datatug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files"
 )
 
 func TestFilter_IsEmpty(t *testing.T) {

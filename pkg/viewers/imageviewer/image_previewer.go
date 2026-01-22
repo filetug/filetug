@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/datatug/filetug/pkg/viewers"
+	"github.com/filetug/filetug/pkg/viewers"
 	_ "golang.org/x/image/bmp"
 	_ "golang.org/x/image/riff"
 	_ "golang.org/x/image/vp8"

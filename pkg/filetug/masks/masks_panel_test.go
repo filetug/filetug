@@ -3,7 +3,7 @@ package masks
 import (
 	"testing"
 
-	"github.com/datatug/filetug/pkg/sneatv/ttestutils"
+	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
 	"github.com/rivo/tview"
 )
 

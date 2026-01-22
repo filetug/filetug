@@ -3,7 +3,7 @@ package filetug
 import (
 	"testing"
 
-	"github.com/datatug/filetug/pkg/filetug/ftui"
+	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
 )

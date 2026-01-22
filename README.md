@@ -4,7 +4,7 @@
 - Free to use & Open source - [GPLv3 License](LICENSE)
   - You can support development of FileTug by [becoming a patron](https://www.patreon.com/cw/filetug)
 
-## ♺ Continuous Integration — [![Build and Test](https://github.com/datatug/filetug/actions/workflows/build.yml/badge.svg)](https://github.com/datatug/filetug/actions/workflows/build.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/datatug/filetug?cache=0)](https://goreportcard.com/report/github.com/datatug/filetug) [![Coverage Status](https://coveralls.io/repos/github/datatug/filetug/badge.svg?branch=main&cache=5)](https://coveralls.io/github/datatug/filetug?branch=main) [![GoDoc](https://godoc.org/github.com/datatug/filetug?status.svg)](https://godoc.org/github.com/datatug/filetug)
+## ♺ Continuous Integration — [![Build and Test](https://github.com/filetug/filetug/actions/workflows/build.yml/badge.svg)](https://github.com/filetug/filetug/actions/workflows/build.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/filetug/filetug?cache=0)](https://goreportcard.com/report/github.com/filetug/filetug) [![Coverage Status](https://coveralls.io/repos/github/datatug/filetug/badge.svg?branch=main&cache=5)](https://coveralls.io/github/datatug/filetug?branch=main) [![GoDoc](https://godoc.org/github.com/filetug/filetug?status.svg)](https://godoc.org/github.com/filetug/filetug)
 
 We are targeting to achieve 100% test coverage (_with a minimum threshold of 90%_).
 

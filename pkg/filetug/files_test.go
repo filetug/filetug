@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/datatug/filetug/pkg/files"
-	"github.com/datatug/filetug/pkg/filetug/ftui"
+	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"

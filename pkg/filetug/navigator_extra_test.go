@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/alecthomas/assert/v2"
-	"github.com/datatug/filetug/pkg/files/osfile"
-	"github.com/datatug/filetug/pkg/filetug/ftstate"
+	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

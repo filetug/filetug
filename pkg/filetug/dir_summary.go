@@ -8,9 +8,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/datatug/filetug/pkg/filetug/ftui"
-	"github.com/datatug/filetug/pkg/fsutils"
-	"github.com/datatug/filetug/pkg/sneatv"
+	"github.com/filetug/filetug/pkg/filetug/ftui"
+	"github.com/filetug/filetug/pkg/fsutils"
+	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

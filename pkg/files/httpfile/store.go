@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/datatug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files"
 )
 
 type StoreOption func(*HttpStore)

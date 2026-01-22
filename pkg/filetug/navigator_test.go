@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/alecthomas/assert/v2"
-	"github.com/datatug/filetug/pkg/files"
-	"github.com/datatug/filetug/pkg/filetug/ftstate"
-	"github.com/datatug/filetug/pkg/gitutils"
+	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/filetug/ftstate"
+	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

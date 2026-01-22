@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datatug/filetug/pkg/filetug/ftstate"
-	"github.com/datatug/filetug/pkg/filetug/ftui"
-	"github.com/datatug/filetug/pkg/sneatv"
+	"github.com/filetug/filetug/pkg/filetug/ftstate"
+	"github.com/filetug/filetug/pkg/filetug/ftui"
+	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

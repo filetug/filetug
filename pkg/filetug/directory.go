@@ -1,6 +1,6 @@
 package filetug
 
-import "github.com/datatug/filetug/pkg/gitutils"
+import "github.com/filetug/filetug/pkg/gitutils"
 
 type DirInfo struct {
 	Git *DirGitInfo

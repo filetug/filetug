@@ -9,8 +9,8 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/datatug/filetug/pkg/filetug"
-	"github.com/datatug/filetug/pkg/profiling"
+	"github.com/filetug/filetug/pkg/filetug"
+	"github.com/filetug/filetug/pkg/profiling"
 	"github.com/rivo/tview"
 )
 

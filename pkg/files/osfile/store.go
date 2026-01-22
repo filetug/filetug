@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/datatug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files"
 )
 
 var osReadDir = os.ReadDir

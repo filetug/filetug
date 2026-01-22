@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datatug/filetug/pkg/files"
-	"github.com/datatug/filetug/pkg/filetug/ftui"
+	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/stretchr/testify/assert"
 )
 

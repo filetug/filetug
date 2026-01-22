@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datatug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
 )

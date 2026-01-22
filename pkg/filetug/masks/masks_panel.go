@@ -1,7 +1,7 @@
 package masks
 
 import (
-	"github.com/datatug/filetug/pkg/sneatv"
+	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datatug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/jlaffaye/ftp"
 )
 

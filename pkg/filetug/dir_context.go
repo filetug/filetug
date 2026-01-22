@@ -3,7 +3,7 @@ package filetug
 import (
 	"os"
 
-	"github.com/datatug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files"
 )
 
 type DirItem struct {

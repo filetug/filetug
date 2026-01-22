@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/datatug/filetug/pkg/fsutils"
+	"github.com/filetug/filetug/pkg/fsutils"
 )
 
 const defaultSettingsDir = "~/.filetug"

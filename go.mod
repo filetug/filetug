@@ -1,4 +1,4 @@
-module github.com/datatug/filetug
+module github.com/filetug/filetug
 
 go 1.25.5
 

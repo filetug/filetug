@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/datatug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files"
 )
 
 // mockStoreForDirContext is a mock implementation of files.Store

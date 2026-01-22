@@ -3,7 +3,7 @@ package sneatv
 import (
 	"testing"
 
-	"github.com/datatug/filetug/pkg/sneatv/ttestutils"
+	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
