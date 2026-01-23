@@ -183,3 +183,11 @@ func (s *Store) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error)
 
 	return result, nil
 }
+
+func (s *Store) CreateDir(ctx context.Context, path string) error {
+	return errors.New("CreateDir not implemented for FTP")
+}
+
+func (s *Store) CreateFile(ctx context.Context, path string) error {
+	return errors.New("CreateFile not implemented for FTP")
+}

@@ -56,6 +56,7 @@ type Navigator struct {
 	dirsTree  *Tree
 	favorites *favorites
 	masks     *masks.Panel
+	newPanel  *NewPanel
 
 	files *filesPanel
 
@@ -136,6 +137,7 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 	nav.right = newContainer(2, nav)
 	nav.favorites = newFavorites(nav)
 	nav.dirsTree = NewTree(nav)
+	nav.newPanel = NewNewPanel(nav)
 	nav.AddItem(nav.breadcrumbs, 1, 0, false)
 
 	copy(nav.proportions, defaultProportions)
@@ -225,13 +227,18 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyF1:
 		showHelpModal(nav)
 		return nil
+	case tcell.KeyF7:
+		nav.showNewPanel()
+		return nil
 	case tcell.KeyRune:
 		if event.Modifiers()&tcell.ModAlt != 0 {
 			switch r := event.Rune(); r {
-			case 'f':
+			case 'f', 'F':
 				nav.favorites.ShowFavorites()
-			case 'm':
+				return nil
+			case 'm', 'M':
 				nav.showMasks()
+				return nil
 			case '0':
 				copy(nav.proportions, defaultProportions)
 				nav.createColumns()
@@ -247,7 +254,7 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 			case '~', 'h', 'H':
 				nav.goDir("~")
 				return nil
-			case 'x':
+			case 'x', 'X':
 				nav.stopApp()
 				return nil
 			default:
@@ -445,6 +452,7 @@ func (nav *Navigator) setBreadcrumbs() {
 	if relativePath == "" {
 		return
 	}
+	relativePath = strings.TrimSuffix(relativePath, "/")
 	currentDir := strings.Split(relativePath, "/")
 	breadPaths := make([]string, 0, len(currentDir))
 	breadPaths = append(breadPaths, rootPath)
@@ -492,4 +500,8 @@ func (nav *Navigator) showMasks() {
 		nav.masks = masks.NewPanel()
 	}
 	nav.right.SetContent(nav.masks)
+}
+
+func (nav *Navigator) showNewPanel() {
+	nav.newPanel.Show()
 }

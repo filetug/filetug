@@ -36,6 +36,24 @@ func (s Store) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) 
 	return osReadDir(name)
 }
 
+func (s Store) CreateDir(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return os.Mkdir(path, 0755)
+}
+
+func (s Store) CreateFile(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
 func NewStore(root string) *Store {
 	if root == "" {
 		panic("root is empty")

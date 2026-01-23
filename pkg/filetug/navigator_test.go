@@ -267,6 +267,14 @@ func (m *mockNavigatorStore) ReadDir(ctx context.Context, path string) ([]os.Dir
 	return nil, nil
 }
 
+func (m *mockNavigatorStore) CreateDir(ctx context.Context, path string) error {
+	return nil
+}
+
+func (m *mockNavigatorStore) CreateFile(ctx context.Context, path string) error {
+	return nil
+}
+
 func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)

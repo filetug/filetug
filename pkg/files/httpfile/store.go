@@ -98,3 +98,11 @@ func (h HttpStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, err
 
 	return entries, nil
 }
+
+func (h HttpStore) CreateDir(ctx context.Context, path string) error {
+	return fmt.Errorf("CreateDir not implemented for HTTP")
+}
+
+func (h HttpStore) CreateFile(ctx context.Context, path string) error {
+	return fmt.Errorf("CreateFile not implemented for HTTP")
+}

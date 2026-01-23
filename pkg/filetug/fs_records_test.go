@@ -19,8 +19,13 @@ type mockStore struct {
 func (m mockStore) RootTitle() string { return "Mock" }
 func (m mockStore) RootURL() url.URL  { return m.root }
 func (m mockStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
 	return nil, nil
+}
+func (m mockStore) CreateDir(ctx context.Context, path string) error {
+	return nil
+}
+func (m mockStore) CreateFile(ctx context.Context, path string) error {
+	return nil
 }
 
 type mockDirEntry struct {
