@@ -88,13 +88,13 @@ func TestPreviewer(t *testing.T) {
 
 	t.Run("InputCapture", func(t *testing.T) {
 		event := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
-		p.GetInputCapture()(event)
+		p.flex.GetInputCapture()(event)
 
 		event = tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
-		p.GetInputCapture()(event)
+		p.flex.GetInputCapture()(event)
 
 		event = tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
-		p.GetInputCapture()(event)
+		p.flex.GetInputCapture()(event)
 	})
 
 	t.Run("PreviewFile_NoName", func(t *testing.T) {

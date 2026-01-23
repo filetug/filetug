@@ -27,7 +27,7 @@ func TestTree(t *testing.T) {
 		tree.Draw(screen)
 
 		// Test Draw with suffix space
-		root := tree.GetRoot()
+		root := tree.tv.GetRoot()
 		root.SetText("root ")
 		tree.Draw(screen)
 	})
@@ -64,7 +64,7 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("changed", func(t *testing.T) {
-		root := tree.GetRoot()
+		root := tree.tv.GetRoot()
 		tree.changed(root)
 
 		// Test with string reference
@@ -83,9 +83,9 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("inputCapture", func(t *testing.T) {
-		root := tree.GetRoot()
+		root := tree.tv.GetRoot()
 		root.SetReference("/test")
-		tree.SetCurrentNode(root)
+		tree.tv.SetCurrentNode(root)
 
 		// Test Right
 		eventRight := tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
@@ -104,7 +104,7 @@ func TestTree(t *testing.T) {
 		tree.inputCapture(eventUp)
 
 		// Test Backspace
-		tree.search = "abc"
+		tree.searchPattern = "abc"
 		eventBS := tcell.NewEventKey(tcell.KeyBackspace, 0, tcell.ModNone)
 		tree.inputCapture(eventBS)
 
@@ -126,7 +126,7 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("setDirContext", func(t *testing.T) {
-		root := tree.GetRoot()
+		root := tree.tv.GetRoot()
 		dc := &DirContext{
 			Path: "/test",
 			children: []os.DirEntry{
@@ -153,12 +153,12 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("setError", func(t *testing.T) {
-		root := tree.GetRoot()
+		root := tree.tv.GetRoot()
 		tree.setError(root, context.DeadlineExceeded)
 	})
 
 	t.Run("getNodePath", func(t *testing.T) {
-		root := tree.GetRoot()
+		root := tree.tv.GetRoot()
 		root.SetReference("/")
 		child := tview.NewTreeNode("child")
 		child.SetReference("/child")

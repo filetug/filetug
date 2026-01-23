@@ -12,10 +12,10 @@ func TestNewPanel(t *testing.T) {
 	if p == nil {
 		t.Fatal("expected panel to be created")
 	}
-	if p.Table == nil {
+	if p.table == nil {
 		t.Error("expected Table to be initialized")
 	}
-	if p.boxed == nil {
+	if p.Boxed == nil {
 		t.Error("expected boxed to be initialized")
 	}
 	if len(p.masks) == 0 {
@@ -23,14 +23,14 @@ func TestNewPanel(t *testing.T) {
 	}
 
 	// Check if table has headers
-	if p.GetCell(0, 0).Text != "Mask" {
-		t.Errorf("expected header 'Mask', got %q", p.GetCell(0, 0).Text)
+	if p.table.GetCell(0, 0).Text != "Mask" {
+		t.Errorf("expected header 'Mask', got %q", p.table.GetCell(0, 0).Text)
 	}
 
 	// Check if table has data (at least one row per mask + header)
 	expectedRows := len(p.masks) + 1
-	if p.GetRowCount() != expectedRows {
-		t.Errorf("expected %d rows, got %d", expectedRows, p.GetRowCount())
+	if p.table.GetRowCount() != expectedRows {
+		t.Errorf("expected %d rows, got %d", expectedRows, p.table.GetRowCount())
 	}
 }
 

@@ -21,7 +21,7 @@ func setupNavigatorForFilesTest(app *tview.Application) *Navigator {
 	}
 	nav.right = newContainer(2, nav)
 	nav.previewer = &previewer{textView: tview.NewTextView()}
-	nav.dirsTree = &Tree{TreeView: tview.NewTreeView()}
+	nav.dirsTree = &Tree{tv: tview.NewTreeView()}
 	return nav
 }
 

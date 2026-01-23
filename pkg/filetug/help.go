@@ -36,7 +36,7 @@ Alt+X - Exit the app`
 	// Close function
 	closeHelp := func() {
 		nav.setAppRoot(root, true)
-		nav.setAppFocus(nav.dirsTree.TreeView)
+		nav.setAppFocus(nav.dirsTree.tv)
 	}
 
 	helpView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

@@ -20,21 +20,17 @@ import (
 )
 
 type previewer struct {
-	*tview.Flex
-	boxed    *sneatv.Boxed
+	*sneatv.Boxed
+	flex     *tview.Flex
 	nav      *Navigator
 	textView *tview.TextView
-}
-
-func (t *previewer) Draw(screen tcell.Screen) {
-	t.boxed.Draw(screen)
 }
 
 func newPreviewer(nav *Navigator) *previewer {
 	flex := tview.NewFlex()
 	p := previewer{
-		Flex: flex,
-		boxed: sneatv.NewBoxed(
+		flex: flex,
+		Boxed: sneatv.NewBoxed(
 			flex,
 			sneatv.WithLeftBorder(0, -1),
 		),
@@ -52,25 +48,25 @@ func newPreviewer(nav *Navigator) *previewer {
 		nav.activeCol = 2
 	})
 
-	p.AddItem(p.textView, 0, 1, false)
+	p.flex.AddItem(p.textView, 0, 1, false)
 
-	p.SetFocusFunc(func() {
+	p.flex.SetFocusFunc(func() {
 		nav.activeCol = 2
-		p.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
+		p.flex.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
 		//nav.setAppFocus(tv)
 	})
 	nav.previewerFocusFunc = func() {
 		nav.activeCol = 2
-		p.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
+		p.flex.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
 	}
-	p.SetBlurFunc(func() {
-		p.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
+	p.flex.SetBlurFunc(func() {
+		p.flex.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
 	})
 	nav.previewerBlurFunc = func() {
-		p.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
+		p.flex.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
 	}
 
-	p.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	p.flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyLeft:
 			nav.setAppFocus(nav.files)

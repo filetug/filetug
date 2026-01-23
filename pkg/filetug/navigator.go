@@ -78,7 +78,7 @@ func (nav *Navigator) SetStore(store files.Store) {
 }
 
 func (nav *Navigator) SetFocus() {
-	nav.setAppFocus(nav.dirsTree.TreeView)
+	nav.setAppFocus(nav.dirsTree.tv)
 }
 
 func (nav *Navigator) SetFocusToContainer(index int) {

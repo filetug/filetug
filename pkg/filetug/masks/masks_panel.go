@@ -7,50 +7,46 @@ import (
 )
 
 type Panel struct {
-	*tview.Table
-	boxed *sneatv.Boxed
+	*sneatv.Boxed
+	table *tview.Table
 	masks []Mask
 }
 
-func (p *Panel) Draw(screen tcell.Screen) {
-	p.boxed.Draw(screen)
-}
-
 func (p *Panel) Focus(delegate func(p tview.Primitive)) {
-	p.Table.Focus(delegate)
+	p.table.Focus(delegate)
 }
 
 func NewPanel() *Panel {
 	p := new(Panel)
 	p.masks = createBuiltInMasks()
 
-	p.Table = tview.NewTable()
-	p.SetTitle("Masks")
-	p.SetSelectable(true, true)
-	p.SetFixed(1, 1)
+	p.table = tview.NewTable()
+	p.table.SetSelectable(true, true)
+	p.table.SetFixed(1, 1)
 
-	p.boxed = sneatv.NewBoxed(p.Table,
+	p.Boxed = sneatv.NewBoxed(p.table,
 		sneatv.WithLeftBorder(0, -1),
 	)
+	p.SetTitle("Masks")
 
-	p.SetCell(0, 0, tview.NewTableCell("Mask").SetExpansion(1))
-	p.SetCell(0, 1, tview.NewTableCell("CurrDir").SetAlign(tview.AlignRight))
-	p.SetCell(0, 2, tview.NewTableCell("SubDirs").SetAlign(tview.AlignRight))
+	p.table.SetCell(0, 0, tview.NewTableCell("Mask").SetExpansion(1))
+	p.table.SetCell(0, 1, tview.NewTableCell("CurrDir").SetAlign(tview.AlignRight))
+	p.table.SetCell(0, 2, tview.NewTableCell("SubDirs").SetAlign(tview.AlignRight))
 
 	for i, m := range p.masks {
 
 		nameCell := tview.NewTableCell(m.Name)
 		nameCell.SetExpansion(1)
-		p.SetCell(i+1, 0, nameCell)
+		p.table.SetCell(i+1, 0, nameCell)
 
 		currDirCell := tview.NewTableCell("...")
 		currDirCell.SetAlign(tview.AlignRight)
-		p.SetCell(i+1, 1, currDirCell)
+		p.table.SetCell(i+1, 1, currDirCell)
 
 		subDirsCell := tview.NewTableCell("...")
 		subDirsCell.SetAlign(tview.AlignRight)
 		subDirsCell.SetTextColor(tcell.ColorGray)
-		p.SetCell(i+1, 2, subDirsCell)
+		p.table.SetCell(i+1, 2, subDirsCell)
 	}
 
 	return p

@@ -23,16 +23,12 @@ type favorite struct {
 }
 
 type favorites struct {
-	*tview.Flex
-	boxed *sneatv.Boxed
+	*sneatv.Boxed
+	flex  *tview.Flex
 	nav   *Navigator
 	list  *tview.List
 	items []favorite
 	prev  current
-}
-
-func (f *favorites) Draw(screen tcell.Screen) {
-	f.boxed.Draw(screen)
 }
 
 func (f *favorites) ShowFavorites() {
@@ -58,18 +54,18 @@ func newFavorites(nav *Navigator) *favorites {
 	list := tview.NewList()
 	list.SetSecondaryTextColor(tcell.ColorGray)
 	f := &favorites{
-		Flex:  flex,
+		flex:  flex,
 		list:  list,
 		nav:   nav,
 		items: builtInFavorites(),
-		boxed: sneatv.NewBoxed(
+		Boxed: sneatv.NewBoxed(
 			flex,
 			sneatv.WithLeftBorder(1, -1),
 		),
 	}
-	f.AddItem(f.list, 0, 1, true)
+	f.flex.AddItem(f.list, 0, 1, true)
 	hint := tview.NewTextView().SetText("<esc> to go back").SetTextColor(tcell.ColorGray)
-	f.AddItem(hint, 1, 0, false)
+	f.flex.AddItem(hint, 1, 0, false)
 	f.setItems()
 	f.list.SetInputCapture(f.inputCapture)
 	f.list.SetChangedFunc(f.changed)

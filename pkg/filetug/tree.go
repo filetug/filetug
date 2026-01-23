@@ -20,11 +20,11 @@ import (
 const dirEmoji = "📁"
 
 type Tree struct {
-	boxed *sneatv.Boxed
-	*tview.TreeView
+	*sneatv.Boxed
+	tv              *tview.TreeView
 	nav             *Navigator
 	rootNode        *tview.TreeNode
-	search          string
+	searchPattern   string
 	loadingProgress int
 }
 
@@ -64,29 +64,29 @@ func (t *Tree) doLoadingAnimation(loading *tview.TreeNode) {
 }
 
 func (t *Tree) Draw(screen tcell.Screen) {
-	root := t.GetRoot()
+	root := t.tv.GetRoot()
 	text := root.GetText()
 	if strings.HasSuffix(text, " ") {
-		_, _, width, _ := t.GetInnerRect()
+		_, _, width, _ := t.tv.GetInnerRect()
 		if width > len(text) {
 			text += strings.Repeat(" ", width-len(text))
 			root.SetText(text)
 		}
 	}
-	t.boxed.Draw(screen)
+	t.Boxed.Draw(screen)
 }
 
 func NewTree(nav *Navigator) *Tree {
 	tv := tview.NewTreeView()
-	t := &Tree{nav: nav, TreeView: tv,
-		boxed: sneatv.NewBoxed(tv, sneatv.WithRightBorder(0, 1)),
+	t := &Tree{nav: nav, tv: tv,
+		Boxed: sneatv.NewBoxed(tv, sneatv.WithRightBorder(0, 1)),
 	}
 	t.rootNode = tview.NewTreeNode("~")
-	t.SetRoot(t.rootNode)
-	t.SetChangedFunc(t.changed)
-	t.SetInputCapture(t.inputCapture)
-	t.SetFocusFunc(t.focus)
-	t.SetBlurFunc(t.blur)
+	tv.SetRoot(t.rootNode)
+	tv.SetChangedFunc(t.changed)
+	tv.SetInputCapture(t.inputCapture)
+	tv.SetFocusFunc(t.focus)
+	tv.SetBlurFunc(t.blur)
 	t.nav.queueUpdateDraw = nav.queueUpdateDraw
 	return t
 }
@@ -125,35 +125,33 @@ func (t *Tree) focus() {
 	t.nav.dirSummary.Blur()
 	t.nav.right.Blur()
 	t.nav.files.blur()
-	currentNode := t.GetCurrentNode()
+	currentNode := t.tv.GetCurrentNode()
 	if currentNode == nil {
-		currentNode = t.GetRoot()
-		t.SetCurrentNode(currentNode)
+		currentNode = t.tv.GetRoot()
+		t.tv.SetCurrentNode(currentNode)
 	}
 	if currentNode != nil {
 		currentNode.SetSelectedTextStyle(sneatv.CurrentTheme.FocusedSelectedTextStyle)
 	}
-	t.SetGraphicsColor(tcell.ColorWhite)
+	t.tv.SetGraphicsColor(tcell.ColorWhite)
 }
 
 func (t *Tree) blur() {
 	t.nav.left.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
-	t.SetGraphicsColor(sneatv.CurrentTheme.BlurredGraphicsColor)
-	currentNode := t.GetCurrentNode()
+	t.tv.SetGraphicsColor(sneatv.CurrentTheme.BlurredGraphicsColor)
+	currentNode := t.tv.GetCurrentNode()
 	if currentNode != nil {
 		currentNode.SetSelectedTextStyle(sneatv.CurrentTheme.BlurredSelectedTextStyle)
 	}
 }
 
 func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
-	tree := t.TreeView
-	nav := t.nav
 	switch event.Key() {
 	case tcell.KeyRight:
 		t.nav.setAppFocus(t.nav.files)
 		return nil
 	case tcell.KeyLeft:
-		switch ref := tree.GetCurrentNode().GetReference().(type) {
+		switch ref := t.tv.GetCurrentNode().GetReference().(type) {
 		case string:
 			parentDir, _ := path.Split(ref)
 			t.nav.goDir(parentDir)
@@ -161,12 +159,13 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		}
 		return event
 	case tcell.KeyEnter:
-		switch ref := tree.GetCurrentNode().GetReference().(type) {
+		currentNode := t.tv.GetCurrentNode()
+		switch ref := currentNode.GetReference().(type) {
 		case string:
 			if ref != "/" {
 				ref = strings.TrimSuffix(ref, "/")
 			}
-			if t.GetCurrentNode() == t.GetRoot() {
+			if currentNode == t.tv.GetRoot() {
 				ref, _ = path.Split(fsutils.ExpandHome(ref))
 			}
 			t.nav.goDir(ref)
@@ -174,24 +173,24 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		}
 		return event
 	case tcell.KeyUp:
-		if tree.GetCurrentNode() == tree.GetRoot() {
-			nav.breadcrumbs.TakeFocus(tree)
-			nav.setAppFocus(nav.breadcrumbs)
+		if t.tv.GetCurrentNode() == t.tv.GetRoot() {
+			t.nav.breadcrumbs.TakeFocus(t.tv)
+			t.nav.setAppFocus(t.nav.breadcrumbs)
 			return nil
 		}
 		return event
 	case tcell.KeyBackspace:
-		t.SetSearch(t.search[:len(t.search)-1])
+		t.SetSearch(t.searchPattern[:len(t.searchPattern)-1])
 		return nil
 	case tcell.KeyEscape:
 		t.SetSearch("")
 		return nil
 	case tcell.KeyRune:
 		s := string(event.Rune())
-		if t.search == "" && s == " " {
+		if t.searchPattern == "" && s == " " {
 			return event
 		}
-		t.SetSearch(t.search + strings.ToLower(s))
+		t.SetSearch(t.searchPattern + strings.ToLower(s))
 		return nil
 	default:
 		return event
@@ -199,55 +198,55 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Tree) SetSearch(pattern string) {
-	t.search = pattern
+	t.searchPattern = pattern
 	if pattern == "" {
-		t.search = ""
+		t.searchPattern = ""
 		t.SetTitle("")
 	} else {
-		t.SetTitle(fmt.Sprintf("Find: %s", t.search))
+		t.SetTitle(fmt.Sprintf("Find: %s", t.searchPattern))
 	}
-	search := &search{
-		pattern: t.search,
+	searchCtx := &searchContext{
+		pattern: t.searchPattern,
 	}
-	highlightTreeNodes(t.GetRoot(), search)
-	if search.firstPrefixed != nil {
-		t.SetCurrentNode(search.firstPrefixed)
-	} else if search.firstContains != nil {
-		t.SetCurrentNode(search.firstContains)
-	} else if len(t.search) > 0 {
-		t.SetSearch(t.search[:len(t.search)-1])
+	highlightTreeNodes(t.tv.GetRoot(), searchCtx)
+	if searchCtx.firstPrefixed != nil {
+		t.tv.SetCurrentNode(searchCtx.firstPrefixed)
+	} else if searchCtx.firstContains != nil {
+		t.tv.SetCurrentNode(searchCtx.firstContains)
+	} else if len(t.searchPattern) > 0 {
+		t.SetSearch(t.searchPattern[:len(t.searchPattern)-1])
 	}
 }
 
-type search struct {
+type searchContext struct {
 	pattern       string
 	found         []string
 	firstContains *tview.TreeNode
 	firstPrefixed *tview.TreeNode
 }
 
-func highlightTreeNodes(n *tview.TreeNode, search *search) {
+func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext) {
 	r := n.GetReference()
 	if s, ok := r.(string); ok {
-		if _, name := path.Split(s); strings.Contains(strings.ToLower(name), search.pattern) {
-			i := strings.Index(strings.ToLower(name), search.pattern)
-			ss := name[i : i+len(search.pattern)]
+		if _, name := path.Split(s); strings.Contains(strings.ToLower(name), searchCtx.pattern) {
+			i := strings.Index(strings.ToLower(name), searchCtx.pattern)
+			ss := name[i : i+len(searchCtx.pattern)]
 			formatted := fmt.Sprintf("[black:lightgreen]%s[-:-]", ss)
 			text := strings.ReplaceAll(name, ss, formatted)
 			n.SetText(text)
-			search.found = append(search.found, text)
-			if search.firstContains == nil {
-				search.firstContains = n
+			searchCtx.found = append(searchCtx.found, text)
+			if searchCtx.firstContains == nil {
+				searchCtx.firstContains = n
 			}
-			if search.firstPrefixed == nil && strings.HasPrefix(strings.ToLower(name), search.pattern) {
-				search.firstPrefixed = n
+			if searchCtx.firstPrefixed == nil && strings.HasPrefix(strings.ToLower(name), searchCtx.pattern) {
+				searchCtx.firstPrefixed = n
 			}
 		} else {
 			n.SetText(name)
 		}
 	}
 	for _, child := range n.GetChildren() {
-		highlightTreeNodes(child, search)
+		highlightTreeNodes(child, searchCtx)
 	}
 }
 
