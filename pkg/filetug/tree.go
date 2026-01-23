@@ -250,7 +250,7 @@ func highlightTreeNodes(n *tview.TreeNode, search *search) {
 	}
 }
 
-func (t *Tree) setCurrentDir(dir string) (nodePath string) {
+func (t *Tree) setCurrentDir(dir string) {
 	t.SetSearch("")
 	t.rootNode.ClearChildren()
 
@@ -267,13 +267,14 @@ func (t *Tree) setCurrentDir(dir string) (nodePath string) {
 			text = strings.TrimSuffix(root.Path, "/")
 		}
 	} else {
-		nodePath = strings.TrimPrefix(dir, root.Path)
+		_, dirName := path.Split(strings.TrimSuffix(dir, "/"))
+		t.SetTitle(dirName)
 		text = ".."
 	}
 
 	t.rootNode.SetText(text)
-	t.rootNode.SetReference(nodePath).SetColor(tcell.ColorWhite)
-
+	t.rootNode.SetReference(dir)
+	t.rootNode.SetColor(tcell.ColorWhite)
 	return
 }
 

@@ -438,6 +438,9 @@ func (nav *Navigator) setBreadcrumbs() {
 	nav.breadcrumbs.Clear()
 
 	rootPath := nav.store.RootURL().Path
+	if rootPath == "" {
+		rootPath = "/"
+	}
 	{
 		rootTitle := nav.store.RootTitle()
 		rootTitle = strings.TrimSuffix(rootTitle, "/")
