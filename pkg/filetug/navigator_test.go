@@ -268,10 +268,12 @@ func (m *mockNavigatorStore) ReadDir(ctx context.Context, path string) ([]os.Dir
 }
 
 func (m *mockNavigatorStore) CreateDir(ctx context.Context, path string) error {
+	_, _ = ctx, path
 	return nil
 }
 
 func (m *mockNavigatorStore) CreateFile(ctx context.Context, path string) error {
+	_, _ = ctx, path
 	return nil
 }
 
