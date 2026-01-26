@@ -222,9 +222,9 @@ const (
 )
 
 func (nav *Navigator) getCurrentBrowser() browser {
-	if nav.left.HasFocus() {
-		return nav.left.content.(browser)
-	} else if nav.files.HasFocus() {
+	if nav.activeCol == 0 {
+		return nav.dirsTree
+	} else if nav.activeCol == 1 {
 		return nav.files
 	}
 	return nil

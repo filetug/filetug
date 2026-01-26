@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/fsutils"
 	"github.com/filetug/filetug/pkg/gitutils"
@@ -280,6 +281,36 @@ func (t *Tree) setCurrentDir(dir string) {
 	t.rootNode.SetText(text)
 	t.rootNode.SetReference(dir)
 	t.rootNode.SetColor(tcell.ColorWhite)
+}
+
+type treeDirEntry struct {
+	os.DirEntry
+	name  string
+	isDir bool
+}
+
+func (e *treeDirEntry) Name() string {
+	return e.name
+}
+
+func (e *treeDirEntry) IsDir() bool {
+	return e.isDir
+}
+
+func (t *Tree) GetCurrentEntry() *files.EntryWithDirPath {
+	node := t.tv.GetCurrentNode()
+	if node == nil {
+		return nil
+	}
+	ref := node.GetReference()
+	if ref == nil {
+		return nil
+	}
+	p := ref.(string)
+	return &files.EntryWithDirPath{
+		Dir:      path.Dir(p),
+		DirEntry: &treeDirEntry{name: path.Base(p), isDir: true},
+	}
 }
 
 func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirContext *DirContext) {
