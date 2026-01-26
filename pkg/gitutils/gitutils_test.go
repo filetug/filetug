@@ -338,7 +338,9 @@ func TestGetRepositoryStatus(t *testing.T) {
 
 		t.Run("repo without head", func(t *testing.T) {
 			emptyRepoDir, _ := os.MkdirTemp("", "empty-repo-*")
-			defer os.RemoveAll(emptyRepoDir)
+			defer func() {
+				_ = os.RemoveAll(emptyRepoDir)
+			}()
 			emptyRepo, _ := git.PlainInit(emptyRepoDir, false)
 			status := GetDirStatus(context.Background(), emptyRepo, emptyRepoDir)
 			if status.Branch != "master" {

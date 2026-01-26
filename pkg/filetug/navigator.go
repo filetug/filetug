@@ -222,9 +222,10 @@ const (
 )
 
 func (nav *Navigator) getCurrentBrowser() browser {
-	if nav.activeCol == 0 {
+	switch nav.activeCol {
+	case 0:
 		return nav.dirsTree
-	} else if nav.activeCol == 1 {
+	case 1:
 		return nav.files
 	}
 	return nil

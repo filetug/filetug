@@ -12,7 +12,7 @@ func TestNewStatusPanel(t *testing.T) {
 	assert.NotNil(t, panel)
 	assert.NotNil(t, panel.Boxed)
 	assert.NotNil(t, panel.flex)
-	assert.Same(t, panel.flex, panel.Boxed.BoxedContent)
+	assert.Same(t, panel.flex, panel.BoxedContent)
 	assert.Equal(t, "Git Status", panel.flex.GetTitle())
 }
 

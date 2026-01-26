@@ -180,7 +180,9 @@ func TestStagingErrors(t *testing.T) {
 	linkDir := filepath.Join(os.TempDir(), "gitutils-link")
 	_ = os.Remove(linkDir)
 	if err := os.Symlink(tempDir, linkDir); err == nil {
-		defer os.Remove(linkDir)
+		defer func() {
+			_ = os.Remove(linkDir)
+		}()
 		_, _ = CanBeStaged(filepath.Join(linkDir, "file.txt"))
 	}
 
@@ -258,7 +260,9 @@ func TestStagingErrors(t *testing.T) {
 
 	// Test findRepoRoot starting from a file that is not in a git repo
 	nonGitDir, _ := os.MkdirTemp("", "non-git-*")
-	defer os.RemoveAll(nonGitDir)
+	defer func() {
+		_ = os.RemoveAll(nonGitDir)
+	}()
 	nonGitFile := filepath.Join(nonGitDir, "file.txt")
 	_ = os.WriteFile(nonGitFile, []byte("test"), 0644)
 	_, err = findRepoRoot(nonGitFile)

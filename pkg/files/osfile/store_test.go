@@ -99,7 +99,9 @@ func TestStore_CreateDir_CreateFile_Delete(t *testing.T) {
 
 	tempDir, err := os.MkdirTemp("", "osfile_test")
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		_ = os.RemoveAll(tempDir)
+	}()
 
 	s := NewStore(tempDir)
 	ctx := context.Background()
