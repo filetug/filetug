@@ -32,7 +32,7 @@ type previewer struct {
 }
 
 func newPreviewer(nav *Navigator) *previewer {
-	flex := tview.NewFlex()
+	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 	p := previewer{
 		Boxed: sneatv.NewBoxed(
 			flex,
@@ -40,7 +40,7 @@ func newPreviewer(nav *Navigator) *previewer {
 		),
 		flex:       flex,
 		attributes: tview.NewTable(),
-		separator:  tview.NewTextView().SetText(strings.Repeat("─", 20)).SetTextColor(tview.Styles.BorderColor),
+		separator:  tview.NewTextView().SetText(strings.Repeat("─", 20)).SetTextColor(tcell.ColorGray),
 		textView:   tview.NewTextView(),
 		nav:        nav,
 	}
