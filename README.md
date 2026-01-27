@@ -6,7 +6,8 @@
 
 - Developed using [Go](https://go.dev/) programming language
 - Free to use & open source - [GPLv3 License](LICENSE)
-    - You can support development of FileTug by [becoming a patron](https://www.patreon.com/cw/filetug)
+    - You can support development of FileTug by [sponsoring it on GitHub](https://github.com/sponsors/filetug) or
+      by [becoming a patron](https://www.patreon.com/cw/filetug) at Patreon.
 
 ## ♺ Continuous Integration — [![Build and Test](https://github.com/filetug/filetug/actions/workflows/build.yml/badge.svg)](https://github.com/filetug/filetug/actions/workflows/build.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/filetug/filetug?cache=0)](https://goreportcard.com/report/github.com/filetug/filetug) [![Coverage Status](https://coveralls.io/repos/github/filetug/filetug/badge.svg?branch=main&cache=7)](https://coveralls.io/github/filetug/filetug?branch=main) [![GoDoc](https://godoc.org/github.com/filetug/filetug?status.svg)](https://godoc.org/github.com/filetug/filetug)
 
