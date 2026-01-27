@@ -1,7 +1,9 @@
 package filetug
 
 import (
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -146,9 +148,32 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 		assert.True(t, moveFocusUpCalled)
 	})
 
+	t.Run("KeyUp_TopRow_NoHandler", func(t *testing.T) {
+		fp.table.Select(0, 0)
+		nav.o.moveFocusUp = nil
+		event := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Equal(t, event, res)
+	})
+
 	t.Run("KeyUp_NotTopRow", func(t *testing.T) {
 		fp.table.Select(1, 0)
 		event := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Equal(t, event, res)
+	})
+
+	t.Run("KeyLeft", func(t *testing.T) {
+		fp.nav.setAppFocus = func(p tview.Primitive) {
+			_, _ = p, p
+		}
+		event := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Nil(t, res)
+	})
+
+	t.Run("KeyDown_Default", func(t *testing.T) {
+		event := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 		res := fp.inputCapture(event)
 		assert.Equal(t, event, res)
 	})
@@ -168,6 +193,84 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 		fp.inputCapture(event)
 		// res := fp.inputCapture(event)
 		// assert.Nil(t, res)
+	})
+
+	t.Run("KeyEnter_NoCell", func(t *testing.T) {
+		fp.rows = nil
+		fp.table.SetContent(nil)
+		fp.table.Clear()
+		fp.table.Select(0, 0)
+		event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Equal(t, event, res)
+	})
+
+	t.Run("KeyEnter_BadRefType", func(t *testing.T) {
+		cell := tview.NewTableCell("bad")
+		cell.SetReference("not-an-entry")
+		fp.table.SetCell(0, 0, cell)
+		fp.table.Select(0, 0)
+		event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Equal(t, event, res)
+	})
+
+	t.Run("KeyEnter_FileEntry", func(t *testing.T) {
+		dir := &DirContext{
+			Store: &mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}},
+			Path:  "/tmp",
+		}
+		fp.rows = NewFileRows(dir)
+		entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), "/tmp")
+		cell := tview.NewTableCell("file.txt")
+		cell.SetReference(entry)
+		fp.table.SetCell(0, 0, cell)
+		fp.table.Select(0, 0)
+		event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Equal(t, event, res)
+	})
+
+	t.Run("KeyEnter_SymlinkDir", func(t *testing.T) {
+		tempDir := t.TempDir()
+		targetDir := filepath.Join(tempDir, "target")
+		err := os.Mkdir(targetDir, 0o755)
+		if !assert.NoError(t, err) {
+			return
+		}
+		linkPath := filepath.Join(tempDir, "link")
+		err = os.Symlink(targetDir, linkPath)
+		if !assert.NoError(t, err) {
+			return
+		}
+		entries, err := os.ReadDir(tempDir)
+		if !assert.NoError(t, err) {
+			return
+		}
+		var linkEntry os.DirEntry
+		for _, entry := range entries {
+			if entry.Name() == "link" {
+				linkEntry = entry
+				break
+			}
+		}
+		if !assert.NotNil(t, linkEntry) {
+			return
+		}
+		fullNav := NewNavigator(app)
+		fp.nav = fullNav
+		fp.rows = NewFileRows(&DirContext{
+			Store: &mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}},
+			Path:  tempDir,
+		})
+		entry := files.EntryWithDirPath{DirEntry: linkEntry, Dir: tempDir}
+		cell := tview.NewTableCell("link")
+		cell.SetReference(&entry)
+		fp.table.SetCell(0, 0, cell)
+		fp.table.Select(0, 0)
+		event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
+		res := fp.inputCapture(event)
+		assert.Nil(t, res)
 	})
 }
 

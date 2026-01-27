@@ -1103,10 +1103,8 @@ func TestFilesPanel_InputCapture_KeyEnterEntry(t *testing.T) {
 	nav := NewNavigator(app)
 	fp := nav.files
 
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("file.txt", false),
-		Dir:      "/tmp",
-	}
+	dirEntry := files.NewDirEntry("tmp", true)
+	entry := files.NewEntryWithDirPath(dirEntry, "/")
 	cell := tview.NewTableCell("file")
 	cell.SetReference(entry)
 	fp.table.SetCell(1, 0, cell)

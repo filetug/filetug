@@ -219,13 +219,22 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyEnter:
 		row, _ := table.GetSelection()
 		nameCell := table.GetCell(row, 0)
-		switch ref := nameCell.GetReference().(type) {
-		case files.EntryWithDirPath:
-			f.nav.goDir(ref.Dir)
-			return nil
-		default:
+		refValue := nameCell.GetReference()
+		entry, ok := refValue.(*files.EntryWithDirPath)
+		if !ok || entry == nil {
 			return event
 		}
+		isDir := entry.IsDir()
+		if !isDir && f.rows != nil {
+			entryValue := *entry
+			isDir = f.rows.isSymlinkToDir(entryValue)
+		}
+		if !isDir {
+			return event
+		}
+		fullPath := entry.FullName()
+		f.nav.goDir(fullPath)
+		return nil
 	default:
 		return event
 	}
