@@ -1,8 +1,15 @@
 # FileTug – modern CLI file browser/picker with neat UI
 
-- Developed using [Go](https://go.dev/) programming language
-- Free to use & Open source - [GPLv3 License](LICENSE)
+![Fast](https://img.shields.io/badge/Fast-Go-blue)
+[![Open Source](https://img.shields.io/badge/Open%20Source-GPLv3-brightgreen)](LICENSE)
+![Cross Platform](https://img.shields.io/badge/Corss%20platform-Mac%20%7C%20Linux%20%7C%20Windows-black)
+
+- Developed using [Go](https://go.dev/) programming language 
+- Free to use & open source - [GPLv3 License](LICENSE)
   - You can support development of FileTug by [becoming a patron](https://www.patreon.com/cw/filetug)
+
+
+
 
 ## ♺ Continuous Integration — [![Build and Test](https://github.com/filetug/filetug/actions/workflows/build.yml/badge.svg)](https://github.com/filetug/filetug/actions/workflows/build.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/filetug/filetug?cache=0)](https://goreportcard.com/report/github.com/filetug/filetug) [![Coverage Status](https://coveralls.io/repos/github/filetug/filetug/badge.svg?branch=main&cache=7)](https://coveralls.io/github/filetug/filetug?branch=main) [![GoDoc](https://godoc.org/github.com/filetug/filetug?status.svg)](https://godoc.org/github.com/filetug/filetug)
 
@@ -41,12 +48,20 @@ We are targeting 100% test coverage (_with a minimum threshold of 99%_).
 
 ## Installation
 
-### Mac OS
+![Cross Platform](https://img.shields.io/badge/platform-mac%20%7C%20linux%20%7C%20windows-blue)
+
+### Mac OS - ![Homebrew](https://img.shields.io/badge/homebrew-filetug-blue)
 ```shell
 brew tap filetug/filetug
 brew install filetug
 ft
 ```
+
+### Linux
+_To be implemented._
+
+### Windows
+_To be implemented._
 
 ### From source:
 ```shell
