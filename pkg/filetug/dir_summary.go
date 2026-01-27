@@ -33,6 +33,10 @@ type dirSummary struct {
 func newDirSummary(nav *Navigator) *dirSummary {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 	flex.SetTitle("Dir Summary")
+
+	tabs := sneatv.NewTabs(nav.app, sneatv.UnderlineTabsStyle)
+	flex.AddItem(tabs, 0, 1, false)
+
 	d := &dirSummary{
 		nav: nav,
 		Boxed: sneatv.NewBoxed(
@@ -42,9 +46,14 @@ func newDirSummary(nav *Navigator) *dirSummary {
 		flex:     flex,
 		extTable: tview.NewTable().SetSelectable(true, false),
 	}
+	tabs.AddTabs(
+		sneatv.NewTab("file_types", "File types", false, d.extTable),
+		sneatv.NewTab("git", "Git", false, tview.NewTextView().SetText("git status info")),
+	)
+
 	d.extTable.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhiteSmoke))
 	//rows.AddItem(tview.NewTextView().SetText("By extension").SetTextColor(tcell.ColorDarkGray), 1, 0, false)
-	flex.AddItem(d.extTable, 0, 1, false)
+	//flex.AddItem(d.extTable, 0, 1, false)
 
 	d.extTable.SetInputCapture(d.inputCapture)
 	d.extTable.SetSelectionChangedFunc(d.selectionChanged)

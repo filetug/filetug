@@ -31,6 +31,15 @@ type Tab struct {
 	tview.Primitive
 }
 
+func NewTab(id string, title string, closable bool, content tview.Primitive) *Tab {
+	return &Tab{
+		ID:        id,
+		Title:     title,
+		Closable:  closable,
+		Primitive: content,
+	}
+}
+
 type tabsApp interface {
 	QueueUpdateDraw(f func()) *tview.Application
 	SetFocus(p tview.Primitive) *tview.Application
