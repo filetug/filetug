@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-	memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+	cpuProfile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+	memProfile = flag.String("memprofile", "", "write memory profile to `file`")
 	pprofAddr  = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
 )
 
@@ -48,13 +48,13 @@ func newFileTugApp() (app *tview.Application) {
 		}
 	}()
 
-	if *cpuprofile != "" {
-		stopCPUProfiling := profiling.DoCPUProfiling(*cpuprofile)
+	if *cpuProfile != "" {
+		stopCPUProfiling := profiling.DoCPUProfiling(*cpuProfile)
 		defer stopCPUProfiling()
 	}
 
-	if *memprofile != "" {
-		stopMemProfiling := profiling.DoMemProfiling(*memprofile)
+	if *memProfile != "" {
+		stopMemProfiling := profiling.DoMemProfiling(*memProfile)
 		defer stopMemProfiling()
 	}
 

@@ -152,8 +152,8 @@ func Test_newFileTugApp(t *testing.T) {
 			}
 		}
 
-		*cpuprofile = "cpuprofile"
-		defer func() { *cpuprofile = "" }()
+		*cpuProfile = "cpuprofile"
+		defer func() { *cpuProfile = "" }()
 
 		app := newFileTugApp()
 		if app == nil {
@@ -182,8 +182,8 @@ func Test_newFileTugApp(t *testing.T) {
 			}
 		}
 
-		*memprofile = "memprofile"
-		defer func() { *memprofile = "" }()
+		*memProfile = "memprofile"
+		defer func() { *memProfile = "" }()
 
 		app := newFileTugApp()
 		if app == nil {
