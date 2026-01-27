@@ -28,7 +28,8 @@ func (p JsonPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queueU
 			return
 		}
 	}
-	str, _ := prettyJSON(string(data))
+	dataText := string(data)
+	str, _ := prettyJSON(dataText)
 	data = []byte(str)
 	p.TextPreviewer.Preview(entry, data, queueUpdateDraw)
 }

@@ -32,10 +32,10 @@ func TestNewStore(t *testing.T) {
 		assert.Equal(t, "🖥️hostname error", s.title)
 	})
 
-	t.Run("empty_root_panics", func(t *testing.T) {
-		assert.Panics(t, func() {
-			NewStore("")
-		})
+	t.Run("empty_root_defaults", func(t *testing.T) {
+		s := NewStore("")
+		assert.NotNil(t, s)
+		assert.Equal(t, "/", s.root)
 	})
 }
 

@@ -53,7 +53,8 @@ type StoreOption func(*Store)
 
 func NewStore(root url.URL, options ...StoreOption) *Store {
 	if root.Scheme != "ftp" {
-		panic(fmt.Errorf("schema should be 'ftp', got '%s'", root.Scheme))
+		_, _ = fmt.Fprintf(os.Stderr, "schema should be 'ftp', got '%s'\n", root.Scheme)
+		return nil
 	}
 	store := &Store{
 		root: root,
@@ -92,10 +93,12 @@ func (s *Store) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error)
 		ftp.DialWithContext(ctx),
 	}
 	if s.implicit {
-		options = append(options, ftp.DialWithTLS(&tls.Config{ServerName: host, InsecureSkipVerify: true}))
+		tlsConfig := &tls.Config{ServerName: host, InsecureSkipVerify: true}
+		options = append(options, ftp.DialWithTLS(tlsConfig))
 	}
 	if s.explicit {
-		options = append(options, ftp.DialWithExplicitTLS(&tls.Config{ServerName: host, InsecureSkipVerify: true}))
+		tlsConfig := &tls.Config{ServerName: host, InsecureSkipVerify: true}
+		options = append(options, ftp.DialWithExplicitTLS(tlsConfig))
 	}
 
 	type dialResult struct {
@@ -181,12 +184,11 @@ func (s *Store) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error)
 		if entry.Name == "." || entry.Name == ".." {
 			continue
 		}
-		dirEntry := files.NewDirEntry(
-			entry.Name,
-			entry.Type == ftp.EntryTypeFolder,
-			files.Size(int64(entry.Size)),
-			files.ModTime(entry.Time),
-		)
+		entrySize := int64(entry.Size)
+		entrySizeValue := files.Size(entrySize)
+		entryModTime := files.ModTime(entry.Time)
+		isDir := entry.Type == ftp.EntryTypeFolder
+		dirEntry := files.NewDirEntry(entry.Name, isDir, entrySizeValue, entryModTime)
 		result = append(result, dirEntry)
 	}
 

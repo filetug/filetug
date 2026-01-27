@@ -14,7 +14,8 @@ func GetRepositoryRoot(dirPath string) (repoRootDir string) {
 		return ""
 	}
 	for {
-		if stat, err := OsStat(filepath.Join(dirPath, ".git")); err == nil {
+		gitPath := filepath.Join(dirPath, ".git")
+		if stat, err := OsStat(gitPath); err == nil {
 			if stat.IsDir() {
 				return dirPath
 			}

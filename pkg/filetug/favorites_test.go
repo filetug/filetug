@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFavorites(t *testing.T) {
@@ -94,18 +95,11 @@ func TestNewFavorites_NilNav(t *testing.T) {
 	}
 }
 
-func TestFavorites_SetStore_Panic(t *testing.T) {
+func TestFavorites_SetStore_InvalidURL(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
 	f := newFavorites(nav)
 
-	defer func() {
-		if r := recover(); r != nil {
-			// Expected panic for invalid URL
-		} else {
-			t.Error("Expected panic for invalid URL in setStore")
-		}
-	}()
-
-	f.setStore(favorite{Store: ":invalid:", Path: ""})
+	dirPath := f.setStore(favorite{Store: ":invalid:", Path: ""})
+	assert.Equal(t, "", dirPath)
 }

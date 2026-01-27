@@ -79,8 +79,9 @@ func (t *Tree) Draw(screen tcell.Screen) {
 
 func NewTree(nav *Navigator) *Tree {
 	tv := tview.NewTreeView()
+	rightBorder := sneatv.WithRightBorder(0, 1)
 	t := &Tree{nav: nav, tv: tv,
-		Boxed: sneatv.NewBoxed(tv, sneatv.WithRightBorder(0, 1)),
+		Boxed: sneatv.NewBoxed(tv, rightBorder),
 	}
 	t.rootNode = tview.NewTreeNode("~")
 	tv.SetRoot(t.rootNode)
@@ -110,7 +111,8 @@ func (t *Tree) setError(node *tview.TreeNode, err error) {
 	nodePath := getNodePath(node)
 	_, name := path.Split(nodePath)
 
-	text := dirEmoji + fmt.Sprintf("%s: %v", name, err)
+	errText := fmt.Sprintf("%s: %v", name, err)
+	text := dirEmoji + errText
 	node.SetText(text)
 	//node.AddChild(tview.NewTreeNode(err.Error()))
 }
@@ -152,7 +154,9 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		t.nav.setAppFocus(t.nav.files)
 		return nil
 	case tcell.KeyLeft:
-		switch ref := t.tv.GetCurrentNode().GetReference().(type) {
+		currentNode := t.tv.GetCurrentNode()
+		refValue := currentNode.GetReference()
+		switch ref := refValue.(type) {
 		case string:
 			parentDir, _ := path.Split(ref)
 			t.nav.goDir(parentDir)
@@ -167,7 +171,8 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 				ref = strings.TrimSuffix(ref, "/")
 			}
 			if currentNode == t.tv.GetRoot() {
-				ref, _ = path.Split(fsutils.ExpandHome(ref))
+				expandedRef := fsutils.ExpandHome(ref)
+				ref, _ = path.Split(expandedRef)
 			}
 			t.nav.goDir(ref)
 			return nil
@@ -191,7 +196,8 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		if t.searchPattern == "" && s == " " {
 			return event
 		}
-		t.SetSearch(t.searchPattern + strings.ToLower(s))
+		lower := strings.ToLower(s)
+		t.SetSearch(t.searchPattern + lower)
 		return nil
 	default:
 		return event
@@ -204,12 +210,14 @@ func (t *Tree) SetSearch(pattern string) {
 		t.searchPattern = ""
 		t.SetTitle("")
 	} else {
-		t.SetTitle(fmt.Sprintf("Find: %s", t.searchPattern))
+		title := fmt.Sprintf("Find: %s", t.searchPattern)
+		t.SetTitle(title)
 	}
 	searchCtx := &searchContext{
 		pattern: t.searchPattern,
 	}
-	highlightTreeNodes(t.tv.GetRoot(), searchCtx)
+	root := t.tv.GetRoot()
+	highlightTreeNodes(root, searchCtx)
 	if searchCtx.firstPrefixed != nil {
 		t.tv.SetCurrentNode(searchCtx.firstPrefixed)
 	} else if searchCtx.firstContains != nil {
@@ -229,8 +237,10 @@ type searchContext struct {
 func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext) {
 	r := n.GetReference()
 	if s, ok := r.(string); ok {
-		if _, name := path.Split(s); strings.Contains(strings.ToLower(name), searchCtx.pattern) {
-			i := strings.Index(strings.ToLower(name), searchCtx.pattern)
+		_, name := path.Split(s)
+		lowerName := strings.ToLower(name)
+		if strings.Contains(lowerName, searchCtx.pattern) {
+			i := strings.Index(lowerName, searchCtx.pattern)
 			ss := name[i : i+len(searchCtx.pattern)]
 			formatted := fmt.Sprintf("[black:lightgreen]%s[-:-]", ss)
 			text := strings.ReplaceAll(name, ss, formatted)
@@ -239,7 +249,7 @@ func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext) {
 			if searchCtx.firstContains == nil {
 				searchCtx.firstContains = n
 			}
-			if searchCtx.firstPrefixed == nil && strings.HasPrefix(strings.ToLower(name), searchCtx.pattern) {
+			if searchCtx.firstPrefixed == nil && strings.HasPrefix(lowerName, searchCtx.pattern) {
 				searchCtx.firstPrefixed = n
 			}
 		} else {
@@ -271,8 +281,9 @@ func (t *Tree) setCurrentDir(dir string) {
 		}
 	} else {
 		text = ".."
-		_, panelTitle = path.Split(strings.TrimSuffix(dir, "/"))
-		if root.Scheme == "file" && strings.TrimSuffix(dir, "/") == userHomeDir {
+		trimmedDir := strings.TrimSuffix(dir, "/")
+		_, panelTitle = path.Split(trimmedDir)
+		if root.Scheme == "file" && trimmedDir == userHomeDir {
 			panelTitle = "~"
 		}
 	}
@@ -307,9 +318,10 @@ func (t *Tree) GetCurrentEntry() *files.EntryWithDirPath {
 		return nil
 	}
 	p := ref.(string)
+	baseName := path.Base(p)
 	return &files.EntryWithDirPath{
 		Dir:      path.Dir(p),
-		DirEntry: &treeDirEntry{name: path.Base(p), isDir: true},
+		DirEntry: &treeDirEntry{name: baseName, isDir: true},
 	}
 }
 
@@ -363,7 +375,8 @@ func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirConte
 				emoji = "🔒"
 			}
 			prefix := emoji + name
-			n := tview.NewTreeNode(prefix).SetReference(childPath)
+			n := tview.NewTreeNode(prefix)
+			n.SetReference(childPath)
 			node.AddChild(n)
 
 			fullPath := fsutils.ExpandHome(childPath)

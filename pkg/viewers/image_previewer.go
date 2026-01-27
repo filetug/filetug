@@ -64,24 +64,26 @@ func (p ImagePreviewer) GetMeta(path string) (meta *Meta) {
 	if err != nil {
 		return
 	}
+	upperFormat := strings.ToUpper(format)
 	main := MetaGroup{
 		ID:    "main",
-		Title: "Format: " + strings.ToUpper(format),
+		Title: "Format: " + upperFormat,
 	}
-	main.Records = append(main.Records,
-		&MetaRecord{
-			ID:         "width",
-			Title:      "Width",
-			Value:      strconv.Itoa(cfg.Width),
-			ValueAlign: AlignRight,
-		},
-		&MetaRecord{
-			ID:         "height",
-			Title:      "Height",
-			Value:      strconv.Itoa(cfg.Height),
-			ValueAlign: AlignRight,
-		},
-	)
+	widthValue := strconv.Itoa(cfg.Width)
+	heightValue := strconv.Itoa(cfg.Height)
+	widthRecord := &MetaRecord{
+		ID:         "width",
+		Title:      "Width",
+		Value:      widthValue,
+		ValueAlign: AlignRight,
+	}
+	heightRecord := &MetaRecord{
+		ID:         "height",
+		Title:      "Height",
+		Value:      heightValue,
+		ValueAlign: AlignRight,
+	}
+	main.Records = append(main.Records, widthRecord, heightRecord)
 	return &Meta{
 		Groups: []*MetaGroup{
 			&main,

@@ -46,10 +46,11 @@ func (s *RepoStatus) String() string {
 		return ""
 	}
 	var noChanges DirGitChangesStats
+	statusText := s.FileGitStatus.String()
 	if s.DirGitChangesStats == noChanges {
-		return separator + fmt.Sprintf("[darkgray]%s[-]%s", s.Branch, s.FileGitStatus.String())
+		return separator + fmt.Sprintf("[darkgray]%s[-]%s", s.Branch, statusText)
 	}
-	return separator + fmt.Sprintf("[darkgray]%s[-]%s[darkgray]ƒ%d[-]%s", s.Branch, separator, s.FilesChanged, s.FileGitStatus.String())
+	return separator + fmt.Sprintf("[darkgray]%s[-]%s[darkgray]ƒ%d[-]%s", s.Branch, separator, s.FilesChanged, statusText)
 }
 
 // GetFileStatus returns a brief git status for a single file.
@@ -155,7 +156,8 @@ func GetFileStatus(ctx context.Context, repo *git.Repository, filePath string) *
 					const maxRead = 1 * 1024 * 1024
 					b := make([]byte, maxRead)
 					n, _ := f.Read(b)
-					res.Insertions += strings.Count(string(b[:n]), "\n")
+					content := string(b[:n])
+					res.Insertions += strings.Count(content, "\n")
 					_ = f.Close()
 				}
 			}

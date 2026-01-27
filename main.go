@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -30,7 +29,10 @@ func newFileTugApp() (app *tview.Application) {
 
 	if *pprofAddr != "" {
 		go func() {
-			log.Println(http.ListenAndServe(*pprofAddr, nil))
+			err := http.ListenAndServe(*pprofAddr, nil)
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "pprof server error: %v\n", err)
+			}
 		}()
 	}
 
@@ -46,9 +48,9 @@ func newFileTugApp() (app *tview.Application) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			log.Printf("Recovered from panic: %v", r)
+			_, _ = fmt.Fprintf(os.Stderr, "Recovered from panic: %v\n", r)
 			pprof.StopCPUProfile()
-			panic(r)
+			os.Exit(1)
 		}
 	}()
 	return

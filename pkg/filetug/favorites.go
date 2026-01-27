@@ -2,7 +2,9 @@ package filetug
 
 import (
 	"context"
+	"fmt"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/filetug/filetug/pkg/files"
@@ -166,7 +168,8 @@ func (f *favorites) setStore(item favorite) (dirPath string) {
 	dirPath = item.Path
 	root, err := url.Parse(item.Store)
 	if err != nil {
-		panic(err)
+		_, _ = fmt.Fprintf(os.Stderr, "failed to parse favorite store %q: %v\n", item.Store, err)
+		return dirPath
 	}
 	if storeRootUrl := f.nav.store.RootURL(); storeRootUrl.String() != root.String() {
 		var store files.Store

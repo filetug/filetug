@@ -6,5 +6,6 @@ import (
 
 func SetupApp(app *tview.Application) {
 	app.EnableMouse(true)
-	app.SetRoot(NewNavigator(app), true)
+	nav := NewNavigator(app)
+	app.SetRoot(nav, true)
 }

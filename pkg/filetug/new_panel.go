@@ -111,7 +111,8 @@ func (p *NewPanel) createDir() {
 	currentDir := p.nav.current.dir
 	fullPath := path.Join(currentDir, name)
 
-	err := p.nav.store.CreateDir(context.Background(), fullPath)
+	ctx := context.Background()
+	err := p.nav.store.CreateDir(ctx, fullPath)
 	if err != nil {
 		// TODO: show error
 		return
@@ -129,14 +130,16 @@ func (p *NewPanel) createFile() {
 	currentDir := p.nav.current.dir
 	fullPath := path.Join(currentDir, name)
 
-	err := p.nav.store.CreateFile(context.Background(), fullPath)
+	ctx := context.Background()
+	err := p.nav.store.CreateFile(ctx, fullPath)
 	if err != nil {
 		// TODO: show error
 		return
 	}
 
 	p.nav.right.SetContent(p.nav.dirSummary)
-	p.nav.showDir(context.Background(), p.nav.dirsTree.rootNode, currentDir, false)
+	ctx = context.Background()
+	p.nav.showDir(ctx, p.nav.dirsTree.rootNode, currentDir, false)
 	p.nav.files.SetCurrentFile(name)
 	p.nav.setAppFocus(p.nav.files.Boxed)
 }

@@ -65,7 +65,8 @@ func (h HttpStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, err
 		client = http.DefaultClient
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+	reqURL := u.String()
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -88,7 +89,8 @@ func (h HttpStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, err
 	}
 
 	re := regexp.MustCompile(`<a href="([^"]+)">`)
-	matches := re.FindAllStringSubmatch(string(body), -1)
+	bodyText := string(body)
+	matches := re.FindAllStringSubmatch(bodyText, -1)
 
 	var entries []os.DirEntry
 	for _, match := range matches {
@@ -98,7 +100,8 @@ func (h HttpStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, err
 		}
 		isDir := strings.HasSuffix(href, "/")
 		name := strings.TrimSuffix(href, "/")
-		entries = append(entries, files.NewDirEntry(name, isDir))
+		dirEntry := files.NewDirEntry(name, isDir)
+		entries = append(entries, dirEntry)
 	}
 
 	return entries, nil

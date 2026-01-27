@@ -135,7 +135,8 @@ func StageDir(path string, recursive bool) error {
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			fileRelPath := filepath.ToSlash(filepath.Join(relPath, entry.Name()))
+			joinedPath := filepath.Join(relPath, entry.Name())
+			fileRelPath := filepath.ToSlash(joinedPath)
 			_, err = worktree.Add(fileRelPath)
 			if err != nil {
 				return fmt.Errorf("failed to stage file %s: %w", fileRelPath, err)
@@ -154,7 +155,8 @@ func findRepoRoot(path string) (string, error) {
 	}
 
 	for {
-		if _, err := os.Stat(filepath.Join(curr, ".git")); err == nil {
+		gitPath := filepath.Join(curr, ".git")
+		if _, err := os.Stat(gitPath); err == nil {
 			return curr, nil
 		}
 

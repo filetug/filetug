@@ -111,8 +111,9 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 	if relPath == "." {
 		relPath = ""
 	}
-	if relPath != "" && !strings.HasSuffix(relPath, string(filepath.Separator)) {
-		relPath += string(filepath.Separator)
+	separator := string(filepath.Separator)
+	if relPath != "" && !strings.HasSuffix(relPath, separator) {
+		relPath += separator
 	}
 
 	res.FilesChanged = 0
@@ -155,7 +156,8 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 						const maxRead = 1 * 1024 * 1024 // 1MB
 						b := make([]byte, maxRead)
 						n, _ := f.Read(b)
-						res.Insertions += strings.Count(string(b[:n]), "\n")
+						content := string(b[:n])
+						res.Insertions += strings.Count(content, "\n")
 						_ = f.Close()
 					}
 					continue

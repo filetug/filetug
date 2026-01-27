@@ -29,9 +29,15 @@ func NewPanel() *Panel {
 	)
 	p.SetTitle("Masks")
 
-	p.table.SetCell(0, 0, tview.NewTableCell("Mask").SetExpansion(1))
-	p.table.SetCell(0, 1, tview.NewTableCell("CurrDir").SetAlign(tview.AlignRight))
-	p.table.SetCell(0, 2, tview.NewTableCell("SubDirs").SetAlign(tview.AlignRight))
+	maskCell := tview.NewTableCell("Mask")
+	maskCell.SetExpansion(1)
+	p.table.SetCell(0, 0, maskCell)
+	currDirCell := tview.NewTableCell("CurrDir")
+	currDirCell.SetAlign(tview.AlignRight)
+	p.table.SetCell(0, 1, currDirCell)
+	subDirsCell := tview.NewTableCell("SubDirs")
+	subDirsCell.SetAlign(tview.AlignRight)
+	p.table.SetCell(0, 2, subDirsCell)
 
 	for i, m := range p.masks {
 

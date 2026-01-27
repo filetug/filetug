@@ -76,7 +76,8 @@ func ExpandHome(p string) string {
 			if p == "~" {
 				return home
 			}
-			p = filepath.Join(home, strings.TrimPrefix(p, "~/"))
+			trimmed := strings.TrimPrefix(p, "~/")
+			p = filepath.Join(home, trimmed)
 			p = strings.TrimSuffix(p, "/")
 			return p
 		}

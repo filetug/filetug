@@ -36,13 +36,15 @@ func (p DsstorePreviewer) Preview(entry files.EntryWithDirPath, data []byte, que
 	var s dsstore.Store
 	err := s.Read(bufferRead)
 	if err != nil {
-		p.showError(fmt.Sprintf("Failed to read %s: %s", entry.Name(), err.Error()))
+		errText := fmt.Sprintf("Failed to read %s: %s", entry.Name(), err.Error())
+		p.showError(errText)
 		return
 	}
 	var sb strings.Builder
 	for _, r := range s.Records {
-		sb.WriteString(fmt.Sprintf("%s: %s\n", r.FileName, r.Type))
+		_, _ = fmt.Fprintf(&sb, "%s: %s\n", r.FileName, r.Type)
 	}
-	data = []byte(sb.String())
+	content := sb.String()
+	data = []byte(content)
 	p.TextPreviewer.Preview(entry, data, queueUpdateDraw)
 }

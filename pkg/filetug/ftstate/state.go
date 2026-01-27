@@ -47,7 +47,8 @@ func GetCurrentDir() string {
 func SaveCurrentDir(store, currentDir string) {
 	root, err := url.Parse(store)
 	if err != nil {
-		panic(err)
+		logErr("SaveCurrentDir: Error parsing store:", err)
+		return
 	}
 	saveSettingValue(func(state *State) {
 		state.Store = store

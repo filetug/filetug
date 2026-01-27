@@ -20,7 +20,8 @@ func (f Filter) IsEmpty() bool {
 }
 
 func (f Filter) IsVisible(entry os.DirEntry) (isVisible bool) {
-	if !f.ShowHidden && strings.HasPrefix(entry.Name(), ".") {
+	entryName := entry.Name()
+	if !f.ShowHidden && strings.HasPrefix(entryName, ".") {
 		return false
 	}
 	if entry.IsDir() && !f.ShowDirs {
@@ -28,7 +29,8 @@ func (f Filter) IsVisible(entry os.DirEntry) (isVisible bool) {
 	}
 	if len(f.Extensions) > 0 {
 		for _, ext := range f.Extensions {
-			if path.Ext(entry.Name()) == ext {
+			entryExt := path.Ext(entryName)
+			if entryExt == ext {
 				isVisible = true
 				break
 			}

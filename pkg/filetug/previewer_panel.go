@@ -28,18 +28,23 @@ type previewerPanel struct {
 }
 
 func newPreviewerPanel(nav *Navigator) *previewerPanel {
-	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex := tview.NewFlex()
+	flex.SetDirection(tview.FlexRow)
+	separator := tview.NewTextView()
+	separator.SetText(strings.Repeat("─", 20))
+	separator.SetTextColor(tcell.ColorGray)
 	p := previewerPanel{
 		Boxed: sneatv.NewBoxed(
 			flex,
 			sneatv.WithLeftBorder(0, -1),
 		),
 		rows:      flex,
-		attrsRow:  tview.NewFlex().SetDirection(tview.FlexRow),
-		separator: tview.NewTextView().SetText(strings.Repeat("─", 20)).SetTextColor(tcell.ColorGray),
+		attrsRow:  tview.NewFlex(),
+		separator: separator,
 		textView:  tview.NewTextView(),
 		nav:       nav,
 	}
+	p.attrsRow.SetDirection(tview.FlexRow)
 	p.fsAttrs = p.createAttrsTable()
 	p.fsAttrs.SetSelectable(true, true)
 
@@ -90,15 +95,20 @@ func newPreviewerPanel(nav *Navigator) *previewerPanel {
 
 func (p *previewerPanel) createAttrsTable() *tview.Table {
 	t := tview.NewTable()
-	sizeLabelCell := tview.NewTableCell("Size").SetAlign(tview.AlignRight).SetTextColor(sneatv.CurrentTheme.LabelColor)
+	sizeLabelCell := tview.NewTableCell("Size")
+	sizeLabelCell.SetAlign(tview.AlignRight)
+	sizeLabelCell.SetTextColor(sneatv.CurrentTheme.LabelColor)
 	sizeLabelCell.SetSelectable(false)
 	t.SetCell(0, 0, sizeLabelCell)
 	p.sizeCell = tview.NewTableCell("")
 	t.SetCell(0, 1, p.sizeCell)
-	modLabelCell := tview.NewTableCell("Modified").SetAlign(tview.AlignRight).SetTextColor(sneatv.CurrentTheme.LabelColor)
+	modLabelCell := tview.NewTableCell("Modified")
+	modLabelCell.SetAlign(tview.AlignRight)
+	modLabelCell.SetTextColor(sneatv.CurrentTheme.LabelColor)
 	modLabelCell.SetSelectable(false)
 	t.SetCell(1, 0, modLabelCell)
-	p.modCell = tview.NewTableCell("").SetAlign(tview.AlignRight)
+	p.modCell = tview.NewTableCell("")
+	p.modCell.SetAlign(tview.AlignRight)
 	t.SetCell(1, 1, p.modCell)
 	return t
 }
@@ -126,7 +136,8 @@ func (p *previewerPanel) setPreviewer(previewer viewers.Previewer) {
 func (p *previewerPanel) SetErr(err error) {
 	p.textView.Clear()
 	p.textView.SetDynamicColors(true)
-	p.textView.SetText(err.Error())
+	errText := err.Error()
+	p.textView.SetText(errText)
 	p.textView.SetTextColor(tcell.ColorRed)
 }
 
@@ -140,8 +151,10 @@ func (p *previewerPanel) SetText(text string) {
 func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 	if info, err := entry.Info(); err == nil {
 		size := info.Size()
-		p.sizeCell.SetText(fsutils.GetSizeShortText(size))
-		p.modCell.SetText(info.ModTime().Format(time.RFC3339))
+		sizeText := fsutils.GetSizeShortText(size)
+		p.sizeCell.SetText(sizeText)
+		modTime := info.ModTime()
+		p.modCell.SetText(modTime.Format(time.RFC3339))
 	}
 
 	name := entry.Name()
@@ -157,7 +170,8 @@ func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 			previewer = viewers.NewDsstorePreviewer()
 		}
 	default:
-		ext := strings.ToLower(filepath.Ext(name))
+		nameExt := filepath.Ext(name)
+		ext := strings.ToLower(nameExt)
 		switch ext {
 		case ".json":
 			if _, ok := p.previewer.(*viewers.JsonPreviewer); !ok {

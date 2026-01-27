@@ -237,12 +237,7 @@ func TestSaveCurrentFileName(t *testing.T) {
 	}
 }
 
-func TestSaveCurrentDir_Panic(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("expected panic for invalid URL")
-		}
-	}()
+func TestSaveCurrentDir_InvalidURL(t *testing.T) {
 	SaveCurrentDir(":", "/dir")
 }
 

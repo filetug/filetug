@@ -107,6 +107,13 @@ func OnMoveFocusUp(f func(source tview.Primitive)) NavigatorOption {
 var getState = ftstate.GetState
 
 func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator {
+	defaultStore := osfile.NewStore("/")
+	rootBreadcrumb := crumbs.NewBreadcrumb("FileTug: ", func() error {
+		return nil
+	})
+	rootBreadcrumb.SetColor(tcell.ColorWhiteSmoke)
+	flex := tview.NewFlex()
+	flex.SetDirection(tview.FlexRow)
 
 	nav := &Navigator{
 		app: app,
@@ -120,15 +127,13 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 			app.SetRoot(root, fullscreen)
 		},
 		stopApp: app.Stop,
-		store:   osfile.NewStore("/"),
+		store:   defaultStore,
 		breadcrumbs: crumbs.NewBreadcrumbs(
-			crumbs.NewBreadcrumb("FileTug: ", func() error {
-				return nil
-			}).SetColor(tcell.ColorWhiteSmoke),
+			rootBreadcrumb,
 			crumbs.WithSeparator("/"),
 			crumbs.WithSeparatorStartIndex(1),
 		),
-		Flex:           tview.NewFlex().SetDirection(tview.FlexRow),
+		Flex:           flex,
 		main:           tview.NewFlex(),
 		proportions:    make([]int, 3),
 		gitStatusCache: make(map[string]*gitutils.RepoStatus),
@@ -163,17 +168,24 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 		if state.Store == "" {
 			state.Store = "file:"
 		}
-		var schema string
-		if i := strings.Index(state.Store, ":"); i < 0 {
-			schema = state.Store
+		schema := state.Store
+		if i := strings.Index(state.Store, ":"); i >= 0 {
+			schema = state.Store[:i]
 		}
 		switch schema {
 		case "http", "https":
-			root, _ := url.Parse(state.Store)
-			nav.store = httpfile.NewStore(*root)
+			root, err := url.Parse(state.Store)
+			if err == nil {
+				nav.store = httpfile.NewStore(*root)
+			}
 		case "ftp":
-			root, _ := url.Parse(state.Store)
-			nav.store = ftpfile.NewStore(*root)
+			root, err := url.Parse(state.Store)
+			if err == nil {
+				store := ftpfile.NewStore(*root)
+				if store != nil {
+					nav.store = store
+				}
+			}
 		}
 
 		if state.CurrentDir == "" {
@@ -183,7 +195,7 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 		if strings.HasPrefix(state.CurrentDir, "https://") {
 			currentUrl, err := url.Parse(state.CurrentDir)
 			if err != nil {
-				return nil
+				return nav
 			}
 			dirPath = currentUrl.Path
 			currentUrl.Path = "/"
@@ -309,7 +321,8 @@ func (nav *Navigator) goDir(dir string) {
 	nav.dirsTree.setCurrentDir(dir)
 	nav.showDir(ctx, nav.dirsTree.rootNode, dir, true)
 	root := nav.store.RootURL()
-	saveCurrentDir(root.String(), dir)
+	rootValue := root.String()
+	saveCurrentDir(rootValue, dir)
 }
 
 func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository, fullPath string, node *tview.TreeNode, prefix string) {
@@ -485,7 +498,8 @@ func (nav *Navigator) setBreadcrumbs() {
 		nav.breadcrumbs.Push(rootBreadcrumb)
 	}
 
-	relativePath := strings.TrimPrefix(strings.TrimPrefix(nav.current.dir, rootPath), "/")
+	trimmedDir := strings.TrimPrefix(nav.current.dir, rootPath)
+	relativePath := strings.TrimPrefix(trimmedDir, "/")
 	if relativePath == "" {
 		return
 	}
@@ -499,10 +513,11 @@ func (nav *Navigator) setBreadcrumbs() {
 		}
 		breadPaths = append(breadPaths, p)
 		breadPath := path.Join(breadPaths...)
-		nav.breadcrumbs.Push(crumbs.NewBreadcrumb(p, func() error {
+		breadcrumb := crumbs.NewBreadcrumb(p, func() error {
 			nav.goDir(breadPath)
 			return nil
-		}))
+		})
+		nav.breadcrumbs.Push(breadcrumb)
 	}
 }
 

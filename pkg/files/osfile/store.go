@@ -2,6 +2,7 @@ package osfile
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"os"
 	"strings"
@@ -64,7 +65,8 @@ func (s Store) CreateFile(ctx context.Context, path string) error {
 
 func NewStore(root string) *Store {
 	if root == "" {
-		panic("root is empty")
+		_, _ = fmt.Fprintf(os.Stderr, "osfile store root is empty, defaulting to /\n")
+		root = "/"
 	}
 	store := Store{root: root}
 	var err error

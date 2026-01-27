@@ -17,7 +17,8 @@ func (c EntryWithDirPath) FullName() string {
 }
 
 func (c EntryWithDirPath) String() string {
-	return path.Join(c.Dir, c.Name())
+	name := c.Name()
+	return path.Join(c.Dir, name)
 }
 
 func NewEntryWithDirPath(entry os.DirEntry, dir string) *EntryWithDirPath {

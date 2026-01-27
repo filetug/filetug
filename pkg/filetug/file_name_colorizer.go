@@ -47,7 +47,8 @@ var fileColors = map[string]tcell.Color{
 }
 
 func GetColorByFileExt(name string) tcell.Color {
-	ext := strings.TrimPrefix(filepath.Ext(name), ".")
+	fileExt := filepath.Ext(name)
+	ext := strings.TrimPrefix(fileExt, ".")
 	if color, ok := fileColors[ext]; ok {
 		return color
 	}

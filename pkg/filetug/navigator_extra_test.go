@@ -48,7 +48,7 @@ func TestNewNavigator_InvalidURL(t *testing.T) {
 			}, nil
 		}
 		nav := NewNavigator(app)
-		assert.True(t, nav == nil)
+		assert.True(t, nav != nil)
 	})
 }
 

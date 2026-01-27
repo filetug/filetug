@@ -60,16 +60,18 @@ func TestStore_RootURL_and_Title(t *testing.T) {
 	assert.Equal(t, "ftp://example.com/path", s3.RootTitle())
 }
 
-func TestNewStore_Panic(t *testing.T) {
+func TestNewStore_InvalidScheme(t *testing.T) {
 	root, _ := url.Parse("http://example.com")
-	assert.Panics(t, func() {
-		NewStore(*root)
-	})
+	store := NewStore(*root)
+	assert.Nil(t, store)
 }
 
 func TestStore_SetTLS(t *testing.T) {
 	root, _ := url.Parse("ftp://example.com")
 	s := NewStore(*root)
+	if s == nil {
+		t.Fatal("store should not be nil")
+	}
 	s.SetTLS(true, true)
 	assert.True(t, s.explicit)
 	assert.True(t, s.implicit)

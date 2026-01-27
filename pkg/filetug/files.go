@@ -2,6 +2,7 @@ package filetug
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -39,7 +40,8 @@ func (f *filesPanel) GetCurrentEntry() *files.EntryWithDirPath {
 	entry := f.rows.VisibleEntries[row]
 	if entry.Dir == "" {
 		if f.rows.Dir == nil {
-			panic("got a dir entry without a dir path and the filesPanel directory is not set")
+			_, _ = fmt.Fprintf(os.Stderr, "files panel missing dir path for entry %q\n", entry.Name())
+			return nil
 		}
 		entry = files.EntryWithDirPath{
 			DirEntry: entry.DirEntry,
@@ -190,9 +192,11 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		cell := table.GetCell(row, 0)
 
 		if strings.HasPrefix(cell.Text, " ") {
-			cell.SetText("✓" + strings.TrimPrefix(cell.Text, " "))
+			trimmed := strings.TrimPrefix(cell.Text, " ")
+			cell.SetText("✓" + trimmed)
 		} else {
-			cell.SetText(" " + strings.TrimPrefix(cell.Text, "✓"))
+			trimmed := strings.TrimPrefix(cell.Text, "✓")
+			cell.SetText(" " + trimmed)
 		}
 		return nil
 	}

@@ -48,7 +48,8 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queue
 			colorized, err := chroma2tcell.Colorize(string(data), "dracula", lexer)
 			queueUpdateDraw(func() {
 				if err != nil {
-					p.showError("Failed to format file: " + err.Error())
+					errText := err.Error()
+					p.showError("Failed to format file: " + errText)
 					return
 				}
 				p.Clear()
@@ -72,7 +73,8 @@ func (p *TextPreviewer) readFile(entry files.EntryWithDirPath, max int) (data []
 	fullName := entry.FullName()
 	data, err = fsutils.ReadFileData(fullName, max)
 	if err != nil && !errors.Is(err, io.EOF) {
-		p.showError(fmt.Sprintf("Failed to read file %s: %s", fullName, err.Error()))
+		errText := fmt.Sprintf("Failed to read file %s: %s", fullName, err.Error())
+		p.showError(errText)
 		return
 	}
 	return

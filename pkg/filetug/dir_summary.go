@@ -31,12 +31,15 @@ type dirSummary struct {
 }
 
 func newDirSummary(nav *Navigator) *dirSummary {
-	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex := tview.NewFlex()
+	flex.SetDirection(tview.FlexRow)
 	flex.SetTitle("Dir Summary")
 
 	tabs := sneatv.NewTabs(nav.app, sneatv.UnderlineTabsStyle)
 	flex.AddItem(tabs, 0, 1, false)
 
+	extTable := tview.NewTable()
+	extTable.SetSelectable(true, false)
 	d := &dirSummary{
 		nav: nav,
 		Boxed: sneatv.NewBoxed(
@@ -44,14 +47,19 @@ func newDirSummary(nav *Navigator) *dirSummary {
 			sneatv.WithLeftBorder(0, -1),
 		),
 		flex:     flex,
-		extTable: tview.NewTable().SetSelectable(true, false),
+		extTable: extTable,
 	}
+	gitTextView := tview.NewTextView()
+	gitTextView.SetText("git status info")
 	tabs.AddTabs(
 		sneatv.NewTab("file_types", "File types", false, d.extTable),
-		sneatv.NewTab("git", "Git", false, tview.NewTextView().SetText("git status info")),
+		sneatv.NewTab("git", "Git", false, gitTextView),
 	)
 
-	d.extTable.SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorBlack).Background(tcell.ColorWhiteSmoke))
+	selectedStyle := tcell.StyleDefault
+	selectedStyle = selectedStyle.Foreground(tcell.ColorBlack)
+	selectedStyle = selectedStyle.Background(tcell.ColorWhiteSmoke)
+	d.extTable.SetSelectedStyle(selectedStyle)
 	//rows.AddItem(tview.NewTextView().SetText("By extension").SetTextColor(tcell.ColorDarkGray), 1, 0, false)
 	//flex.AddItem(d.extTable, 0, 1, false)
 
@@ -330,7 +338,8 @@ func (d *dirSummary) updateTable() {
 }
 
 func getSizeCell(size int64, defaultColor tcell.Color) (sizeCell *tview.TableCell) {
-	sizeText := "  " + fsutils.GetSizeShortText(size)
+	shortText := fsutils.GetSizeShortText(size)
+	sizeText := "  " + shortText
 	sizeCell = tview.NewTableCell(sizeText).SetAlign(tview.AlignRight)
 	if size >= 1024*1024*1024*1024 { // TB
 		sizeCell.SetTextColor(tcell.ColorOrangeRed)

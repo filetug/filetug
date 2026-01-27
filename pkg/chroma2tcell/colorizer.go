@@ -35,7 +35,8 @@ func Colorize(text, styleName string, lexer chroma.Lexer) (string, error) {
 
 		// Map Chroma color to tview [color] tag
 		// simple approximation: use hex
-		sb.WriteString("[" + color.Colour.String() + "]")
+		colorText := color.Colour.String()
+		sb.WriteString("[" + colorText + "]")
 		sb.WriteString(token.Value)
 		sb.WriteString("[-]")
 	}

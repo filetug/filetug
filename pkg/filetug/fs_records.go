@@ -129,7 +129,10 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 	}
 	if r.Err != nil {
 		if col == nameColIndex {
-			return tview.NewTableCell(" 📁" + r.Err.Error()).SetTextColor(tcell.ColorOrangeRed)
+			errText := r.Err.Error()
+			cell := tview.NewTableCell(" 📁" + errText)
+			cell.SetTextColor(tcell.ColorOrangeRed)
+			return cell
 		}
 		return nil
 	}
@@ -146,7 +149,8 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 	var cell *tview.TableCell
 	if len(r.VisibleEntries) == 0 {
 		if col == nameColIndex {
-			cell = tview.NewTableCell("[::i]No entries[::-]").SetTextColor(tcell.ColorGray)
+			cell = tview.NewTableCell("[::i]No entries[::-]")
+			cell.SetTextColor(tcell.ColorGray)
 		} else {
 			return nil
 		}
@@ -177,7 +181,10 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 				var err error
 				fi, err = dirEntry.Info()
 				if err != nil {
-					return tview.NewTableCell(err.Error()).SetBackgroundColor(tcell.ColorRed)
+					errText := err.Error()
+					cell := tview.NewTableCell(errText)
+					cell.SetBackgroundColor(tcell.ColorRed)
+					return cell
 				}
 				r.Infos[i] = fi
 			}
@@ -191,13 +198,16 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 						sizeText = fsutils.GetSizeShortText(size)
 					}
 				}
-				cell = tview.NewTableCell(sizeText).
-					SetAlign(tview.AlignRight).
-					SetExpansion(1)
+				cell = tview.NewTableCell(sizeText)
+				cell.SetAlign(tview.AlignRight)
+				cell.SetExpansion(1)
 			case modifiedColIndex:
 				var s string
 				if fi != nil && !reflect.ValueOf(fi).IsNil() {
-					if modTime := fi.ModTime(); fi.ModTime().After(time.Now().Add(24 * time.Hour)) {
+					modTime := fi.ModTime()
+					now := time.Now()
+					cutoff := now.Add(24 * time.Hour)
+					if modTime.After(cutoff) {
 						s = modTime.Format("15:04:05")
 					} else {
 						s = modTime.Format("2006-01-02")
@@ -210,7 +220,9 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 		color := GetColorByFileExt(name)
 		cell.SetTextColor(color)
-		ref := files.NewEntryWithDirPath(dirEntry, path.Join(fsutils.ExpandHome(r.Dir.Path)))
+		expandedDir := fsutils.ExpandHome(r.Dir.Path)
+		refDir := path.Clean(expandedDir)
+		ref := files.NewEntryWithDirPath(dirEntry, refDir)
 		cell.SetReference(ref)
 	}
 	return cell
@@ -255,7 +267,8 @@ func (r *FileRows) getTopRowName() *tview.TableCell {
 	} else {
 		cellText = ".."
 	}
-	cell := tview.NewTableCell(cellText).SetExpansion(1)
+	cell := tview.NewTableCell(cellText)
+	cell.SetExpansion(1)
 	var parentDir string
 	if r.Dir.Path == "~" {
 		parentDir = fsutils.ExpandHome("~")

@@ -42,13 +42,16 @@ func (b *bottom) render() {
 	for _, mi := range b.menuItems {
 		title := mi.Title
 		for _, key := range mi.HotKeys {
-			title = strings.Replace(title, key, fmt.Sprintf("[%s]%s[-]", sneatv.CurrentTheme.HotkeyColor, key), 1)
+			hotkeyText := fmt.Sprintf("[%s]%s[-]", sneatv.CurrentTheme.HotkeyColor, key)
+			title = strings.Replace(title, key, hotkeyText, 1)
 		}
 		title = fmt.Sprintf(`["%s"]%s[""]`, mi.HotKeys[0], title)
 		sb.WriteString(title)
 		sb.WriteString(separator)
 	}
-	b.SetText(sb.String()[:sb.Len()-len(separator)])
+	fullText := sb.String()
+	trimmedText := fullText[:sb.Len()-len(separator)]
+	b.SetText(trimmedText)
 }
 
 func (b *bottom) highlighted(added, _, _ []string) {
