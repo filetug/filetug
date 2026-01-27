@@ -76,7 +76,7 @@ func (b *bottom) highlighted(added, _, _ []string) {
 var archiveAction = func() {
 }
 
-var exitApp = os.Exit
+var osExit = os.Exit
 
 func (b *bottom) getCtrlMenuItems() []ftui.MenuItem {
 	// Unfortunately, most terminals do not send standalone CTRL key event,
@@ -105,7 +105,7 @@ func (b *bottom) getCtrlMenuItems() []ftui.MenuItem {
 func (b *bottom) getAltMenuItems() []ftui.MenuItem {
 	return []ftui.MenuItem{
 		{Title: "F1Help", HotKeys: []string{"F1"}, Action: func() {}},
-		{Title: "Exit", HotKeys: []string{"x"}, Action: func() { b.nav.stopApp(); exitApp(0) }},
+		{Title: "Exit", HotKeys: []string{"x"}, Action: func() { b.nav.stopApp(); osExit(0) }},
 		{Title: "Go", HotKeys: []string{"o"}, Action: func() {}},
 		{Title: "/root", HotKeys: []string{"/"}, Action: func() {}},
 		{Title: "~Home", HotKeys: []string{"H", "~"}, Action: func() {}},

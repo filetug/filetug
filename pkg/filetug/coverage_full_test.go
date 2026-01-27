@@ -152,13 +152,13 @@ func TestBottomGetAltMenuItemsExitAction(t *testing.T) {
 		stopCalled = true
 	}
 
-	oldExit := exitApp
+	oldExit := osExit
 	exitCode := -1
-	exitApp = func(code int) {
+	osExit = func(code int) {
 		exitCode = code
 	}
 	defer func() {
-		exitApp = oldExit
+		osExit = oldExit
 	}()
 
 	items := nav.bottom.getAltMenuItems()
