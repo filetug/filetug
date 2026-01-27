@@ -8,6 +8,7 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -176,6 +177,8 @@ func TestLoadGitDirStatus_Seams(t *testing.T) {
 	origRel := filepathRel
 	origRoot := getRepositoryRoot
 	origFromSlash := filepathFromSlashFn
+	origLoadGlobalIgnore := loadGlobalIgnore
+	origIsIgnoredPath := isIgnoredPath
 
 	defer func() {
 		gitPlainOpen = origPlainOpen
@@ -184,7 +187,16 @@ func TestLoadGitDirStatus_Seams(t *testing.T) {
 		filepathRel = origRel
 		getRepositoryRoot = origRoot
 		filepathFromSlashFn = origFromSlash
+		loadGlobalIgnore = origLoadGlobalIgnore
+		isIgnoredPath = origIsIgnoredPath
 	}()
+
+	loadGlobalIgnore = func(_ string) gitignore.Matcher {
+		return nil
+	}
+	isIgnoredPath = func(_ string, _ gitignore.Matcher) bool {
+		return false
+	}
 
 	getRepositoryRoot = func(_ string) string {
 		return ""

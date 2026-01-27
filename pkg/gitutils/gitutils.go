@@ -102,6 +102,8 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 		return res
 	}
 
+	matcher := LoadGlobalIgnoreMatcher(repoRoot)
+
 	relPath, err := filepathRel(repoRoot, dir)
 	if err != nil {
 		relPath = ""
@@ -117,6 +119,10 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 	res.FilesChanged = 0
 	for fileName, s := range status {
 		if relPath != "" && !strings.HasPrefix(fileName, relPath) {
+			continue
+		}
+		fileNameSlash := filepath.ToSlash(fileName)
+		if IsIgnoredPath(fileNameSlash, matcher) {
 			continue
 		}
 		if s.Worktree != git.Unmodified || s.Staging != git.Unmodified {
@@ -138,6 +144,10 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 				}
 
 				if relPath != "" && !strings.HasPrefix(fileName, relPath) {
+					continue
+				}
+				fileNameSlash := filepath.ToSlash(fileName)
+				if IsIgnoredPath(fileNameSlash, matcher) {
 					continue
 				}
 

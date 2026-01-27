@@ -21,6 +21,8 @@ var (
 	filepathRel         = filepath.Rel
 	getRepositoryRoot   = gitutils.GetRepositoryRoot
 	filepathFromSlashFn = filepath.FromSlash
+	loadGlobalIgnore    = gitutils.LoadGlobalIgnoreMatcher
+	isIgnoredPath       = gitutils.IsIgnoredPath
 )
 
 type GitDirStatusPreviewer struct {
@@ -208,6 +210,8 @@ func loadGitDirStatus(dirPath string) (gitDirStatusResult, error) {
 		return gitDirStatusResult{repoRoot: repoRoot}, err
 	}
 
+	matcher := loadGlobalIgnore(repoRoot)
+
 	relDir, err := filepathRel(repoRoot, dirPath)
 	if err != nil || relDir == "." {
 		relDir = ""
@@ -221,18 +225,22 @@ func loadGitDirStatus(dirPath string) (gitDirStatusResult, error) {
 
 	entries := make([]gitDirStatusEntry, 0, len(status))
 	for fileName, fileStatus := range status {
-		if prefix != "" && !strings.HasPrefix(fileName, prefix) {
+		fileNameSlash := filepath.ToSlash(fileName)
+		if prefix != "" && !strings.HasPrefix(fileNameSlash, prefix) {
 			continue
 		}
 		if fileStatus.Worktree == git.Unmodified && fileStatus.Staging == git.Unmodified {
 			continue
 		}
-
-		displayName := fileName
-		if prefix != "" {
-			displayName = strings.TrimPrefix(fileName, prefix)
+		if isIgnoredPath(fileNameSlash, matcher) {
+			continue
 		}
-		absPath := filepath.Join(repoRoot, filepathFromSlashFn(fileName))
+
+		displayName := fileNameSlash
+		if prefix != "" {
+			displayName = strings.TrimPrefix(fileNameSlash, prefix)
+		}
+		absPath := filepath.Join(repoRoot, filepathFromSlashFn(fileNameSlash))
 		entry := gitDirStatusEntry{
 			fullPath:    absPath,
 			displayName: displayName,
