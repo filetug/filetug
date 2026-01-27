@@ -78,3 +78,17 @@ Responsiveness of the app is critical for a good user experience.
       assert.Equal(t, expected, actual, "Values should be equal")
   }
   ```
+
+### Unused arguments – explicitly mark function parameters as intentionally unused
+- Assigns the parameters to the blank identifier(s) `_`
+  - Prevents the Go compiler from complaining about unused variables
+  - Documents that the parameters are currently unused by design
+
+```go
+package some
+
+func foo(a1, a2 string) {
+    _, _ = a1, a2
+}
+```
+
