@@ -29,6 +29,10 @@ func (c *DirContext) Entries() []files.EntryWithDirPath {
 	return entries
 }
 
+func (c *DirContext) Children() []os.DirEntry {
+	return c.children
+}
+
 func newDirContext(store files.Store, path string, children []os.DirEntry) *DirContext {
 	return &DirContext{
 		Store:    store,

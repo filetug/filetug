@@ -18,6 +18,7 @@ import (
 	"github.com/filetug/filetug/pkg/fsutils"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv/crumbs"
+	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
@@ -60,7 +61,7 @@ type Navigator struct {
 
 	files *filesPanel
 
-	dirSummary *dirSummary
+	dirSummary *viewers.DirSummary
 
 	previewer *previewerPanel
 
@@ -151,7 +152,13 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 
 	nav.files = newFiles(nav)
 	nav.previewer = newPreviewerPanel(nav)
-	nav.dirSummary = newDirSummary(nav)
+	filterSetter := viewers.WithDirSummaryFilterSetter(nav.files.SetFilter)
+	focusLeft := viewers.WithDirSummaryFocusLeft(func() {
+		nav.setAppFocus(nav.files)
+	})
+	queueUpdateDraw := viewers.WithDirSummaryQueueUpdateDraw(nav.queueUpdateDraw)
+	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
+	nav.dirSummary = viewers.NewDirSummary(app, filterSetter, focusLeft, queueUpdateDraw, colorByExt)
 	nav.right.SetContent(nav.dirSummary)
 
 	for _, option := range options {
@@ -454,7 +461,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir str
 }
 
 func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, dirContext *DirContext, isTreeRootChanged bool) {
-	nav.dirSummary.SetDir(dirContext)
+	nav.dirSummary.SetDir(dirContext.Path, dirContext.Children())
 
 	//nav.filesPanel.Clear()
 	nav.files.table.SetSelectable(true, false)

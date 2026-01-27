@@ -16,6 +16,7 @@ import (
 
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
+	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv/crumbs"
 	"github.com/filetug/filetug/pkg/viewers"
@@ -41,6 +42,19 @@ func (m *mockStoreWithHooks) RootTitle() string {
 		return m.rootTitle
 	}
 	return "Mock"
+}
+
+func newTestDirSummary(nav *Navigator) *viewers.DirSummary {
+	filterSetter := viewers.WithDirSummaryFilterSetter(func(filter ftui.Filter) {
+		if nav.files == nil {
+			return
+		}
+		nav.files.SetFilter(filter)
+	})
+	focusLeft := viewers.WithDirSummaryFocusLeft(func() {})
+	queueUpdate := viewers.WithDirSummaryQueueUpdateDraw(nav.queueUpdateDraw)
+	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
+	return viewers.NewDirSummary(nav.app, filterSetter, focusLeft, queueUpdate, colorByExt)
 }
 func (m *mockStoreWithHooks) RootURL() url.URL { return m.root }
 
@@ -167,57 +181,54 @@ func TestBottomGetAltMenuItemsExitAction(t *testing.T) {
 func TestDirSummary_UpdateTableAndGetSizes_Coverage(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 
-	emptyExt := &extStat{
-		id: "",
-		groupStats: groupStats{
+	emptyExt := &viewers.ExtStat{
+		ID: "",
+		GroupStats: viewers.GroupStats{
 			Count:     1,
 			TotalSize: 10,
 		},
 	}
-	multiExt1 := &extStat{
-		id: ".a",
-		groupStats: groupStats{
+	multiExt1 := &viewers.ExtStat{
+		ID: ".a",
+		GroupStats: viewers.GroupStats{
 			Count:     1,
 			TotalSize: 20,
 		},
 	}
-	multiExt2 := &extStat{
-		id: ".b",
-		groupStats: groupStats{
+	multiExt2 := &viewers.ExtStat{
+		ID: ".b",
+		GroupStats: viewers.GroupStats{
 			Count:     2,
 			TotalSize: 30,
 		},
 	}
-	groupSingle := &extensionsGroup{
-		id:         "Single",
-		title:      "Singles",
-		groupStats: &groupStats{Count: 1, TotalSize: 10},
-		extStats:   []*extStat{emptyExt},
+	groupSingle := &viewers.ExtensionsGroup{
+		ID:         "Single",
+		Title:      "Singles",
+		GroupStats: &viewers.GroupStats{Count: 1, TotalSize: 10},
+		ExtStats:   []*viewers.ExtStat{emptyExt},
 	}
-	groupMulti := &extensionsGroup{
-		id:         "Multi",
-		title:      "Multis",
-		groupStats: &groupStats{Count: 1, TotalSize: 50},
-		extStats:   []*extStat{multiExt1, multiExt2},
+	groupMulti := &viewers.ExtensionsGroup{
+		ID:         "Multi",
+		Title:      "Multis",
+		GroupStats: &viewers.GroupStats{Count: 1, TotalSize: 50},
+		ExtStats:   []*viewers.ExtStat{multiExt1, multiExt2},
 	}
-	ds.extGroups = []*extensionsGroup{groupSingle, groupMulti}
+	ds.ExtGroups = []*viewers.ExtensionsGroup{groupSingle, groupMulti}
 
-	ds.updateTable()
+	ds.UpdateTable()
 
-	cell := ds.extTable.GetCell(1, 1)
+	cell := ds.ExtTable.GetCell(1, 1)
 	assert.Contains(t, cell.Text, "<no extension>")
 
 	nilInfoEntry := mockDirEntryInfo{name: "nil.txt", info: nil}
 	var typedNil *nilFileInfo
 	typedNilEntry := mockDirEntryInfo{name: "typednil.txt", info: typedNil}
 	okInfo := mockDirEntryInfo{name: "size.txt", info: mockFileInfo{size: 5}}
-	dir := &DirContext{
-		Path:     "/test",
-		children: []os.DirEntry{nilInfoEntry, typedNilEntry, okInfo},
-	}
-	ds.SetDir(dir)
+	entries := []os.DirEntry{nilInfoEntry, typedNilEntry, okInfo}
+	ds.SetDir("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -225,7 +236,7 @@ func TestDirSummary_UpdateTableAndGetSizes_Coverage(t *testing.T) {
 func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
@@ -235,17 +246,17 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 		mockDirEntry{name: "c.png", isDir: false},
 		mockDirEntry{name: "d.jpg", isDir: false},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 
 	eventDown := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	eventUp := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 
-	ds.extTable.Select(2, 0)
-	res := ds.inputCapture(eventDown)
+	ds.ExtTable.Select(2, 0)
+	res := ds.InputCapture(eventDown)
 	assert.Nil(t, res)
 
-	ds.extTable.Select(1, 0)
-	_ = ds.inputCapture(eventUp)
+	ds.ExtTable.Select(1, 0)
+	_ = ds.InputCapture(eventUp)
 }
 
 func TestFavorites_SetItems_ExtraBranches(t *testing.T) {
@@ -1379,12 +1390,12 @@ func TestTree_SetSearch_Recursion(t *testing.T) {
 func TestDirSummary_GetSizes_Error(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "bad.txt", err: errors.New("fail")},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 	err := ds.GetSizes()
 	assert.Error(t, err)
 }
@@ -1458,17 +1469,17 @@ func TestFilesPanel_SelectionChangedNavFunc_RefNilReuse(t *testing.T) {
 func TestDirSummary_InputCapture_Left(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 
 	left := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
-	res := ds.inputCapture(left)
+	res := ds.InputCapture(left)
 	assert.Nil(t, res)
 }
 
@@ -1508,23 +1519,23 @@ func TestFilesPanel_SelectionChanged_NilRef(t *testing.T) {
 func TestDirSummary_UpdateTable_SingleExtGroup(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 
-	ext := &extStat{
-		id: ".txt",
-		groupStats: groupStats{
+	ext := &viewers.ExtStat{
+		ID: ".txt",
+		GroupStats: viewers.GroupStats{
 			Count:     1,
 			TotalSize: 1,
 		},
 	}
-	group := &extensionsGroup{
-		id:         "Text",
-		title:      "Texts",
-		groupStats: &groupStats{Count: 1, TotalSize: 1},
-		extStats:   []*extStat{ext},
+	group := &viewers.ExtensionsGroup{
+		ID:         "Text",
+		Title:      "Texts",
+		GroupStats: &viewers.GroupStats{Count: 1, TotalSize: 1},
+		ExtStats:   []*viewers.ExtStat{ext},
 	}
-	ds.extGroups = []*extensionsGroup{group}
-	ds.updateTable()
+	ds.ExtGroups = []*viewers.ExtensionsGroup{group}
+	ds.UpdateTable()
 }
 
 func TestTree_GetCurrentEntry_RefNil(t *testing.T) {
@@ -1615,12 +1626,12 @@ func TestNavigator_GitStatusText_IsRepoRoot(t *testing.T) {
 func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "nil.txt", info: nil},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -1713,15 +1724,15 @@ func TestFilesPanel_SelectionChanged_WithDirAndFile(t *testing.T) {
 func TestDirSummary_InputCapture_NoGroupRefs(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
 	cell := tview.NewTableCell("no-ref")
-	ds.extTable.SetCell(0, 1, cell)
-	ds.extTable.Select(0, 0)
+	ds.ExtTable.SetCell(0, 1, cell)
+	ds.ExtTable.Select(0, 0)
 	event := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
-	res := ds.inputCapture(event)
+	res := ds.InputCapture(event)
 	assert.Equal(t, event, res)
 }
 
@@ -1865,124 +1876,124 @@ func TestFilesPanel_SelectionChanged_WithError(t *testing.T) {
 func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 
 	up := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
-	ds.extTable.Select(0, 0)
-	res := ds.inputCapture(up)
+	ds.ExtTable.Select(0, 0)
+	res := ds.InputCapture(up)
 	assert.Equal(t, up, res)
 }
 
 func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 
 	down := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
-	rowCount := ds.extTable.GetRowCount()
-	ds.extTable.Select(rowCount-1, 0)
-	res := ds.inputCapture(down)
+	rowCount := ds.ExtTable.GetRowCount()
+	ds.ExtTable.Select(rowCount-1, 0)
+	res := ds.InputCapture(down)
 	assert.Equal(t, down, res)
 }
 
 func TestDirSummary_InputCapture_AllBranches(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
-	groupOne := &extensionsGroup{extStats: []*extStat{{id: ".a"}}}
-	groupTwo := &extensionsGroup{extStats: []*extStat{{id: ".a"}, {id: ".b"}}}
+	groupOne := &viewers.ExtensionsGroup{ExtStats: []*viewers.ExtStat{{ID: ".a"}}}
+	groupTwo := &viewers.ExtensionsGroup{ExtStats: []*viewers.ExtStat{{ID: ".a"}, {ID: ".b"}}}
 
 	setRef := func(row int, ref interface{}) {
 		cell := tview.NewTableCell("row")
 		cell.SetReference(ref)
-		ds.extTable.SetCell(row, 1, cell)
+		ds.ExtTable.SetCell(row, 1, cell)
 	}
 
 	keyDown := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	keyUp := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, "b")
-	ds.extTable.Select(1, 0)
-	res := ds.inputCapture(keyDown)
+	ds.ExtTable.Select(1, 0)
+	res := ds.InputCapture(keyDown)
 	assert.Equal(t, keyDown, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, groupOne)
 	setRef(2, "b")
-	ds.extTable.Select(0, 0)
-	res = ds.inputCapture(keyDown)
+	ds.ExtTable.Select(0, 0)
+	res = ds.InputCapture(keyDown)
 	assert.Nil(t, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, groupTwo)
 	setRef(2, "b")
-	ds.extTable.Select(0, 0)
-	res = ds.inputCapture(keyDown)
+	ds.ExtTable.Select(0, 0)
+	res = ds.InputCapture(keyDown)
 	assert.Equal(t, keyDown, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, "b")
-	ds.extTable.Select(0, 0)
-	res = ds.inputCapture(keyDown)
+	ds.ExtTable.Select(0, 0)
+	res = ds.InputCapture(keyDown)
 	assert.Equal(t, keyDown, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
-	ds.extTable.Select(0, 0)
-	res = ds.inputCapture(keyUp)
+	ds.ExtTable.Select(0, 0)
+	res = ds.InputCapture(keyUp)
 	assert.Equal(t, keyUp, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, groupOne)
 	setRef(1, "a")
-	ds.extTable.Select(1, 0)
-	res = ds.inputCapture(keyUp)
+	ds.ExtTable.Select(1, 0)
+	res = ds.InputCapture(keyUp)
 	assert.Nil(t, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, groupOne)
 	setRef(2, "b")
-	ds.extTable.Select(2, 0)
-	res = ds.inputCapture(keyUp)
+	ds.ExtTable.Select(2, 0)
+	res = ds.InputCapture(keyUp)
 	assert.Nil(t, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, groupTwo)
 	setRef(2, "b")
-	ds.extTable.Select(2, 0)
-	res = ds.inputCapture(keyUp)
+	ds.ExtTable.Select(2, 0)
+	res = ds.InputCapture(keyUp)
 	assert.Equal(t, keyUp, res)
 
-	ds.extTable.Clear()
+	ds.ExtTable.Clear()
 	setRef(0, "a")
 	setRef(1, "b")
 	setRef(2, "c")
-	ds.extTable.Select(2, 0)
-	res = ds.inputCapture(keyUp)
+	ds.ExtTable.Select(2, 0)
+	res = ds.InputCapture(keyUp)
 	assert.Equal(t, keyUp, res)
 }
 
@@ -2007,10 +2018,10 @@ func TestFilesPanel_SelectionChangedNavFunc_NoRef(t *testing.T) {
 func TestDirSummary_InputCapture_Default(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 
 	key := tcell.NewEventKey(tcell.KeyRune, 'x', tcell.ModNone)
-	res := ds.inputCapture(key)
+	res := ds.InputCapture(key)
 	assert.Equal(t, key, res)
 }
 
@@ -2065,13 +2076,13 @@ func TestTree_SetCurrentDir_NonSlashRoot(t *testing.T) {
 func TestDirSummary_GetSizes_TypedNilInfo(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 
 	var typedNil *nilFileInfo
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "typednil.txt", info: typedNil},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -2172,7 +2183,7 @@ func TestFilesPanel_SelectionChangedNavFunc_WithRef(t *testing.T) {
 func TestDirSummary_InputCapture_SkipGroupWithMultipleExt(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
-	ds := newDirSummary(nav)
+	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
 
@@ -2182,10 +2193,10 @@ func TestDirSummary_InputCapture_SkipGroupWithMultipleExt(t *testing.T) {
 		mockDirEntry{name: "c.png", isDir: false},
 		mockDirEntry{name: "d.jpg", isDir: false},
 	}
-	ds.SetDir(&DirContext{Path: "/test", children: entries})
+	ds.SetDir("/test", entries)
 
-	ds.extTable.Select(1, 0)
+	ds.ExtTable.Select(1, 0)
 	down := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
-	res := ds.inputCapture(down)
+	res := ds.InputCapture(down)
 	assert.Equal(t, down, res)
 }
