@@ -4,14 +4,15 @@ go 1.25.5
 
 require (
 	github.com/alecthomas/assert/v2 v2.11.0
-	github.com/alecthomas/chroma/v2 v2.23.0
-	github.com/gdamore/tcell/v2 v2.13.7
+	github.com/alecthomas/chroma/v2 v2.23.1
+	github.com/gdamore/tcell/v2 v2.13.8
 	github.com/go-git/go-git/v5 v5.16.4
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/rivo/tview v0.42.0
 	github.com/stretchr/testify v1.11.1
 	github.com/strongo/dsstore v0.0.1
 	golang.org/x/image v0.35.0
+	golang.org/x/sys v0.40.0
 )
 
 require (
@@ -19,7 +20,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/alecthomas/repr v0.5.2 // indirect
-	github.com/cloudflare/circl v1.6.2 // indirect
+	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
@@ -43,7 +44,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
 	golang.org/x/term v0.39.0 // indirect
 	golang.org/x/text v0.33.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
