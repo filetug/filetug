@@ -11,7 +11,11 @@
 
 ## ♺ Continuous Integration — [![Build and Test](https://github.com/filetug/filetug/actions/workflows/build.yml/badge.svg)](https://github.com/filetug/filetug/actions/workflows/build.yml) [![Go Report Card](https://goreportcard.com/badge/github.com/filetug/filetug?cache=0)](https://goreportcard.com/report/github.com/filetug/filetug) [![Coverage Status](https://coveralls.io/repos/github/filetug/filetug/badge.svg?branch=main&cache=7)](https://coveralls.io/github/filetug/filetug?branch=main) [![GoDoc](https://godoc.org/github.com/filetug/filetug?status.svg)](https://godoc.org/github.com/filetug/filetug)
 
-We are targeting **100% test coverage** (_with a minimum threshold of 99%_).
+We currently have **100% test coverage**!
+
+While this is a strong baseline, there is always room to improve test quality and depth.
+We are committed to maintaining and strengthening our test suite to ensure FileTug remains reliable and stable.
+Pull requests that improve tests are very welcome and will be very much appreciated.
 
 ## Why FileTug and not MC/ranger/etc.?
 
