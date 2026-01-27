@@ -21,7 +21,7 @@ We are targeting 100% test coverage (_with a minimum threshold of 99%_).
 
 <table>
     <tr>
-        <td style="width:20%;">
+        <td width="25%">
             <img alt="FileTug avatar" src="https://github.com/filetug/filetug/blob/main/docs/filetug-avatar1.png?raw=true" />
         </td>
         <td>
