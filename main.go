@@ -19,6 +19,10 @@ var (
 	pprofAddr  = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
 )
 
+var httpListenAndServe = http.ListenAndServe
+var osExit = os.Exit
+var pprofStopCPUProfile = pprof.StopCPUProfile
+
 func main() {
 	app := newFileTugApp()
 	run(app)
@@ -29,30 +33,32 @@ func newFileTugApp() (app *tview.Application) {
 
 	if *pprofAddr != "" {
 		go func() {
-			err := http.ListenAndServe(*pprofAddr, nil)
+			err := httpListenAndServe(*pprofAddr, nil)
 			if err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "pprof server error: %v\n", err)
 			}
 		}()
 	}
 
-	if *cpuprofile != "" {
-		defer profiling.DoCPUProfiling(*cpuprofile)
-	}
-
-	if *memprofile != "" {
-		defer profiling.DoMemProfiling(*memprofile)
-	}
-
-	app = newApp()
-
 	defer func() {
 		if r := recover(); r != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "Recovered from panic: %v\n", r)
-			pprof.StopCPUProfile()
-			os.Exit(1)
+			pprofStopCPUProfile()
+			osExit(1)
 		}
 	}()
+
+	if *cpuprofile != "" {
+		stopCPUProfiling := profiling.DoCPUProfiling(*cpuprofile)
+		defer stopCPUProfiling()
+	}
+
+	if *memprofile != "" {
+		stopMemProfiling := profiling.DoMemProfiling(*memprofile)
+		defer stopMemProfiling()
+	}
+
+	app = newApp()
 	return
 }
 

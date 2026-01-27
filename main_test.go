@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/filetug/filetug/pkg/profiling"
 	"github.com/rivo/tview"
 )
 
@@ -57,6 +61,13 @@ func (f fakeApp) Run() error {
 	return fmt.Errorf("app failed: %w", f.err)
 }
 
+type okApp struct{}
+
+func (o okApp) Run() error {
+	_ = o
+	return nil
+}
+
 func Test_run(t *testing.T) {
 	oldStderr := os.Stderr
 	r, w, _ := os.Pipe()
@@ -76,6 +87,27 @@ func Test_run(t *testing.T) {
 
 	if !strings.Contains(output, expectedErr.Error()) {
 		t.Errorf("expected stderr to contain %q, got %q", expectedErr.Error(), output)
+	}
+}
+
+func Test_run_noError(t *testing.T) {
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	defer func() {
+		os.Stderr = oldStderr
+	}()
+
+	run(okApp{})
+
+	_ = w.Close()
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	output := buf.String()
+
+	if output != "" {
+		t.Errorf("expected no stderr output, got %q", output)
 	}
 }
 
@@ -105,6 +137,20 @@ func Test_newFileTugApp(t *testing.T) {
 	})
 
 	t.Run("with_cpuprofile", func(t *testing.T) {
+		oldDoCPUProfiling := profiling.DoCPUProfiling
+		defer func() {
+			profiling.DoCPUProfiling = oldDoCPUProfiling
+		}()
+		closed := false
+		called := false
+		profiling.DoCPUProfiling = func(cpuProfFile string) func() {
+			_ = cpuProfFile
+			called = true
+			return func() {
+				closed = true
+			}
+		}
+
 		*cpuprofile = "cpuprofile"
 		defer func() { *cpuprofile = "" }()
 
@@ -112,9 +158,29 @@ func Test_newFileTugApp(t *testing.T) {
 		if app == nil {
 			t.Error("newFileTugApp() returned nil")
 		}
+		if !called {
+			t.Error("expected cpu profiling to be started")
+		}
+		if !closed {
+			t.Error("expected cpu profiling to be stopped")
+		}
 	})
 
 	t.Run("with_memprofile", func(t *testing.T) {
+		oldDoMemProfiling := profiling.DoMemProfiling
+		defer func() {
+			profiling.DoMemProfiling = oldDoMemProfiling
+		}()
+		closed := false
+		called := false
+		profiling.DoMemProfiling = func(memProfFile string) func() {
+			_ = memProfFile
+			called = true
+			return func() {
+				closed = true
+			}
+		}
+
 		*memprofile = "memprofile"
 		defer func() { *memprofile = "" }()
 
@@ -122,5 +188,134 @@ func Test_newFileTugApp(t *testing.T) {
 		if app == nil {
 			t.Error("newFileTugApp() returned nil")
 		}
+		if !called {
+			t.Error("expected memory profiling to be started")
+		}
+		if !closed {
+			t.Error("expected memory profiling to be stopped")
+		}
 	})
+}
+
+func Test_newFileTugApp_pprofError(t *testing.T) {
+	oldNewApp := newApp
+	oldListenAndServe := httpListenAndServe
+	defer func() {
+		newApp = oldNewApp
+		httpListenAndServe = oldListenAndServe
+	}()
+	newApp = func() *tview.Application {
+		return tview.NewApplication()
+	}
+
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	defer func() {
+		os.Stderr = oldStderr
+	}()
+
+	listenCalled := make(chan struct{})
+	listenErr := errors.New("listen failed")
+	httpListenAndServe = func(addr string, handler http.Handler) error {
+		_ = addr
+		_ = handler
+		close(listenCalled)
+		return listenErr
+	}
+
+	*pprofAddr = "bad-address"
+	defer func() { *pprofAddr = "" }()
+
+	app := newFileTugApp()
+	if app == nil {
+		t.Error("newFileTugApp() returned nil")
+	}
+
+	timer := time.NewTimer(time.Second)
+	defer timer.Stop()
+	select {
+	case <-listenCalled:
+	case <-timer.C:
+		t.Fatal("expected pprof server to start")
+	}
+
+	reader := bufio.NewReader(r)
+	lineChan := make(chan string, 1)
+	readErrChan := make(chan error, 1)
+	go func() {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			readErrChan <- err
+			return
+		}
+		lineChan <- line
+	}()
+
+	timer = time.NewTimer(time.Second)
+	defer timer.Stop()
+	var output string
+	select {
+	case output = <-lineChan:
+	case err := <-readErrChan:
+		t.Fatalf("expected stderr output, got error: %v", err)
+	case <-timer.C:
+		t.Fatal("expected stderr output")
+	}
+
+	_ = w.Close()
+
+	if !strings.Contains(output, "pprof server error") {
+		t.Errorf("expected stderr to include pprof error, got %q", output)
+	}
+}
+
+func Test_newFileTugApp_panicRecovery(t *testing.T) {
+	oldNewApp := newApp
+	oldExit := osExit
+	oldStop := pprofStopCPUProfile
+	defer func() {
+		newApp = oldNewApp
+		osExit = oldExit
+		pprofStopCPUProfile = oldStop
+	}()
+	newApp = func() *tview.Application {
+		panic("boom")
+	}
+
+	exitCode := 0
+	osExit = func(code int) {
+		exitCode = code
+	}
+	stopCalled := false
+	pprofStopCPUProfile = func() {
+		stopCalled = true
+	}
+
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+	defer func() {
+		os.Stderr = oldStderr
+	}()
+
+	app := newFileTugApp()
+
+	_ = w.Close()
+	var buf bytes.Buffer
+	_, _ = io.Copy(&buf, r)
+	output := buf.String()
+
+	if app != nil {
+		t.Error("expected newFileTugApp() to return nil after panic")
+	}
+	if exitCode != 1 {
+		t.Errorf("expected exit code 1, got %d", exitCode)
+	}
+	if !stopCalled {
+		t.Error("expected CPU profiling to stop on panic")
+	}
+	if !strings.Contains(output, "Recovered from panic") {
+		t.Errorf("expected stderr to include panic recovery message, got %q", output)
+	}
 }
