@@ -1,10 +1,13 @@
 package ftpfile
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"net"
 	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -340,6 +343,54 @@ func TestStore_ReadDir_Mock(t *testing.T) {
 	assert.False(t, entries[0].IsDir())
 	assert.Equal(t, "dir1", entries[1].Name())
 	assert.True(t, entries[1].IsDir())
+}
+
+func TestFtpDial_Default(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
+	defer func() {
+		_ = listener.Close()
+	}()
+
+	done := make(chan struct{})
+	go func() {
+		conn, acceptErr := listener.Accept()
+		if acceptErr != nil {
+			close(done)
+			return
+		}
+		defer func() {
+			_ = conn.Close()
+			close(done)
+		}()
+		_, _ = fmt.Fprint(conn, "220 test server\r\n")
+		reader := bufio.NewReader(conn)
+		for {
+			line, readErr := reader.ReadString('\n')
+			if readErr != nil {
+				return
+			}
+			if strings.HasPrefix(line, "QUIT") {
+				_, _ = fmt.Fprint(conn, "221 bye\r\n")
+				return
+			}
+		}
+	}()
+
+	options := []ftp.DialOption{
+		ftp.DialWithTimeout(1 * time.Second),
+	}
+	addr := listener.Addr().String()
+	client, err := ftpDial(addr, options...)
+	assert.NoError(t, err)
+	if err == nil {
+		quitErr := client.Quit()
+		assert.NoError(t, quitErr)
+	}
+	<-done
 }
 
 func TestStore_ReadDir(t *testing.T) {
