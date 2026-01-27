@@ -229,7 +229,7 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 			entryValue := *entry
 			isDir = f.rows.isSymlinkToDir(entryValue)
 		}
-		if !isDir {
+		if !isDir { // TODO: Open file for view?
 			return event
 		}
 		fullPath := entry.FullName()

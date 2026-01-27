@@ -22,6 +22,10 @@ func (c EntryWithDirPath) String() string {
 }
 
 func NewEntryWithDirPath(entry os.DirEntry, dir string) *EntryWithDirPath {
+	name := entry.Name()
+	if namePath, _ := path.Split(name); namePath != "" {
+		panic("dir entry name with path: " + name)
+	}
 	return &EntryWithDirPath{
 		Dir:      dir,
 		DirEntry: entry,

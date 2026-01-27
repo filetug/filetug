@@ -2,6 +2,7 @@ package files
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -79,6 +80,37 @@ func TestDirEntry(t *testing.T) {
 			t.Errorf("expected info.Sys() = nil, got %v", info.Sys())
 		}
 	})
+}
+
+type pathDirEntry struct {
+	name string
+}
+
+func (p pathDirEntry) Name() string      { return p.name }
+func (p pathDirEntry) IsDir() bool       { return false }
+func (p pathDirEntry) Type() os.FileMode { return 0 }
+func (p pathDirEntry) Info() (os.FileInfo, error) {
+	return nil, nil
+}
+
+func TestNewDirEntry_PanicsOnNameWithPath(t *testing.T) {
+	name := filepath.Join("parent", "child")
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic for name with path")
+		}
+	}()
+	_ = NewDirEntry(name, false)
+}
+
+func TestNewEntryWithDirPath_PanicsOnNameWithPath(t *testing.T) {
+	entry := pathDirEntry{name: "parent/child"}
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatalf("expected panic for entry name with path")
+		}
+	}()
+	_ = NewEntryWithDirPath(entry, "/tmp")
 }
 
 func TestFileInfo_NilReceiver(t *testing.T) {

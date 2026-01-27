@@ -21,5 +21,5 @@ func NewStatusPanel() *StatusPanel {
 }
 
 func (p *StatusPanel) SetDir(dir string) {
-
+	_ = dir // TODO: Document why we need this or better implement
 }

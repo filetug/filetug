@@ -65,6 +65,48 @@ func TestTree(t *testing.T) {
 		// Since we cleared children in a goroutine, it should have iterated a few times then stopped.
 	})
 
+	t.Run("doLoadingAnimation_withoutQueueUpdateDraw", func(t *testing.T) {
+		loading := tview.NewTreeNode(" Loading...")
+		tree.rootNode.ClearChildren()
+		tree.rootNode.AddChild(loading)
+
+		originalNav := tree.nav
+		tree.nav = nil
+		defer func() {
+			tree.nav = originalNav
+		}()
+
+		done := make(chan struct{})
+		go func() {
+			tree.doLoadingAnimation(loading)
+			close(done)
+		}()
+
+		updatedText := ""
+		deadline := time.Now().Add(300 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			text := loading.GetText()
+			if text != " Loading..." {
+				updatedText = text
+				break
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+
+		tree.rootNode.ClearChildren()
+
+		timeout := time.After(300 * time.Millisecond)
+		select {
+		case <-done:
+		case <-timeout:
+			t.Fatalf("loading animation did not stop")
+		}
+
+		if updatedText == "" {
+			t.Fatalf("expected loading text to update")
+		}
+	})
+
 	t.Run("changed", func(t *testing.T) {
 		root := tree.tv.GetRoot()
 		tree.changed(root)

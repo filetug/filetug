@@ -129,6 +129,27 @@ func TestFileRows_GetCell(t *testing.T) {
 	assert.NotEmpty(t, cell.Text)
 }
 
+func TestFileRows_getTopRowNameParentReference(t *testing.T) {
+	store := mockStore{root: url.URL{Path: "/"}}
+	dir := &DirContext{Store: store, Path: "/home/user"}
+	fr := NewFileRows(dir)
+
+	cell := fr.getTopRowName()
+	ref := cell.GetReference()
+
+	entryRef, ok := ref.(*files.EntryWithDirPath)
+	if !assert.True(t, ok) {
+		return
+	}
+	if !assert.NotNil(t, entryRef) {
+		return
+	}
+	dirPath := entryRef.Dir
+	name := entryRef.Name()
+	assert.Equal(t, "/", dirPath)
+	assert.Equal(t, "home", name)
+}
+
 func TestFileRows_SetGitStatusText(t *testing.T) {
 	store := mockStore{root: url.URL{Path: "/"}}
 	fr := NewFileRows(&DirContext{Store: store, Path: "/home"})

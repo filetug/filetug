@@ -220,10 +220,7 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 		color := GetColorByFileExt(name)
 		cell.SetTextColor(color)
-		expandedDir := fsutils.ExpandHome(r.Dir.Path)
-		refDir := path.Clean(expandedDir)
-		ref := files.NewEntryWithDirPath(dirEntry, refDir)
-		cell.SetReference(ref)
+		cell.SetReference(&dirEntry)
 	}
 	return cell
 }
@@ -278,7 +275,7 @@ func (r *FileRows) getTopRowName() *tview.TableCell {
 	if parentDir != "/" {
 		parentDir = strings.TrimSuffix(parentDir, "/")
 	}
-	parentDirName, parentDirPath := path.Split(parentDir)
+	parentDirPath, parentDirName := path.Split(parentDir)
 	parentDirEntry := files.NewDirEntry(parentDirName, true)
 	ref := files.NewEntryWithDirPath(parentDirEntry, parentDirPath)
 	return cell.SetReference(ref)
