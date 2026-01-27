@@ -129,6 +129,21 @@ func TestGetDirStatus_HeadError(t *testing.T) {
 	}
 }
 
+func TestGetDirStatus_HeadNil(t *testing.T) {
+	dir, repo, _ := initRepoWithCommit(t)
+	stubRepoHead(t, func(*git.Repository) (*plumbing.Reference, error) {
+		return nil, nil
+	})
+
+	status := GetDirStatus(context.Background(), repo, dir)
+	if status == nil {
+		t.Fatal("expected non-nil status")
+	}
+	if status.Branch != "unknown" {
+		t.Fatalf("expected branch unknown when head is nil, got %q", status.Branch)
+	}
+}
+
 func TestGetDirStatus_WorktreeErrorSecondCall(t *testing.T) {
 	_, repo, _ := initRepoWithCommit(t)
 
@@ -314,6 +329,22 @@ func TestGetFileStatus_ContextCanceledInLoop(t *testing.T) {
 	}
 }
 
+func TestGetFileStatus_ContextCanceledAfterHead(t *testing.T) {
+	_, repo, filePath := initRepoWithCommit(t)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	stubRepoHead(t, func(r *git.Repository) (*plumbing.Reference, error) {
+		ref, err := r.Head()
+		cancel()
+		return ref, err
+	})
+
+	status := GetFileStatus(ctx, repo, filePath)
+	if status == nil {
+		t.Fatal("expected non-nil status")
+	}
+}
+
 func TestCanBeStaged_StatusMissingEntry(t *testing.T) {
 	dir, _, _ := initRepoWithCommit(t)
 	targetPath := filepath.Join(dir, "missing.txt")
@@ -398,6 +429,18 @@ func TestGetWorktreeAndRelPath_RelError(t *testing.T) {
 	}
 
 	_ = dir
+}
+
+func TestIsCtxDone(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	if !isCtxDone(ctx) {
+		t.Fatal("expected canceled context to return true")
+	}
+	if isCtxDone(context.Background()) {
+		t.Fatal("expected background context to return false")
+	}
 }
 
 func TestStageDir_AddError(t *testing.T) {
