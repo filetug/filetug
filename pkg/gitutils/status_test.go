@@ -253,8 +253,8 @@ func TestGetFileStatus_ModifiedAndDeletedFile(t *testing.T) {
 	if status.FilesChanged != 1 {
 		t.Fatalf("Expected FilesChanged=1 for modified file, got %d", status.FilesChanged)
 	}
-	if status.Insertions != 0 || status.Deletions != 0 {
-		t.Fatalf("Expected no insertions or deletions for modified file, got +%d -%d", status.Insertions, status.Deletions)
+	if status.Insertions != 1 || status.Deletions != 0 {
+		t.Fatalf("Expected +1 -0 for modified file, got +%d -%d", status.Insertions, status.Deletions)
 	}
 
 	err = os.Remove(filePath)

@@ -3,6 +3,7 @@ package gitutils
 import (
 	"context"
 	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -47,6 +48,18 @@ func stubWorktreeAdd(t *testing.T, stub func(*git.Worktree, string) (plumbing.Ha
 	old := worktreeAdd
 	worktreeAdd = stub
 	t.Cleanup(func() { worktreeAdd = old })
+}
+
+func stubReadLimitedContent(t *testing.T, stub func(io.Reader) (string, error)) {
+	old := readLimitedContentFn
+	readLimitedContentFn = stub
+	t.Cleanup(func() { readLimitedContentFn = old })
+}
+
+func stubReadHeadFileContents(t *testing.T, stub func(*object.File) (string, error)) {
+	old := readHeadFileContents
+	readHeadFileContents = stub
+	t.Cleanup(func() { readHeadFileContents = old })
 }
 
 func stubIsCtxDone(t *testing.T, stub func(context.Context) bool) {

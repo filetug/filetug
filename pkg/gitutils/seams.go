@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
 var (
@@ -26,6 +27,10 @@ var (
 	}
 	worktreeAdd = func(wt *git.Worktree, path string) (plumbing.Hash, error) {
 		return wt.Add(path)
+	}
+	readLimitedContentFn = readLimitedContent
+	readHeadFileContents = func(f *object.File) (string, error) {
+		return f.Contents()
 	}
 
 	isCtxDone = func(ctx context.Context) bool {

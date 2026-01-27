@@ -147,22 +147,57 @@ func GetFileStatus(ctx context.Context, repo *git.Repository, filePath string) *
 
 			if fileStatus.Worktree == git.Untracked {
 				if f, err := worktree.Filesystem.Open(relPath); err == nil {
-					const maxRead = 1 * 1024 * 1024
-					b := make([]byte, maxRead)
-					n, _ := f.Read(b)
-					content := string(b[:n])
-					res.Insertions += strings.Count(content, "\n")
+					content, err := readLimitedContentFn(f)
 					_ = f.Close()
+					if err != nil {
+						return res
+					}
+					res.Insertions += countLines(content)
 				}
 			}
 
 			if fileStatus.Worktree == git.Deleted || fileStatus.Staging == git.Deleted {
 				if f, err := headTree.File(relPath); err == nil {
-					if content, err := f.Contents(); err == nil {
-						res.Deletions += strings.Count(content, "\n")
+					if content, err := readHeadFileContents(f); err == nil {
+						res.Deletions += countLines(content)
 					}
 				}
 			}
+
+			if fileStatus.Worktree == git.Untracked || fileStatus.Worktree == git.Deleted || fileStatus.Staging == git.Deleted {
+				return res
+			}
+
+			var headContent string
+			headFile, err := headTree.File(relPath)
+			if err != nil {
+				if f, err := worktree.Filesystem.Open(relPath); err == nil {
+					content, err := readLimitedContent(f)
+					_ = f.Close()
+					if err == nil {
+						res.Insertions += countLines(content)
+					}
+				}
+				return res
+			}
+			headContent, err = readHeadFileContents(headFile)
+			if err != nil {
+				return res
+			}
+
+			f, err := worktree.Filesystem.Open(relPath)
+			if err != nil {
+				return res
+			}
+			worktreeContent, err := readLimitedContentFn(f)
+			_ = f.Close()
+			if err != nil {
+				return res
+			}
+
+			insertions, deletions := diffLineStats(headContent, worktreeContent)
+			res.Insertions += insertions
+			res.Deletions += deletions
 		}
 	}
 

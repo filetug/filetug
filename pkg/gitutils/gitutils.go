@@ -158,13 +158,12 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 				// If file is untracked, we can count its lines as insertions
 				if fileStatus.Worktree == git.Untracked {
 					if f, err := worktree.Filesystem.Open(fileName); err == nil {
-						// Limit reading to avoid performance issues with large files
-						const maxRead = 1 * 1024 * 1024 // 1MB
-						b := make([]byte, maxRead)
-						n, _ := f.Read(b)
-						content := string(b[:n])
-						res.Insertions += strings.Count(content, "\n")
+						content, err := readLimitedContentFn(f)
 						_ = f.Close()
+						if err != nil {
+							continue
+						}
+						res.Insertions += countLines(content)
 					}
 					continue
 				}
@@ -172,12 +171,43 @@ func GetDirStatus(ctx context.Context, repo *git.Repository, dir string) *RepoSt
 				// If file is deleted, we can count its lines in head as deletions
 				if fileStatus.Worktree == git.Deleted || fileStatus.Staging == git.Deleted {
 					if f, err := headTree.File(fileName); err == nil {
-						if content, err := f.Contents(); err == nil {
-							res.Deletions += strings.Count(content, "\n")
+						if content, err := readHeadFileContents(f); err == nil {
+							res.Deletions += countLines(content)
 						}
 					}
 					continue
 				}
+
+				var headContent string
+				headFile, err := headTree.File(fileName)
+				if err != nil {
+					if f, err := worktree.Filesystem.Open(fileName); err == nil {
+						content, err := readLimitedContent(f)
+						_ = f.Close()
+						if err == nil {
+							res.Insertions += countLines(content)
+						}
+					}
+					continue
+				}
+				headContent, err = readHeadFileContents(headFile)
+				if err != nil {
+					continue
+				}
+
+				f, err := worktree.Filesystem.Open(fileName)
+				if err != nil {
+					continue
+				}
+				worktreeContent, err := readLimitedContentFn(f)
+				_ = f.Close()
+				if err != nil {
+					continue
+				}
+
+				insertions, deletions := diffLineStats(headContent, worktreeContent)
+				res.Insertions += insertions
+				res.Deletions += deletions
 			}
 		}
 	}

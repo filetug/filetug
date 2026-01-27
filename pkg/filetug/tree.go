@@ -366,7 +366,7 @@ func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirConte
 			case "public":
 				emoji = "📢"
 			case "temp":
-				emoji = "ƒ⏳"
+				emoji = "⏳"
 			case "system":
 				emoji = "🧠"
 			case "bin", "sbin":
