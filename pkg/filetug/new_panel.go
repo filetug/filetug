@@ -10,9 +10,11 @@ import (
 )
 
 type NewPanel struct {
-	flex  *tview.Flex
-	input *tview.InputField
-	nav   *Navigator
+	flex          *tview.Flex
+	input         *tview.InputField
+	createDirBtn  *sneatv.ButtonWithShortcut
+	createFileBtn *sneatv.ButtonWithShortcut
+	nav           *Navigator
 	*sneatv.Boxed
 }
 
@@ -27,15 +29,18 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 		SetFieldBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
 		SetFieldTextColor(tview.Styles.PrimaryTextColor)
 
-	createDirBtn := sneatv.NewButtonWithShortcut("Create directory", 'd').
-		SetSelectedFunc(func() {
-			p.createDir()
-		})
+	createDirBtn := sneatv.NewButtonWithShortcut("Create directory", 'd')
+	createDirBtn.SetSelectedFunc(func() {
+		p.createDir()
+	})
 
-	createFileBtn := sneatv.NewButtonWithShortcut("Create file", 'f').
-		SetSelectedFunc(func() {
-			p.createFile()
-		})
+	createFileBtn := sneatv.NewButtonWithShortcut("Create file", 'f')
+	createFileBtn.SetSelectedFunc(func() {
+		p.createFile()
+	})
+
+	p.createDirBtn = createDirBtn
+	p.createFileBtn = createFileBtn
 
 	p.flex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(p.input, 1, 1, true).
@@ -61,12 +66,12 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 
 	p.input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			if createDirBtn.HasFocus() {
-				p.nav.setAppFocus(createFileBtn)
-			} else if createFileBtn.HasFocus() {
+			if p.createDirBtn.HasFocus() {
+				p.nav.setAppFocus(p.createFileBtn)
+			} else if p.createFileBtn.HasFocus() {
 				p.nav.setAppFocus(p.input)
 			} else {
-				p.nav.setAppFocus(createDirBtn)
+				p.nav.setAppFocus(p.createDirBtn)
 			}
 			return nil
 		}

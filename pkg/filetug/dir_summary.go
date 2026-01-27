@@ -303,8 +303,8 @@ func (d *dirSummary) updateTable() {
 			col++
 
 			nameText := "  *" + ext.id
-			if nameText == "*" {
-				nameText = "<no extension>"
+			if ext.id == "" {
+				nameText = "  <no extension>"
 			}
 			nameColor := GetColorByFileExt(nameText)
 			nameCell := tview.NewTableCell(nameText)

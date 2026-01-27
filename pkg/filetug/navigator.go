@@ -105,6 +105,8 @@ func OnMoveFocusUp(f func(source tview.Primitive)) NavigatorOption {
 }
 
 var getState = ftstate.GetState
+var getDirStatus = gitutils.GetDirStatus
+var getFileStatus = gitutils.GetFileStatus
 
 func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator {
 	defaultStore := osfile.NewStore("/")
@@ -377,9 +379,9 @@ func (nav *Navigator) getGitStatus(ctx context.Context, repo *git.Repository, fu
 
 	var status *gitutils.RepoStatus
 	if isDir {
-		status = gitutils.GetDirStatus(ctx, repo, fullPath)
+		status = getDirStatus(ctx, repo, fullPath)
 	} else {
-		status = gitutils.GetFileStatus(ctx, repo, fullPath)
+		status = getFileStatus(ctx, repo, fullPath)
 	}
 	if status == nil {
 		return nil
