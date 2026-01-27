@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -227,5 +229,80 @@ func TestFileRows_Extra(t *testing.T) {
 
 		// col out of range
 		assert.Nil(t, fr.GetCell(0, 10))
+	})
+}
+
+func TestFileRows_isSymlinkToDir(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlink behavior depends on Windows permissions")
+	}
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "target-dir")
+	err := os.Mkdir(targetDir, 0o755)
+	assert.NoError(t, err)
+
+	targetFile := filepath.Join(tmpDir, "target.txt")
+	file, err := os.Create(targetFile)
+	assert.NoError(t, err)
+	if err == nil {
+		closeErr := file.Close()
+		assert.NoError(t, closeErr)
+	}
+
+	linkDir := filepath.Join(tmpDir, "link-dir")
+	if err := os.Symlink(targetDir, linkDir); err != nil {
+		t.Skipf("symlink not supported: %v", err)
+	}
+
+	linkFile := filepath.Join(tmpDir, "link-file")
+	err = os.Symlink(targetFile, linkFile)
+	assert.NoError(t, err)
+
+	brokenLink := filepath.Join(tmpDir, "broken-link")
+	missingPath := filepath.Join(tmpDir, "missing")
+	err = os.Symlink(missingPath, brokenLink)
+	assert.NoError(t, err)
+
+	entries, err := os.ReadDir(tmpDir)
+	assert.NoError(t, err)
+
+	findEntry := func(name string) files.EntryWithDirPath {
+		for _, entry := range entries {
+			if entry.Name() == name {
+				return files.EntryWithDirPath{DirEntry: entry, Dir: tmpDir}
+			}
+		}
+		t.Fatalf("missing entry %s", name)
+		return files.EntryWithDirPath{}
+	}
+
+	fileStore := mockStore{root: url.URL{Scheme: "file"}}
+	rows := NewFileRows(&DirContext{Store: fileStore, Path: tmpDir})
+
+	t.Run("dir symlink", func(t *testing.T) {
+		entry := findEntry("link-dir")
+		assert.True(t, rows.isSymlinkToDir(entry))
+	})
+
+	t.Run("file symlink", func(t *testing.T) {
+		entry := findEntry("link-file")
+		assert.False(t, rows.isSymlinkToDir(entry))
+	})
+
+	t.Run("broken symlink", func(t *testing.T) {
+		entry := findEntry("broken-link")
+		assert.False(t, rows.isSymlinkToDir(entry))
+	})
+
+	t.Run("non-symlink", func(t *testing.T) {
+		entry := findEntry("target-dir")
+		assert.False(t, rows.isSymlinkToDir(entry))
+	})
+
+	t.Run("non-file store", func(t *testing.T) {
+		entry := findEntry("link-dir")
+		remoteStore := mockStore{root: url.URL{Scheme: "ftp"}}
+		remoteRows := NewFileRows(&DirContext{Store: remoteStore, Path: tmpDir})
+		assert.False(t, remoteRows.isSymlinkToDir(entry))
 	})
 }

@@ -122,7 +122,11 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 
 		name := dirEntry.Name()
 		if col == nameColIndex {
-			if dirEntry.IsDir() {
+			isDir := dirEntry.IsDir()
+			if !isDir {
+				isDir = r.isSymlinkToDir(dirEntry)
+			}
+			if isDir {
 				cell = tview.NewTableCell(dirEmoji + name)
 			} else {
 				cell = tview.NewTableCell("📄" + name)
@@ -170,6 +174,21 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		cell.SetReference(ref)
 	}
 	return cell
+}
+
+func (r *FileRows) isSymlinkToDir(entry files.EntryWithDirPath) bool {
+	if entry.Type()&os.ModeSymlink == 0 {
+		return false
+	}
+	if r.store == nil || r.store.RootURL().Scheme != "file" {
+		return false // TODO: Handle for FTP, HTTP & other stores?
+	}
+	fullName := entry.FullName()
+	info, err := os.Stat(fullName) // We can't use entry.Info() as it would return symlink info
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
 }
 
 func (r *FileRows) getTopRow(col int) *tview.TableCell {
