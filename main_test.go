@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -216,11 +217,14 @@ func Test_newFileTugApp_pprofError(t *testing.T) {
 	}()
 
 	listenCalled := make(chan struct{})
+	var listenOnce sync.Once
 	listenErr := errors.New("listen failed")
 	httpListenAndServe = func(addr string, handler http.Handler) error {
 		_ = addr
 		_ = handler
-		close(listenCalled)
+		listenOnce.Do(func() {
+			close(listenCalled)
+		})
 		return listenErr
 	}
 
