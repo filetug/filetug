@@ -31,11 +31,11 @@ Pull requests that improve tests are very welcome and will be very much apprecia
         <td>
             <ul>
                 <li>
-                    - It is fast!
+                    It is fast!
                     <ul>
-                        <li>- Non-blocking progressive UI (_that pulls data in the background_).</li>
-                        <li>Predictive pre-fetching</li>
-                        <li>Caching of data for network resources (_with in-background refresh_)
+                        <li>Non-blocking progressive UI (<i>that pulls data in the background</i>).</li>
+                        <li>Predictive pre-fetching (<i>to be implemented)</i></li>
+                        <li>Caching of data for network resources (<i>with in-background refresh - to be implemented</i>)
                     </ul>
                 </li>
                 <li>Smart summarizer that provides a concise overview of directory contents</li>
