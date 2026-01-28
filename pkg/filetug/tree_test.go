@@ -2,11 +2,16 @@ package filetug
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
@@ -65,6 +70,24 @@ func TestTree(t *testing.T) {
 		// Since we cleared children in a goroutine, it should have iterated a few times then stopped.
 	})
 
+	t.Run("doLoadingAnimation_queueUpdateDrawExecutes", func(t *testing.T) {
+		nav := NewNavigator(app)
+		tree := NewTree(nav)
+		loading := tview.NewTreeNode(" Loading...")
+		tree.rootNode.ClearChildren()
+		tree.rootNode.AddChild(loading)
+
+		queued := false
+		nav.queueUpdateDraw = func(f func()) {
+			queued = true
+			f()
+			tree.rootNode.ClearChildren()
+		}
+
+		tree.doLoadingAnimation(loading)
+		assert.True(t, queued)
+	})
+
 	t.Run("doLoadingAnimation_withoutQueueUpdateDraw", func(t *testing.T) {
 		loading := tview.NewTreeNode(" Loading...")
 		tree.rootNode.ClearChildren()
@@ -114,6 +137,106 @@ func TestTree(t *testing.T) {
 		// Test with string reference
 		node := tview.NewTreeNode("test").SetReference("/test")
 		tree.changed(node)
+	})
+
+	t.Run("changed_updatesDirSummaryPreview", func(t *testing.T) {
+		nav := NewNavigator(app)
+		nav.store = osfile.NewStore("/")
+		nav.dirSummary = newTestDirSummary(nav)
+		tree := NewTree(nav)
+
+		tempDir := t.TempDir()
+		err := os.WriteFile(filepath.Join(tempDir, "alpha.txt"), []byte("data"), 0644)
+		assert.NoError(t, err)
+
+		done := make(chan struct{})
+		var once sync.Once
+		nav.queueUpdateDraw = func(f func()) {
+			f()
+			once.Do(func() {
+				close(done)
+			})
+		}
+
+		node := tview.NewTreeNode("temp").SetReference(tempDir)
+		tree.changed(node)
+
+		select {
+		case <-done:
+		case <-time.After(200 * time.Millisecond):
+			t.Fatal("timeout waiting for dir summary update")
+		}
+
+		if assert.Len(t, nav.dirSummary.ExtStats, 1) {
+			assert.Equal(t, ".txt", nav.dirSummary.ExtStats[0].ID)
+		}
+	})
+
+	t.Run("updateDirSummaryPreview_usesNodeReference", func(t *testing.T) {
+		nav := NewNavigator(app)
+		nav.dirSummary = newTestDirSummary(nav)
+		nav.store = osfile.NewStore("/")
+		tree := NewTree(nav)
+
+		tempDir := t.TempDir()
+		err := os.WriteFile(filepath.Join(tempDir, "alpha.txt"), []byte("data"), 0644)
+		assert.NoError(t, err)
+
+		nav.current.dir = t.TempDir()
+		node := tview.NewTreeNode("temp").SetReference(tempDir)
+
+		tree.updateDirSummaryPreview(node)
+
+		if assert.Len(t, nav.dirSummary.ExtStats, 1) {
+			assert.Equal(t, ".txt", nav.dirSummary.ExtStats[0].ID)
+		}
+	})
+
+	t.Run("updateDirSummaryPreview_earlyReturn", func(t *testing.T) {
+		nav := NewNavigator(app)
+		tree := NewTree(nav)
+		tree.updateDirSummaryPreview(nil)
+	})
+
+	t.Run("updateDirSummaryPreview_emptyRef", func(t *testing.T) {
+		nav := NewNavigator(app)
+		nav.dirSummary = newTestDirSummary(nav)
+		tree := NewTree(nav)
+		node := tview.NewTreeNode("empty").SetReference("")
+		tree.updateDirSummaryPreview(node)
+	})
+
+	t.Run("updateDirSummaryPreview_nonStringRef", func(t *testing.T) {
+		nav := NewNavigator(app)
+		nav.dirSummary = newTestDirSummary(nav)
+		tree := NewTree(nav)
+		node := tview.NewTreeNode("bad").SetReference(123)
+		tree.updateDirSummaryPreview(node)
+	})
+
+	t.Run("updateDirSummaryPreview_storeNil", func(t *testing.T) {
+		oldGetState := getState
+		getState = func() (*ftstate.State, error) {
+			return nil, errors.New("disabled")
+		}
+		defer func() {
+			getState = oldGetState
+		}()
+		nav := NewNavigator(app)
+		nav.dirSummary = newTestDirSummary(nav)
+		nav.store = nil
+		tree := NewTree(nav)
+		node := tview.NewTreeNode("temp").SetReference(t.TempDir())
+		tree.updateDirSummaryPreview(node)
+	})
+
+	t.Run("updateDirSummaryPreview_readDirError", func(t *testing.T) {
+		nav := NewNavigator(app)
+		nav.dirSummary = newTestDirSummary(nav)
+		nav.store = &mockStoreWithHooks{readDirErr: errors.New("read failed")}
+		tree := NewTree(nav)
+		node := tview.NewTreeNode("temp").SetReference(t.TempDir())
+		tree.updateDirSummaryPreview(node)
 	})
 
 	t.Run("setError", func(t *testing.T) {

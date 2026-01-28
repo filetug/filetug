@@ -6,7 +6,7 @@ import (
 )
 
 type browser interface {
-	GetCurrentEntry() *files.EntryWithDirPath
+	GetCurrentEntry() files.EntryWithDirPath
 	tview.Primitive
 }
 

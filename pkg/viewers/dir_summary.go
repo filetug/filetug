@@ -105,7 +105,7 @@ func NewDirSummary(app *tview.Application, options ...DirSummaryOption) *DirSumm
 
 func (d *DirSummaryPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, queueUpdateDraw func(func())) {
 	d.queueUpdateDraw = queueUpdateDraw
-	dirPath := entry.Dir
+	dirPath := entry.DirPath()
 	if entry.IsDir() {
 		dirPath = entry.FullName()
 	}

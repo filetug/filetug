@@ -472,6 +472,7 @@ func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, di
 	if isTreeRootChanged {
 		nav.dirsTree.setDirContext(ctx, node, dirContext)
 	}
+	nav.previewer.PreviewEntry(dirContext)
 	nav.files.updateGitStatuses(ctx, dirContext)
 }
 

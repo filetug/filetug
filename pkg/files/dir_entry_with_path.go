@@ -1,33 +1,45 @@
 package files
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 )
 
-type EntryWithDirPath struct {
+type EntryWithDirPath interface {
 	os.DirEntry
-	Dir string
+	fmt.Stringer
+	DirPath() string
+	FullName() string
 }
 
-func (c EntryWithDirPath) FullName() string {
+type entryWithDirPath struct {
+	os.DirEntry
+	dirPath string
+}
+
+func (c entryWithDirPath) DirPath() string {
+	return c.dirPath
+}
+
+func (c entryWithDirPath) FullName() string {
 	name := c.Name()
-	return filepath.Join(c.Dir, name)
+	return filepath.Join(c.dirPath, name)
 }
 
-func (c EntryWithDirPath) String() string {
+func (c entryWithDirPath) String() string {
 	name := c.Name()
-	return path.Join(c.Dir, name)
+	return path.Join(c.dirPath, name)
 }
 
-func NewEntryWithDirPath(entry os.DirEntry, dir string) *EntryWithDirPath {
+func NewEntryWithDirPath(entry os.DirEntry, dirPath string) EntryWithDirPath {
 	name := entry.Name()
 	if namePath, _ := path.Split(name); namePath != "" {
-		panic("dir entry name with path: " + name)
+		panic("entry name should have no path: " + name)
 	}
-	return &EntryWithDirPath{
-		Dir:      dir,
+	return &entryWithDirPath{
+		dirPath:  dirPath,
 		DirEntry: entry,
 	}
 }

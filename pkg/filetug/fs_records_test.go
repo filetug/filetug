@@ -137,14 +137,14 @@ func TestFileRows_getTopRowNameParentReference(t *testing.T) {
 	cell := fr.getTopRowName()
 	ref := cell.GetReference()
 
-	entryRef, ok := ref.(*files.EntryWithDirPath)
+	entryRef, ok := ref.(files.EntryWithDirPath)
 	if !assert.True(t, ok) {
 		return
 	}
 	if !assert.NotNil(t, entryRef) {
 		return
 	}
-	dirPath := entryRef.Dir
+	dirPath := entryRef.DirPath()
 	name := entryRef.Name()
 	assert.Equal(t, "/", dirPath)
 	assert.Equal(t, "home", name)

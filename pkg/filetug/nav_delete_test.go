@@ -80,7 +80,7 @@ func TestFilesPanel_GetCurrentEntry_EdgeCases(t *testing.T) {
 
 	t.Run("empty_rows", func(t *testing.T) {
 		fp.rows = &FileRows{}
-		assert.Equal(t, (*files.EntryWithDirPath)(nil), fp.GetCurrentEntry())
+		assert.Equal(t, (files.EntryWithDirPath)(nil), fp.GetCurrentEntry())
 	})
 
 	t.Run("entry_with_no_dir_path_but_rows_has_dir", func(t *testing.T) {

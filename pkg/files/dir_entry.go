@@ -10,7 +10,7 @@ type DirEntryOption func(*DirEntry)
 func NewDirEntry(name string, isDir bool, o ...FileInfoOption) DirEntry {
 	if parent, _ := filepath.Split(name); parent != "" {
 		// It's OK to have panic here.
-		panic("dir entry name can not have path: " + name)
+		panic("dirPath entry name can not have path: " + name)
 	}
 	dirEntry := DirEntry{
 		name:  name,

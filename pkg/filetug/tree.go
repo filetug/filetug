@@ -100,8 +100,35 @@ func (t *Tree) changed(node *tview.TreeNode) {
 		var ctx context.Context
 		ctx, t.nav.cancel = context.WithCancel(context.Background())
 		t.nav.showDir(ctx, node, dir, false)
+		t.updateDirSummaryPreview(node)
 		ftstate.SaveSelectedTreeDir(dir)
 	}
+}
+
+func (t *Tree) updateDirSummaryPreview(node *tview.TreeNode) {
+	if t.nav == nil || t.nav.dirSummary == nil || node == nil {
+		return
+	}
+	ref, ok := node.GetReference().(string)
+	if !ok || ref == "" {
+		return
+	}
+	dirPath := fsutils.ExpandHome(ref)
+	if dirPath != "/" {
+		dirPath = strings.TrimSuffix(dirPath, "/")
+	}
+	if t.nav.store == nil {
+		t.nav.dirSummary.SetDir(dirPath, nil)
+		return
+	}
+	ctx := context.Background()
+	entries, err := t.nav.store.ReadDir(ctx, dirPath)
+	if err != nil {
+		t.nav.dirSummary.SetDir(dirPath, nil)
+		return
+	}
+	sortedEntries := sortDirChildren(entries)
+	t.nav.dirSummary.SetDir(dirPath, sortedEntries)
 }
 
 func (t *Tree) setError(node *tview.TreeNode, err error) {
@@ -310,7 +337,7 @@ func (e *treeDirEntry) IsDir() bool {
 	return e.isDir
 }
 
-func (t *Tree) GetCurrentEntry() *files.EntryWithDirPath {
+func (t *Tree) GetCurrentEntry() files.EntryWithDirPath {
 	node := t.tv.GetCurrentNode()
 	if node == nil {
 		return nil
@@ -321,10 +348,7 @@ func (t *Tree) GetCurrentEntry() *files.EntryWithDirPath {
 	}
 	p := ref.(string)
 	baseName := path.Base(p)
-	return &files.EntryWithDirPath{
-		Dir:      path.Dir(p),
-		DirEntry: &treeDirEntry{name: baseName, isDir: true},
-	}
+	return files.NewEntryWithDirPath(&treeDirEntry{name: baseName, isDir: true}, path.Dir(p))
 }
 
 func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirContext *DirContext) {

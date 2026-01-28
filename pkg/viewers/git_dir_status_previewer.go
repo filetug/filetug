@@ -79,7 +79,7 @@ func NewGitDirStatusPreviewer() *GitDirStatusPreviewer {
 }
 
 func (p *GitDirStatusPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, queueUpdateDraw func(func())) {
-	dirPath := entry.Dir
+	dirPath := entry.DirPath()
 	if entry.IsDir() {
 		dirPath = entry.FullName()
 	}

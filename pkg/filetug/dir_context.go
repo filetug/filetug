@@ -12,7 +12,10 @@ type DirItem struct {
 	Size  int64
 }
 
+var _ files.EntryWithDirPath = (*DirContext)(nil)
+
 type DirContext struct {
+	files.EntryWithDirPath
 	Store    files.Store
 	Path     string
 	children []os.DirEntry
@@ -21,10 +24,7 @@ type DirContext struct {
 func (c *DirContext) Entries() []files.EntryWithDirPath {
 	entries := make([]files.EntryWithDirPath, len(c.children))
 	for i, child := range c.children {
-		entries[i] = files.EntryWithDirPath{
-			DirEntry: child,
-			Dir:      c.Path,
-		}
+		entries[i] = files.NewEntryWithDirPath(child, c.Path)
 	}
 	return entries
 }
@@ -35,8 +35,9 @@ func (c *DirContext) Children() []os.DirEntry {
 
 func newDirContext(store files.Store, path string, children []os.DirEntry) *DirContext {
 	return &DirContext{
-		Store:    store,
-		Path:     path,
-		children: children,
+		EntryWithDirPath: nil, // TODO: assign from an argument
+		Store:            store,
+		Path:             path,
+		children:         children,
 	}
 }

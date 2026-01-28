@@ -31,24 +31,21 @@ type filesPanel struct {
 	loadingProgress int
 }
 
-func (f *filesPanel) GetCurrentEntry() *files.EntryWithDirPath {
+func (f *filesPanel) GetCurrentEntry() files.EntryWithDirPath {
 	row, _ := f.table.GetSelection()
 	if row >= len(f.rows.VisibleEntries) {
 		return nil
 	}
 	entry := f.rows.VisibleEntries[row]
-	if entry.Dir == "" {
+	if entry.DirPath() == "" {
 		if f.rows.Dir == nil {
 			_, _ = fmt.Fprintf(os.Stderr, "files panel missing dir path for entry %q\n", entry.Name())
 			return nil
 		}
-		entry = files.EntryWithDirPath{
-			DirEntry: entry.DirEntry,
-			Dir:      f.rows.Dir.Path,
-		}
+		entry = files.NewEntryWithDirPath(entry, f.rows.Dir.Path)
 	}
 
-	return &entry
+	return entry
 }
 
 //func (f *filesPanel) Clear() {
@@ -219,14 +216,13 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		row, _ := table.GetSelection()
 		nameCell := table.GetCell(row, 0)
 		refValue := nameCell.GetReference()
-		entry, ok := refValue.(*files.EntryWithDirPath)
+		entry, ok := refValue.(files.EntryWithDirPath)
 		if !ok || entry == nil {
 			return event
 		}
 		isDir := entry.IsDir()
 		if !isDir && f.rows != nil {
-			entryValue := *entry
-			isDir = f.rows.isSymlinkToDir(entryValue)
+			isDir = f.rows.isSymlinkToDir(entry)
 		}
 		if !isDir { // TODO: Open file for view?
 			return event
@@ -316,7 +312,7 @@ func (f *filesPanel) selectionChangedNavFunc(row, _ int) {
 	if entry == nil {
 		return
 	}
-	f.updatePreviewForEntry(*entry)
+	f.updatePreviewForEntry(entry)
 }
 
 // selectionChanged: TODO: is it a duplicate of selectionChangedNavFunc?
@@ -328,7 +324,7 @@ func (f *filesPanel) selectionChanged(row, _ int) {
 		}
 		return
 	}
-	f.updatePreviewForEntry(*entry)
+	f.updatePreviewForEntry(entry)
 }
 
 func (f *filesPanel) rememberCurrent(fullName string) {
@@ -336,7 +332,7 @@ func (f *filesPanel) rememberCurrent(fullName string) {
 	ftstate.SaveCurrentFileName(f.currentFileName)
 }
 
-func (f *filesPanel) entryFromRow(row int) *files.EntryWithDirPath {
+func (f *filesPanel) entryFromRow(row int) files.EntryWithDirPath {
 	if f.table == nil {
 		return nil
 	}
@@ -345,7 +341,7 @@ func (f *filesPanel) entryFromRow(row int) *files.EntryWithDirPath {
 	if ref == nil {
 		return nil
 	}
-	entry, ok := ref.(*files.EntryWithDirPath)
+	entry, ok := ref.(files.EntryWithDirPath)
 	if !ok || entry == nil {
 		return nil
 	}
@@ -386,7 +382,7 @@ func (f *filesPanel) showDirSummary(entry files.EntryWithDirPath) {
 	content := nav.dirSummary
 	nav.right.SetContent(content)
 
-	dirPath := entry.Dir
+	dirPath := entry.DirPath()
 	if entry.IsDir() {
 		dirPath = entry.FullName()
 	} else if f.rows != nil && f.rows.isSymlinkToDir(entry) {

@@ -413,7 +413,7 @@ func TestFilesPanel_entryFromRow_MissingData(t *testing.T) {
 	assert.Nil(t, entry)
 
 	nilRefCell := tview.NewTableCell("nil ref")
-	var nilEntry *files.EntryWithDirPath
+	var nilEntry files.EntryWithDirPath
 	nilRefCell.SetReference(nilEntry)
 	fp.table.SetCell(0, 0, nilRefCell)
 	entry = fp.entryFromRow(0)
