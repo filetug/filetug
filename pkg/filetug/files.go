@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -313,51 +312,97 @@ func (f *filesPanel) blur() {
 
 // selectionChangedNavFunc: TODO: is it a duplicate of selectionChangedNavFunc?
 func (f *filesPanel) selectionChangedNavFunc(row, _ int) {
-	cell := f.table.GetCell(row, 0)
-	ref := cell.GetReference()
-	if ref == nil {
+	entry := f.entryFromRow(row)
+	if entry == nil {
 		return
 	}
-	entry := ref.(*files.EntryWithDirPath)
-	f.nav.right.SetContent(f.nav.previewer)
-	f.nav.previewer.PreviewEntry(*entry)
+	f.updatePreviewForEntry(*entry)
 }
 
 // selectionChanged: TODO: is it a duplicate of selectionChangedNavFunc?
 func (f *filesPanel) selectionChanged(row, _ int) {
-	if row == 0 {
-		f.nav.previewer.textView.SetText("Selected dir: " + f.nav.current.dir)
-		f.nav.previewer.textView.SetTextColor(tcell.ColorWhiteSmoke)
+	entry := f.entryFromRow(row)
+	if entry == nil {
+		if f.nav != nil && f.nav.previewer != nil {
+			f.nav.previewer.SetText("cell has no reference")
+		}
 		return
 	}
-	cell := f.table.GetCell(row, 0)
-	ref := cell.GetReference()
-	if ref == nil {
-		f.nav.previewer.SetText("cell has no reference")
-		return
-	}
-
-	dirEntry := ref.(*files.EntryWithDirPath)
-	name := dirEntry.Name()
-	fullName := filepath.Join(dirEntry.Dir, name)
-	f.rememberCurrent(fullName)
-
-	stat, err := os.Stat(fullName)
-	if err != nil {
-		f.nav.previewer.SetErr(err)
-		return
-	}
-
-	if stat.IsDir() {
-		f.nav.previewer.SetTitle("Directory: " + name)
-		f.nav.previewer.SetText("")
-		return
-	}
-
-	f.nav.previewer.PreviewEntry(*dirEntry)
+	f.updatePreviewForEntry(*entry)
 }
 
 func (f *filesPanel) rememberCurrent(fullName string) {
 	_, f.currentFileName = path.Split(fullName)
 	ftstate.SaveCurrentFileName(f.currentFileName)
+}
+
+func (f *filesPanel) entryFromRow(row int) *files.EntryWithDirPath {
+	if f.table == nil {
+		return nil
+	}
+	cell := f.table.GetCell(row, 0)
+	ref := cell.GetReference()
+	if ref == nil {
+		return nil
+	}
+	entry, ok := ref.(*files.EntryWithDirPath)
+	if !ok || entry == nil {
+		return nil
+	}
+	return entry
+}
+
+func (f *filesPanel) updatePreviewForEntry(entry files.EntryWithDirPath) {
+	nav := f.nav
+	if nav == nil {
+		return
+	}
+	isDir := entry.IsDir()
+	if !isDir && f.rows != nil {
+		isDir = f.rows.isSymlinkToDir(entry)
+	}
+	if isDir {
+		f.showDirSummary(entry)
+		return
+	}
+
+	if nav.right != nil && nav.previewer != nil {
+		content := nav.previewer
+		nav.right.SetContent(content)
+	}
+	fullName := entry.FullName()
+	f.rememberCurrent(fullName)
+	if nav.previewer == nil {
+		return
+	}
+	nav.previewer.PreviewEntry(entry)
+}
+
+func (f *filesPanel) showDirSummary(entry files.EntryWithDirPath) {
+	nav := f.nav
+	if nav == nil || nav.dirSummary == nil || nav.right == nil {
+		return
+	}
+	content := nav.dirSummary
+	nav.right.SetContent(content)
+
+	dirPath := entry.Dir
+	if entry.IsDir() {
+		dirPath = entry.FullName()
+	} else if f.rows != nil && f.rows.isSymlinkToDir(entry) {
+		dirPath = entry.FullName()
+	}
+
+	if nav.store == nil {
+		nav.dirSummary.SetDir(dirPath, nil)
+		return
+	}
+	ctx := context.Background()
+	entries, err := nav.store.ReadDir(ctx, dirPath)
+	if err != nil {
+		nav.dirSummary.SetDir(dirPath, nil)
+		return
+	}
+	sortedEntries := sortDirChildren(entries)
+	nav.dirSummary.SetDir(dirPath, sortedEntries)
 }

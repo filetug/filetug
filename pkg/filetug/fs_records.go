@@ -258,6 +258,12 @@ func (r *FileRows) getTopRow(col int) *tview.TableCell {
 
 func (r *FileRows) getTopRowName() *tview.TableCell {
 	var cellText string
+	if r.store == nil {
+		cellText = ".."
+		cell := tview.NewTableCell(cellText)
+		cell.SetExpansion(1)
+		return cell
+	}
 	rootPath := r.store.RootURL().Path
 	if r.Dir.Path == rootPath {
 		cellText = "."

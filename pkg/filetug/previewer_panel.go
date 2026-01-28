@@ -149,7 +149,8 @@ func (p *previewerPanel) SetText(text string) {
 }
 
 func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
-	if info, err := entry.Info(); err == nil {
+	info, err := entry.Info()
+	if err == nil && info != nil {
 		size := info.Size()
 		sizeText := fsutils.GetSizeShortText(size)
 		p.sizeCell.SetText(sizeText)

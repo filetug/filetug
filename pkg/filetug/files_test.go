@@ -1,6 +1,7 @@
 package filetug
 
 import (
+	"context"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,9 +23,36 @@ func setupNavigatorForFilesTest(app *tview.Application) *Navigator {
 		},
 	}
 	nav.right = NewContainer(2, nav)
-	nav.previewer = &previewerPanel{textView: tview.NewTextView()}
+	nav.previewer = newPreviewerPanel(nav)
 	nav.dirsTree = &Tree{tv: tview.NewTreeView()}
 	return nav
+}
+
+type trackingStore struct {
+	root        url.URL
+	readDirPath string
+	entries     map[string][]os.DirEntry
+}
+
+func (t *trackingStore) RootTitle() string { return "Mock" }
+func (t *trackingStore) RootURL() url.URL  { return t.root }
+func (t *trackingStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
+	_, _ = ctx, name
+	t.readDirPath = name
+	entries := t.entries[name]
+	return entries, nil
+}
+func (t *trackingStore) CreateDir(ctx context.Context, p string) error {
+	_, _ = ctx, p
+	return nil
+}
+func (t *trackingStore) CreateFile(ctx context.Context, p string) error {
+	_, _ = ctx, p
+	return nil
+}
+func (t *trackingStore) Delete(ctx context.Context, p string) error {
+	_, _ = ctx, p
+	return nil
 }
 
 func TestNewFiles(t *testing.T) {
@@ -278,25 +306,39 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	app := tview.NewApplication()
 	nav := setupNavigatorForFilesTest(app)
 	nav.current.dir = "/test"
+	nav.dirSummary = newTestDirSummary(nav)
+
 	fp := newFiles(nav)
+	nav.files = fp
+
+	store := &trackingStore{
+		root: url.URL{Scheme: "file", Path: "/"},
+		entries: map[string][]os.DirEntry{
+			"/":           {mockDirEntry{name: "test", isDir: true}},
+			"/test/child": {mockDirEntry{name: "file.txt", isDir: false}},
+		},
+	}
+	nav.store = store
 
 	entries := []files.EntryWithDirPath{
-		{DirEntry: files.NewDirEntry("file1.txt", false)},
+		{DirEntry: files.NewDirEntry("child", true), Dir: "/test"},
 	}
-	rows := NewFileRows(&DirContext{Path: "/test"})
+	rows := NewFileRows(&DirContext{Store: store, Path: "/test"})
+	rows.AllEntries = entries
 	rows.VisibleEntries = entries
-	rows.VisualInfos = []os.FileInfo{
-		files.NewFileInfo(entries[0].DirEntry.(files.DirEntry)),
-	}
+	rows.VisualInfos = make([]os.FileInfo, len(entries))
 	fp.rows = rows
 	fp.table.SetContent(rows)
 
 	// Test row 0 (parent dir)
 	fp.selectionChanged(0, 0)
-	assert.Contains(t, nav.previewer.textView.GetText(true), "Selected dir: /test")
+	assert.Equal(t, nav.dirSummary, nav.right.content)
+	assert.Equal(t, "/", store.readDirPath)
 
-	// Test file row
+	// Test dir row
 	fp.selectionChanged(1, 0)
+	assert.Equal(t, nav.dirSummary, nav.right.content)
+	assert.Equal(t, "/test/child", store.readDirPath)
 }
 
 func TestFilesPanel_OnStoreChange(t *testing.T) {
@@ -321,4 +363,223 @@ func TestFilesPanel_selectionChangedNavFunc(t *testing.T) {
 
 	fp.table.SetCell(1, 0, tview.NewTableCell(" file1.txt"))
 	fp.selectionChangedNavFunc(1, 0)
+}
+
+type errorReadDirStore struct {
+	root        url.URL
+	readDirPath string
+	readErr     error
+}
+
+func (e *errorReadDirStore) RootTitle() string { return "Mock" }
+func (e *errorReadDirStore) RootURL() url.URL  { return e.root }
+func (e *errorReadDirStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
+	_, _ = ctx, name
+	e.readDirPath = name
+	return nil, e.readErr
+}
+func (e *errorReadDirStore) CreateDir(ctx context.Context, p string) error {
+	_, _ = ctx, p
+	return nil
+}
+func (e *errorReadDirStore) CreateFile(ctx context.Context, p string) error {
+	_, _ = ctx, p
+	return nil
+}
+func (e *errorReadDirStore) Delete(ctx context.Context, p string) error {
+	_, _ = ctx, p
+	return nil
+}
+
+func TestFilesPanel_entryFromRow_MissingData(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	fp := newFiles(nav)
+
+	fp.table = nil
+	entry := fp.entryFromRow(0)
+	assert.Nil(t, entry)
+
+	fp.table = tview.NewTable()
+	noRefCell := tview.NewTableCell("no ref")
+	fp.table.SetCell(0, 0, noRefCell)
+	entry = fp.entryFromRow(0)
+	assert.Nil(t, entry)
+
+	badRefCell := tview.NewTableCell("bad ref")
+	badRefCell.SetReference("not-an-entry")
+	fp.table.SetCell(0, 0, badRefCell)
+	entry = fp.entryFromRow(0)
+	assert.Nil(t, entry)
+
+	nilRefCell := tview.NewTableCell("nil ref")
+	var nilEntry *files.EntryWithDirPath
+	nilRefCell.SetReference(nilEntry)
+	fp.table.SetCell(0, 0, nilRefCell)
+	entry = fp.entryFromRow(0)
+	assert.Nil(t, entry)
+}
+
+func TestFilesPanel_updatePreviewForEntry_FileNoPreviewer(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	nav.previewer = nil
+	nav.right = NewContainer(2, nav)
+	fp := newFiles(nav)
+
+	entry := files.EntryWithDirPath{
+		DirEntry: files.NewDirEntry("file.txt", false),
+		Dir:      "/tmp",
+	}
+	fp.updatePreviewForEntry(entry)
+	assert.Equal(t, "file.txt", fp.currentFileName)
+	assert.Nil(t, nav.right.content)
+}
+
+func TestFilesPanel_updatePreviewForEntry_FileWithPreviewer(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	nav.right = NewContainer(2, nav)
+	nav.previewer = newPreviewerPanel(nav)
+	fp := newFiles(nav)
+
+	tempDir := t.TempDir()
+	filePath := filepath.Join(tempDir, "file.txt")
+	err := os.WriteFile(filePath, []byte("content"), 0o644)
+	if !assert.NoError(t, err) {
+		return
+	}
+	entries, err := os.ReadDir(tempDir)
+	if !assert.NoError(t, err) {
+		return
+	}
+	var fileEntry os.DirEntry
+	for _, entry := range entries {
+		if entry.Name() == "file.txt" {
+			fileEntry = entry
+			break
+		}
+	}
+	if !assert.NotNil(t, fileEntry) {
+		return
+	}
+
+	entry := files.EntryWithDirPath{
+		DirEntry: fileEntry,
+		Dir:      tempDir,
+	}
+	fp.updatePreviewForEntry(entry)
+	assert.Equal(t, nav.previewer, nav.right.content)
+}
+
+func TestFilesPanel_updatePreviewForEntry_Dir(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	nav.right = NewContainer(2, nav)
+	nav.dirSummary = newTestDirSummary(nav)
+	fp := newFiles(nav)
+
+	entry := files.EntryWithDirPath{
+		DirEntry: files.NewDirEntry("dir", true),
+		Dir:      "/tmp",
+	}
+	fp.updatePreviewForEntry(entry)
+	assert.Equal(t, nav.dirSummary, nav.right.content)
+}
+
+func TestFilesPanel_updatePreviewForEntry_NoNav(t *testing.T) {
+	fp := &filesPanel{}
+	entry := files.EntryWithDirPath{
+		DirEntry: files.NewDirEntry("file.txt", false),
+		Dir:      "/tmp",
+	}
+	fp.updatePreviewForEntry(entry)
+}
+
+func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	nav.right = NewContainer(2, nav)
+	nav.dirSummary = newTestDirSummary(nav)
+	fp := newFiles(nav)
+
+	entry := files.EntryWithDirPath{
+		DirEntry: files.NewDirEntry("dir", true),
+		Dir:      "/tmp",
+	}
+	fp.showDirSummary(entry)
+	assert.Equal(t, nav.dirSummary, nav.right.content)
+	assert.Len(t, nav.dirSummary.ExtStats, 0)
+}
+
+func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	nav.right = NewContainer(2, nav)
+	nav.dirSummary = newTestDirSummary(nav)
+	store := &errorReadDirStore{
+		root:    url.URL{Scheme: "file", Path: "/"},
+		readErr: assert.AnError,
+	}
+	nav.store = store
+	fp := newFiles(nav)
+
+	entry := files.EntryWithDirPath{
+		DirEntry: files.NewDirEntry("dir", true),
+		Dir:      "/tmp",
+	}
+	fp.showDirSummary(entry)
+	assert.Equal(t, nav.dirSummary, nav.right.content)
+	assert.Len(t, nav.dirSummary.ExtStats, 0)
+	assert.Equal(t, "/tmp/dir", store.readDirPath)
+}
+
+func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
+	app := tview.NewApplication()
+	nav := setupNavigatorForFilesTest(app)
+	nav.right = NewContainer(2, nav)
+	nav.dirSummary = newTestDirSummary(nav)
+	fp := newFiles(nav)
+
+	tempDir := t.TempDir()
+	targetDir := filepath.Join(tempDir, "target")
+	err := os.Mkdir(targetDir, 0o755)
+	if !assert.NoError(t, err) {
+		return
+	}
+	linkPath := filepath.Join(tempDir, "link")
+	err = os.Symlink(targetDir, linkPath)
+	if !assert.NoError(t, err) {
+		return
+	}
+	entries, err := os.ReadDir(tempDir)
+	if !assert.NoError(t, err) {
+		return
+	}
+	var linkEntry os.DirEntry
+	for _, entry := range entries {
+		if entry.Name() == "link" {
+			linkEntry = entry
+			break
+		}
+	}
+	if !assert.NotNil(t, linkEntry) {
+		return
+	}
+
+	store := &trackingStore{
+		root: url.URL{Scheme: "file", Path: "/"},
+		entries: map[string][]os.DirEntry{
+			linkPath: {},
+		},
+	}
+	nav.store = store
+	fp.rows = NewFileRows(&DirContext{Store: store, Path: tempDir})
+
+	entry := files.EntryWithDirPath{
+		DirEntry: linkEntry,
+		Dir:      tempDir,
+	}
+	fp.showDirSummary(entry)
+	assert.Equal(t, linkPath, store.readDirPath)
 }
