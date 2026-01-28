@@ -114,6 +114,9 @@ func (p *previewerPanel) createAttrsTable() *tview.Table {
 }
 
 func (p *previewerPanel) setPreviewer(previewer viewers.Previewer) {
+	if p.previewer == previewer {
+		return
+	}
 	if p.previewer != nil {
 		if meta := p.previewer.Meta(); meta != nil {
 			p.attrsRow.RemoveItem(meta)
@@ -164,38 +167,45 @@ func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 		_, name = path.Split(fullName)
 	}
 	p.SetTitle(name)
+
 	var previewer viewers.Previewer
+
 	if info != nil && info.IsDir() {
 		previewer = p.nav.dirSummary
 	} else {
 		switch name {
 		case ".DS_Store":
-			if _, ok := p.previewer.(*viewers.DsstorePreviewer); !ok {
+			if dsStorePreviewer, ok := p.previewer.(*viewers.DsstorePreviewer); ok {
+				previewer = dsStorePreviewer
+			} else {
 				previewer = viewers.NewDsstorePreviewer()
 			}
 		default:
 			nameExt := filepath.Ext(name)
 			ext := strings.ToLower(nameExt)
 			switch ext {
-			case ".json":
-				if _, ok := p.previewer.(*viewers.JsonPreviewer); !ok {
+			case ".json", ".jsonb":
+				if jsonPreviewer, ok := p.previewer.(*viewers.JsonPreviewer); ok {
+					previewer = jsonPreviewer
+				} else {
 					previewer = viewers.NewJsonPreviewer()
-					p.setPreviewer(previewer)
 				}
 			case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".riff", ".tiff", ".vp8", ".webp":
-				if _, ok := p.previewer.(*viewers.ImagePreviewer); !ok {
+				if imagePreviewer, ok := p.previewer.(*viewers.ImagePreviewer); ok {
+					previewer = imagePreviewer
+				} else {
 					previewer = viewers.NewImagePreviewer()
 				}
 			default:
-				if _, ok := p.previewer.(*viewers.TextPreviewer); !ok {
+				if textPreviewer, ok := p.previewer.(*viewers.TextPreviewer); ok {
+					previewer = textPreviewer
+				} else {
 					previewer = viewers.NewTextPreviewer()
 				}
 			}
 		}
 	}
 
-	if previewer != nil {
-		p.setPreviewer(previewer)
-		p.previewer.Preview(entry, nil, p.nav.queueUpdateDraw)
-	}
+	p.setPreviewer(previewer)
+	p.previewer.Preview(entry, nil, p.nav.queueUpdateDraw)
 }

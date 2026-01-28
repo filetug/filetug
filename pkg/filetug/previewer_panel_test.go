@@ -96,6 +96,7 @@ func TestPreviewer(t *testing.T) {
 		header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
 		_ = os.WriteFile(tmpFile.Name(), header, 0644)
 		previewFile(".DS_Store", tmpFile.Name())
+		previewFile(".DS_Store", tmpFile.Name())
 	})
 
 	t.Run("FocusBlur", func(t *testing.T) {
@@ -136,6 +137,29 @@ func TestPreviewer(t *testing.T) {
 		// Colorized output will have tags, but GetText(false) should strip them or show them depending on dynamic colors
 		// tview.TextView.GetText(false) returns the text without tags if dynamic colors are enabled.
 		waitForText(t, previewText, "a")
+	})
+
+	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
+		p.setPreviewer(nil)
+		firstFile, _ := os.CreateTemp("", "first*.json")
+		defer func() {
+			_ = os.Remove(firstFile.Name())
+		}()
+		secondFile, _ := os.CreateTemp("", "second*.json")
+		defer func() {
+			_ = os.Remove(secondFile.Name())
+		}()
+		err := os.WriteFile(firstFile.Name(), []byte(`{"first":1}`), 0644)
+		assert.NoError(t, err)
+		err = os.WriteFile(secondFile.Name(), []byte(`{"second":2}`), 0644)
+		assert.NoError(t, err)
+
+		previewFile(filepath.Base(firstFile.Name()), firstFile.Name())
+		waitForText(t, previewText, "first")
+
+		previewFile(filepath.Base(secondFile.Name()), secondFile.Name())
+		waitForText(t, previewText, "second")
+		assert.NotContains(t, previewText(), "first")
 	})
 
 	t.Run("InputCapture", func(t *testing.T) {
@@ -199,6 +223,13 @@ func TestPreviewer(t *testing.T) {
 		}
 		_ = os.WriteFile(tmpFile.Name(), pngData, 0644)
 		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
+
+		secondFile, _ := os.CreateTemp("", "test*.png")
+		defer func() {
+			_ = os.Remove(secondFile.Name())
+		}()
+		_ = os.WriteFile(secondFile.Name(), pngData, 0644)
+		previewFile(filepath.Base(secondFile.Name()), secondFile.Name())
 	})
 
 	t.Run("PreviewFile_ChromaError", func(t *testing.T) {
