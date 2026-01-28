@@ -442,7 +442,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirCont
 	if expandedDir != dirContext.Path {
 		dirContext = files.NewDirContext(dirContext.Store, expandedDir, dirContext.Children())
 	}
-	if nav.current.dir == expandedDir {
+	if nav.current.dir == expandedDir && !isTreeRootChanged {
 		return // TODO: Investigate and document why this happens or fix
 	}
 	nav.current.dir = expandedDir

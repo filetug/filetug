@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -168,6 +169,79 @@ func TestNavigator_goDir(t *testing.T) {
 		nav.onDataLoaded(ctx, node, dirContext, false)
 		assert.Equal(t, filepath.Base(tempDir), nav.previewer.GetTitle())
 	})
+}
+
+type mockReadDirStore struct {
+	root    url.URL
+	entries map[string][]os.DirEntry
+}
+
+func (m *mockReadDirStore) RootTitle() string { return "Mock" }
+func (m *mockReadDirStore) RootURL() url.URL  { return m.root }
+func (m *mockReadDirStore) ReadDir(ctx context.Context, path string) ([]os.DirEntry, error) {
+	_, _ = ctx, path
+	entries, ok := m.entries[path]
+	if !ok {
+		return nil, nil
+	}
+	return entries, nil
+}
+func (m *mockReadDirStore) CreateDir(ctx context.Context, path string) error {
+	_, _ = ctx, path
+	return nil
+}
+func (m *mockReadDirStore) CreateFile(ctx context.Context, path string) error {
+	_, _ = ctx, path
+	return nil
+}
+func (m *mockReadDirStore) Delete(ctx context.Context, path string) error {
+	_, _ = ctx, path
+	return nil
+}
+
+func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
+	oldSaveCurrentDir := saveCurrentDir
+	saveCurrentDir = func(string, string) {}
+	defer func() {
+		saveCurrentDir = oldSaveCurrentDir
+	}()
+
+	app := tview.NewApplication()
+	nav := NewNavigator(app)
+	entries := []os.DirEntry{
+		mockDirEntry{name: "child", isDir: true},
+	}
+	store := &mockReadDirStore{
+		root: url.URL{Scheme: "mock", Path: "/"},
+		entries: map[string][]os.DirEntry{
+			"/root": entries,
+		},
+	}
+	nav.store = store
+	nav.current.dir = "/root"
+
+	done := make(chan struct{})
+	var once sync.Once
+	nav.queueUpdateDraw = func(f func()) {
+		f()
+		once.Do(func() {
+			close(done)
+		})
+	}
+
+	dirContext := files.NewDirContext(nav.store, "/root", nil)
+	nav.goDir(dirContext)
+
+	select {
+	case <-done:
+	case <-time.After(500 * time.Millisecond):
+		t.Fatal("timeout waiting for tree refresh")
+	}
+
+	children := nav.dirsTree.rootNode.GetChildren()
+	if len(children) == 0 {
+		t.Fatal("expected tree children after goDir")
+	}
 }
 
 func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
