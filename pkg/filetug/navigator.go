@@ -463,7 +463,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir str
 }
 
 func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext, isTreeRootChanged bool) {
-	nav.dirSummary.SetDir(dirContext.Path, dirContext.Children())
+	nav.dirSummary.SetDirEntries(dirContext.Path, dirContext.Children())
 
 	//nav.filesPanel.Clear()
 	nav.files.table.SetSelectable(true, false)

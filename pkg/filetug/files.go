@@ -390,15 +390,15 @@ func (f *filesPanel) showDirSummary(entry files.EntryWithDirPath) {
 	}
 
 	if nav.store == nil {
-		nav.dirSummary.SetDir(dirPath, nil)
+		nav.dirSummary.SetDirEntries(dirPath, nil)
 		return
 	}
 	ctx := context.Background()
 	entries, err := nav.store.ReadDir(ctx, dirPath)
 	if err != nil {
-		nav.dirSummary.SetDir(dirPath, nil)
+		nav.dirSummary.SetDirEntries(dirPath, nil)
 		return
 	}
 	sortedEntries := sortDirChildren(entries)
-	nav.dirSummary.SetDir(dirPath, sortedEntries)
+	nav.dirSummary.SetDirEntries(dirPath, sortedEntries)
 }

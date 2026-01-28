@@ -114,7 +114,7 @@ func (d *DirSummaryPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, qu
 	if ok {
 		entries = dirContext.Children()
 	}
-	d.SetDir(dirPath, entries)
+	d.SetDirEntries(dirPath, entries)
 }
 
 func (d *DirSummaryPreviewer) Main() tview.Primitive {
@@ -156,13 +156,16 @@ type ExtStat struct {
 	entries []os.DirEntry
 }
 
-func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
+func (d *DirSummaryPreviewer) SetDirEntries(dirPath string, entries []os.DirEntry) {
+	if dirPath == d.dirPath {
+		return
+	}
 	d.dirPath = dirPath
 
-	d.extByID = make(map[string]*ExtStat)
-	d.ExtStats = make([]*ExtStat, 0)
-	d.extGroupsByID = make(map[string]*ExtensionsGroup)
-	d.ExtGroups = make([]*ExtensionsGroup, 0)
+	extByID := make(map[string]*ExtStat)
+	extStats := make([]*ExtStat, 0)
+	extGroupsByID := make(map[string]*ExtensionsGroup)
+	extGroups := make([]*ExtensionsGroup, 0)
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
@@ -172,13 +175,13 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 		if extID == name {
 			continue
 		}
-		ext, ok := d.extByID[extID]
+		ext, ok := extByID[extID]
 		if !ok {
 			ext = &ExtStat{
 				ID: extID,
 			}
-			d.extByID[extID] = ext
-			d.ExtStats = append(d.ExtStats, ext)
+			extByID[extID] = ext
+			extStats = append(extStats, ext)
 		}
 		ext.entries = append(ext.entries, entry)
 		ext.Count++
@@ -187,7 +190,7 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 		if groupID == "" {
 			groupID = otherExtensionsGroupID
 		}
-		extGroup, existingExtGroup := d.extGroupsByID[groupID]
+		extGroup, existingExtGroup := extGroupsByID[groupID]
 
 		if !existingExtGroup {
 			extGroup = &ExtensionsGroup{
@@ -198,8 +201,8 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 			if extGroup.Title == "" {
 				extGroup.Title = groupID + "s"
 			}
-			d.extGroupsByID[groupID] = extGroup
-			d.ExtGroups = append(d.ExtGroups, extGroup)
+			extGroupsByID[groupID] = extGroup
+			extGroups = append(extGroups, extGroup)
 		}
 		extGroup.Count++
 
@@ -215,11 +218,11 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 		}
 	}
 
-	slices.SortFunc(d.ExtStats, func(a, b *ExtStat) int {
+	slices.SortFunc(extStats, func(a, b *ExtStat) int {
 		return strings.Compare(a.ID, b.ID)
 	})
 
-	slices.SortFunc(d.ExtGroups, func(a, b *ExtensionsGroup) int {
+	slices.SortFunc(extGroups, func(a, b *ExtensionsGroup) int {
 		if a.ID == otherExtensionsGroupID {
 			return 1
 		}
@@ -229,7 +232,7 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 		return strings.Compare(a.Title, b.Title)
 	})
 
-	for _, group := range d.ExtGroups {
+	for _, group := range extGroups {
 		slices.SortFunc(group.ExtStats, func(a, b *ExtStat) int {
 			return strings.Compare(a.ID, b.ID)
 		})
@@ -244,6 +247,10 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 	}
 
 	if d.queueUpdateDraw == nil {
+		d.extByID = extByID
+		d.ExtStats = extStats
+		d.extGroupsByID = extGroupsByID
+		d.ExtGroups = extGroups
 		err := d.GetSizes()
 		if err == nil {
 			d.updateTable()
@@ -251,12 +258,20 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 		return
 	}
 
+	currentDirPath := dirPath
 	go func() {
-		err := d.GetSizes()
+		err := getSizesForGroups(extGroups)
 		if err != nil {
 			return
 		}
 		d.queueUpdate(func() {
+			if d.dirPath != currentDirPath {
+				return
+			}
+			d.extByID = extByID
+			d.ExtStats = extStats
+			d.extGroupsByID = extGroupsByID
+			d.ExtGroups = extGroups
 			d.updateTable()
 		})
 	}()
@@ -467,7 +482,11 @@ func GetSizeCell(size int64, defaultColor tcell.Color) *tview.TableCell {
 }
 
 func (d *DirSummaryPreviewer) GetSizes() error {
-	for _, g := range d.ExtGroups {
+	return getSizesForGroups(d.ExtGroups)
+}
+
+func getSizesForGroups(groups []*ExtensionsGroup) error {
+	for _, g := range groups {
 		g.TotalSize = 0
 		for _, ext := range g.ExtStats {
 			ext.TotalSize = 0

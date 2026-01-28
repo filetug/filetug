@@ -166,7 +166,7 @@ func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 	p.SetTitle(name)
 	var previewer viewers.Previewer
 	if info != nil && info.IsDir() {
-		previewer = viewers.NewDirSummary(p.nav.app)
+		previewer = p.nav.dirSummary
 	} else {
 		switch name {
 		case ".DS_Store":

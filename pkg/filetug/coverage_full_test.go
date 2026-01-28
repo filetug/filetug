@@ -52,9 +52,8 @@ func newTestDirSummary(nav *Navigator) *viewers.DirSummaryPreviewer {
 		nav.files.SetFilter(filter)
 	})
 	focusLeft := viewers.WithDirSummaryFocusLeft(func() {})
-	queueUpdate := viewers.WithDirSummaryQueueUpdateDraw(nav.queueUpdateDraw)
 	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
-	return viewers.NewDirSummary(nav.app, filterSetter, focusLeft, queueUpdate, colorByExt)
+	return viewers.NewDirSummary(nav.app, filterSetter, focusLeft, colorByExt)
 }
 func (m *mockStoreWithHooks) RootURL() url.URL { return m.root }
 
@@ -228,7 +227,7 @@ func TestDirSummary_UpdateTableAndGetSizes_Coverage(t *testing.T) {
 	typedNilEntry := mockDirEntryInfo{name: "typednil.txt", info: typedNil}
 	okInfo := mockDirEntryInfo{name: "size.txt", info: mockFileInfo{size: 5}}
 	entries := []os.DirEntry{nilInfoEntry, typedNilEntry, okInfo}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -244,7 +243,7 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 		mockDirEntry{name: "a.txt", isDir: false},
 		mockDirEntry{name: "b.png", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	ds.UpdateTable()
 
 	eventDown := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
@@ -1402,7 +1401,7 @@ func TestDirSummary_GetSizes_Error(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "bad.txt", err: errors.New("fail")},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	err := ds.GetSizes()
 	assert.Error(t, err)
 }
@@ -1483,7 +1482,7 @@ func TestDirSummary_InputCapture_Left(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 
 	left := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 	res := ds.InputCapture(left)
@@ -1635,7 +1634,7 @@ func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "nil.txt", info: nil},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -1887,7 +1886,7 @@ func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 
 	up := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 	ds.ExtTable.Select(0, 0)
@@ -1905,7 +1904,7 @@ func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 
 	down := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	rowCount := ds.ExtTable.GetRowCount()
@@ -2086,7 +2085,7 @@ func TestDirSummary_GetSizes_TypedNilInfo(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "typednil.txt", info: typedNil},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -2194,7 +2193,7 @@ func TestDirSummary_InputCapture_SkipGroupWithMultipleExt(t *testing.T) {
 		mockDirEntry{name: "c.png", isDir: false},
 		mockDirEntry{name: "d.jpg", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 
 	ds.ExtTable.Select(1, 0)
 	down := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)

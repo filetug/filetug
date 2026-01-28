@@ -3,6 +3,7 @@ package viewers
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/filetug/ftui"
@@ -50,7 +51,7 @@ func TestDirSummary_SetDir(t *testing.T) {
 		mockDirEntry{name: "data.json", isDir: false},
 	}
 
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 
 	var imageGroup *ExtensionsGroup
 	for _, g := range ds.ExtGroups {
@@ -128,7 +129,7 @@ func TestDirSummary_Extra(t *testing.T) {
 			mockDirEntry{name: "image1.png", isDir: false},
 			mockDirEntry{name: "video1.mp4", isDir: false},
 		}
-		ds.SetDir("/test", entries)
+		ds.SetDirEntries("/test/selection", entries)
 
 		ds.selectionChanged(1, 0)
 		assert.Len(t, lastFilter.Extensions, 1)
@@ -143,7 +144,7 @@ func TestDirSummary_Extra(t *testing.T) {
 			mockDirEntry{name: "image2.jpg", isDir: false},
 			mockDirEntry{name: "video1.mp4", isDir: false},
 		}
-		ds.SetDir("/test", entriesSkip)
+		ds.SetDirEntries("/test/input", entriesSkip)
 
 		eventLeft := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 		assert.Nil(t, ds.inputCapture(eventLeft))
@@ -172,7 +173,7 @@ func TestDirSummary_Extra(t *testing.T) {
 		entriesSingle := []os.DirEntry{
 			mockDirEntry{name: "video1.mp4", isDir: false},
 		}
-		ds.SetDir("/test", entriesSingle)
+		ds.SetDirEntries("/test/input/single", entriesSingle)
 		ds.ExtTable.Select(1, 0)
 		assert.Nil(t, ds.inputCapture(eventUp))
 
@@ -195,7 +196,7 @@ func TestDirSummary_Extra(t *testing.T) {
 				info:         nil,
 			},
 		}
-		ds.SetDir("/test", entries)
+		ds.SetDirEntries("/test/sizes", entries)
 		err := ds.GetSizes()
 		assert.Error(t, err)
 	})
@@ -236,7 +237,7 @@ func TestDirSummary_InputCapture_LeftWithoutFocus(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 
 	left := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 	res := ds.InputCapture(left)
@@ -258,7 +259,7 @@ func TestDirSummary_SetDir_WithRepo(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
 	}
-	ds.SetDir(tempDir, entries)
+	ds.SetDirEntries(tempDir, entries)
 	assert.NotNil(t, ds.tabs)
 }
 
@@ -301,7 +302,7 @@ func TestDirSummary_Preview_FileEntryAndError(t *testing.T) {
 
 	entries, err := os.ReadDir(tempDir)
 	assert.NoError(t, err)
-	ds.SetDir(tempDir, entries)
+	ds.SetDirEntries(tempDir, entries)
 	assert.NotEmpty(t, ds.ExtGroups)
 
 	fileEntry := files.NewEntryWithDirPath(mockDirEntry{name: "b.log", isDir: false}, tempDir)
@@ -340,7 +341,7 @@ func TestDirSummary_InputCapture_Edges(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	ds.ExtTable.Select(0, 0)
 
 	up := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
@@ -426,7 +427,7 @@ func TestDirSummary_GetSizes_NilAndTypedNil(t *testing.T) {
 			info:         typedNil,
 		},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -507,7 +508,7 @@ func TestDirSummary_SetDir_GetSizesErrorInQueue(t *testing.T) {
 			err:          assert.AnError,
 		},
 	}
-	ds.SetDir("/test", entries)
+	ds.SetDirEntries("/test", entries)
 }
 
 func TestDirSummary_UpdateTable_SingleCountForGroup(t *testing.T) {
@@ -543,4 +544,33 @@ func TestDirSummary_UpdateTable_SingleCountForGroup(t *testing.T) {
 	ds.UpdateTable()
 	cell := ds.ExtTable.GetCell(0, 2)
 	assert.Contains(t, cell.Text, "1")
+}
+
+func TestDirSummary_SetDirEntries_StaleQueueUpdate(t *testing.T) {
+	app := tview.NewApplication()
+	queueUpdates := make(chan func(), 2)
+	ds := NewDirSummary(app, WithDirSummaryQueueUpdateDraw(func(f func()) {
+		queueUpdates <- f
+	}))
+
+	entries := []os.DirEntry{
+		mockDirEntry{name: "a.txt", isDir: false},
+	}
+
+	ds.SetDirEntries("/first", entries)
+	var firstUpdate func()
+	select {
+	case firstUpdate = <-queueUpdates:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for first queue update")
+	}
+
+	ds.SetDirEntries("/second", entries)
+	firstUpdate()
+
+	select {
+	case nextUpdate := <-queueUpdates:
+		nextUpdate()
+	default:
+	}
 }
