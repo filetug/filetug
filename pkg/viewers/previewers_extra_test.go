@@ -83,7 +83,7 @@ func TestTextPreviewerPreviewPlainText(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, data, queueUpdateDraw)
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
@@ -103,7 +103,7 @@ func TestTextPreviewerPreviewWithLexer(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, data, queueUpdateDraw)
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
@@ -129,11 +129,53 @@ func TestTextPreviewerPreviewWithLexerError(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, data, queueUpdateDraw)
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
 	assert.Contains(t, text, "Failed to format file")
+}
+
+func TestTextPreviewerPreviewWithLexerDataErr(t *testing.T) {
+	previewer := NewTextPreviewer()
+	data := []byte("package main\n")
+	dir := filepath.Dir("main.go")
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "main.go"}, dir)
+
+	done := make(chan struct{})
+	queueUpdateDraw := func(fn func()) {
+		fn()
+		close(done)
+	}
+
+	dataErr := errors.New("bad json")
+	previewer.Preview(entry, data, dataErr, queueUpdateDraw)
+	waitForUpdate(t, done)
+
+	text := previewer.GetText(false)
+	assert.Contains(t, text, "[red]bad json[-]")
+	assert.Contains(t, text, "package")
+}
+
+func TestTextPreviewerPreviewPlainTextDataErr(t *testing.T) {
+	previewer := NewTextPreviewer()
+	data := []byte("plain text")
+	dir := filepath.Dir("note.unknownext")
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
+
+	done := make(chan struct{})
+	queueUpdateDraw := func(fn func()) {
+		fn()
+		close(done)
+	}
+
+	dataErr := errors.New("bad json")
+	previewer.Preview(entry, data, dataErr, queueUpdateDraw)
+	waitForUpdate(t, done)
+
+	text := previewer.GetText(false)
+	assert.Contains(t, text, "[red]bad json[-]")
+	assert.Contains(t, text, "plain text")
 }
 
 func TestTextPreviewerPreviewReadsFile(t *testing.T) {
@@ -153,7 +195,7 @@ func TestTextPreviewerPreviewReadsFile(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
@@ -169,7 +211,7 @@ func TestTextPreviewerPreviewReadFileError(t *testing.T) {
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: name, isDir: true}, dir)
 
 	queueUpdateDraw := func(fn func()) { fn() }
-	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
 	waitForText(t, previewer, "Failed to read file")
 }
 
@@ -184,8 +226,8 @@ func TestTextPreviewerPreviewReadFileError_Stale(t *testing.T) {
 		fn()
 	}
 
-	previewer.Preview(entry, nil, queueUpdateDraw)
-	previewer.Preview(entry, []byte("fresh"), func(fn func()) { fn() })
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
+	previewer.Preview(entry, []byte("fresh"), nil, func(fn func()) { fn() })
 	close(allow)
 }
 
@@ -195,7 +237,7 @@ func TestTextPreviewerPreviewQueueUpdateNil(t *testing.T) {
 	dir := filepath.Dir("note.unknownext")
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
 
-	previewer.Preview(entry, data, nil)
+	previewer.Preview(entry, data, nil, nil)
 	waitForText(t, previewer, "queue nil")
 }
 
@@ -218,8 +260,8 @@ func TestTextPreviewerPreviewStalePlain(t *testing.T) {
 		close(doneSecond)
 	}
 
-	previewer.Preview(entry, []byte("first"), queueUpdateFirst)
-	previewer.Preview(entry, []byte("second"), queueUpdateSecond)
+	previewer.Preview(entry, []byte("first"), nil, queueUpdateFirst)
+	previewer.Preview(entry, []byte("second"), nil, queueUpdateSecond)
 	waitForUpdate(t, doneSecond)
 
 	close(allowFirst)
@@ -249,8 +291,8 @@ func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
 		close(doneSecond)
 	}
 
-	previewer.Preview(lexerEntry, []byte("package main\n"), queueUpdateFirst)
-	previewer.Preview(plainEntry, []byte("second"), queueUpdateSecond)
+	previewer.Preview(lexerEntry, []byte("package main\n"), nil, queueUpdateFirst)
+	previewer.Preview(plainEntry, []byte("second"), nil, queueUpdateSecond)
 	waitForUpdate(t, doneSecond)
 
 	close(allowFirst)
@@ -271,10 +313,11 @@ func TestTextPreviewerMetaAndMain(t *testing.T) {
 }
 
 func TestPrettyJSONSuccess(t *testing.T) {
-	input := "{\"a\":1}"
+	input := []byte("{\"a\":1}")
 	output, err := prettyJSON(input)
 	assert.NoError(t, err)
-	assert.Contains(t, output, "\n  \"a\": 1\n")
+	outputText := string(output)
+	assert.Contains(t, outputText, "\n  \"a\": 1\n")
 }
 
 func TestJsonPreviewerPreviewReadsFile(t *testing.T) {
@@ -294,7 +337,7 @@ func TestJsonPreviewerPreviewReadsFile(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
@@ -305,7 +348,7 @@ func TestJsonPreviewerPreviewReadFileError(t *testing.T) {
 	previewer := NewJsonPreviewer()
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.json"}, t.TempDir())
 	queueUpdateDraw := func(func()) {}
-	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
 }
 func TestJsonPreviewerPreviewWithData(t *testing.T) {
 	previewer := NewJsonPreviewer()
@@ -319,11 +362,31 @@ func TestJsonPreviewerPreviewWithData(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, data, queueUpdateDraw)
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
 	assert.Contains(t, text, "\n  \"a\": 1\n")
+}
+
+func TestJsonPreviewerPreviewInvalidJSON(t *testing.T) {
+	previewer := NewJsonPreviewer()
+	data := []byte("{invalid}")
+	dir := filepath.Dir("bad.json")
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "bad.json"}, dir)
+
+	done := make(chan struct{})
+	queueUpdateDraw := func(fn func()) {
+		fn()
+		close(done)
+	}
+
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
+	waitForUpdate(t, done)
+
+	text := previewer.GetText(false)
+	assert.Contains(t, text, "[red]Invalid JSON:")
+	assert.Equal(t, 1, strings.Count(text, "Invalid JSON:"))
 }
 
 func TestDsstorePreviewerPreviewSuccess(t *testing.T) {
@@ -353,7 +416,7 @@ func TestDsstorePreviewerPreviewSuccess(t *testing.T) {
 	}
 
 	data := buffer.Bytes()
-	previewer.Preview(entry, data, queueUpdateDraw)
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
@@ -391,7 +454,7 @@ func TestDsstorePreviewerPreviewReadsFile(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	text := previewer.GetText(false)
@@ -402,7 +465,7 @@ func TestDsstorePreviewerPreviewReadFileError(t *testing.T) {
 	previewer := NewDsstorePreviewer()
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.DS_Store"}, t.TempDir())
 	queueUpdateDraw := func(func()) {}
-	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, nil, nil, queueUpdateDraw)
 }
 
 func TestDsstorePreviewerPreviewError(t *testing.T) {
@@ -412,7 +475,7 @@ func TestDsstorePreviewerPreviewError(t *testing.T) {
 
 	data := []byte("not a dsstore")
 	queueUpdateDraw := func(func()) {}
-	previewer.Preview(entry, data, queueUpdateDraw)
+	previewer.Preview(entry, data, nil, queueUpdateDraw)
 
 	text := previewer.GetText(false)
 	assert.Contains(t, text, "Failed to read")

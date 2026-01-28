@@ -106,7 +106,7 @@ func NewDirSummary(app *tview.Application, options ...DirSummaryOption) *DirSumm
 	return d
 }
 
-func (d *DirSummaryPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, queueUpdateDraw func(func())) {
+func (d *DirSummaryPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ error, queueUpdateDraw func(func())) {
 	d.queueUpdateDraw = queueUpdateDraw
 	dirContext, ok := entry.(*files.DirContext)
 	if ok {

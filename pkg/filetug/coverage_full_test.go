@@ -1813,7 +1813,7 @@ type mockPreviewer struct {
 	main tview.Primitive
 }
 
-func (m *mockPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ func(func())) {
+func (m *mockPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ error, _ func(func())) {
 	_ = entry
 }
 

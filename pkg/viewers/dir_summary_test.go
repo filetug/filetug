@@ -240,7 +240,7 @@ func TestDirSummary_PreviewAndOptions(t *testing.T) {
 	assert.NoError(t, writeErr)
 
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "temp", isDir: true}, tempDir)
-	ds.Preview(entry, nil, ds.queueUpdateDraw)
+	ds.Preview(entry, nil, nil, ds.queueUpdateDraw)
 
 	ds.queueUpdate(func() {})
 	assert.True(t, queueCalled)
@@ -526,10 +526,10 @@ func TestDirSummary_Preview_FileEntryAndError(t *testing.T) {
 	assert.NotEmpty(t, ds.ExtGroups)
 
 	fileEntry := files.NewEntryWithDirPath(mockDirEntry{name: "b.log", isDir: false}, tempDir)
-	ds.Preview(fileEntry, nil, nil)
+	ds.Preview(fileEntry, nil, nil, nil)
 
 	badEntry := files.NewEntryWithDirPath(mockDirEntry{name: "missing", isDir: true}, tempDir+"/nope")
-	ds.Preview(badEntry, nil, nil)
+	ds.Preview(badEntry, nil, nil, nil)
 }
 
 func TestDirSummary_Preview_DirContext(t *testing.T) {
@@ -540,7 +540,7 @@ func TestDirSummary_Preview_DirContext(t *testing.T) {
 		mockDirEntry{name: "a.txt", isDir: false},
 	})
 
-	ds.Preview(dirContext, nil, nil)
+	ds.Preview(dirContext, nil, nil, nil)
 	assert.NotEmpty(t, ds.ExtGroups)
 }
 

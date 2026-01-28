@@ -32,7 +32,7 @@ func NewImagePreviewer() *ImagePreviewer {
 	return previewer
 }
 
-func (p ImagePreviewer) Preview(entry files.EntryWithDirPath, _ []byte, queueUpdateDraw func(func())) {
+func (p ImagePreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ error, queueUpdateDraw func(func())) {
 	go func() {
 		fullName := entry.FullName()
 		meta := p.GetMeta(fullName)

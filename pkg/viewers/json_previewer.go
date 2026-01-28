@@ -3,6 +3,7 @@ package viewers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	"github.com/filetug/filetug/pkg/files"
 )
@@ -20,7 +21,7 @@ func NewJsonPreviewer() *JsonPreviewer {
 	}
 }
 
-func (p JsonPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queueUpdateDraw func(func())) {
+func (p JsonPreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataErr error, queueUpdateDraw func(func())) {
 	if data == nil {
 		var err error
 		data, err = p.readFile(entry, 0)
@@ -28,17 +29,26 @@ func (p JsonPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queueU
 			return
 		}
 	}
-	dataText := string(data)
-	str, _ := prettyJSON(dataText)
-	data = []byte(str)
-	p.TextPreviewer.Preview(entry, data, queueUpdateDraw)
+	formatted, err := prettyJSON(data)
+	if err != nil {
+		errText := err.Error()
+		prefix := "Invalid JSON: " + errText + "\n"
+		data = append([]byte(prefix), data...)
+		dataErr = fmt.Errorf("Invalid JSON: %w", err)
+	} else {
+		data = formatted
+		dataErr = nil
+	}
+	p.TextPreviewer.Preview(entry, data, dataErr, queueUpdateDraw)
 }
 
-func prettyJSON(input string) (string, error) {
+const jsonIndent = "  "
+
+func prettyJSON(input []byte) ([]byte, error) {
 	var out bytes.Buffer
-	err := json.Indent(&out, []byte(input), "", "  ") // 2-space indent
+	err := json.Indent(&out, input, "", jsonIndent)
 	if err != nil {
 		return input, err
 	}
-	return out.String(), nil
+	return out.Bytes(), nil
 }

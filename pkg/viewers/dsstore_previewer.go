@@ -23,7 +23,7 @@ func NewDsstorePreviewer() *DsstorePreviewer {
 	}
 }
 
-func (p DsstorePreviewer) Preview(entry files.EntryWithDirPath, data []byte, queueUpdateDraw func(func())) {
+func (p DsstorePreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataErr error, queueUpdateDraw func(func())) {
 	if data == nil {
 		fullName := entry.FullName()
 		var err error
@@ -46,5 +46,5 @@ func (p DsstorePreviewer) Preview(entry files.EntryWithDirPath, data []byte, que
 	}
 	content := sb.String()
 	data = []byte(content)
-	p.TextPreviewer.Preview(entry, data, queueUpdateDraw)
+	p.TextPreviewer.Preview(entry, data, dataErr, queueUpdateDraw)
 }

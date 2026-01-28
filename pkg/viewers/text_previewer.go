@@ -1,6 +1,7 @@
 package viewers
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -31,7 +32,7 @@ func NewTextPreviewer() *TextPreviewer {
 	}
 }
 
-func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queueUpdateDraw func(func())) {
+func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataErr error, queueUpdateDraw func(func())) {
 	if queueUpdateDraw == nil {
 		queueUpdateDraw = func(f func()) { f() }
 	}
@@ -51,14 +52,29 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queue
 				return
 			}
 		}
+		dataErrPrefix := ""
+		if dataErr != nil {
+			dataErrPrefix = dataErr.Error() + "\n"
+			prefixBytes := []byte(dataErrPrefix)
+			if bytes.HasPrefix(data, prefixBytes) {
+				data = data[len(prefixBytes):]
+			}
+		}
 		name := entry.Name()
 		if lexer := lexers.Match(name); lexer == nil {
 			queueUpdateDraw(func() {
 				if !p.isCurrentPreview(previewID) {
 					return
 				}
+				dataText := string(data)
+				if dataErr != nil {
+					errorLine := "[red]" + dataErr.Error() + "[-]\n"
+					p.SetDynamicColors(true)
+					p.SetText(errorLine + dataText)
+					return
+				}
 				p.SetDynamicColors(false)
-				p.SetText(string(data))
+				p.SetText(dataText)
 			})
 		} else {
 			colorized, err := chroma2tcell.Colorize(string(data), "dracula", lexer)
@@ -73,6 +89,9 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queue
 				}
 				p.Clear()
 				p.SetDynamicColors(true)
+				if dataErr != nil {
+					colorized = fmt.Sprintf("[red]%s[-]\n%s", dataErr.Error(), colorized)
+				}
 				p.SetText(colorized)
 				p.SetWrap(true)
 			})

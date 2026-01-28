@@ -207,5 +207,5 @@ func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 	}
 
 	p.setPreviewer(previewer)
-	p.previewer.Preview(entry, nil, p.nav.queueUpdateDraw)
+	p.previewer.Preview(entry, nil, nil, p.nav.queueUpdateDraw)
 }
