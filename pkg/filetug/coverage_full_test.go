@@ -238,22 +238,37 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
-		mockDirEntry{name: "b.log", isDir: false},
-		mockDirEntry{name: "c.png", isDir: false},
-		mockDirEntry{name: "d.jpg", isDir: false},
+		mockDirEntry{name: "b.png", isDir: false},
 	}
 	ds.SetDir("/test", entries)
+	ds.UpdateTable()
 
 	eventDown := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	eventUp := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 
-	ds.ExtTable.Select(2, 0)
-	res := ds.InputCapture(eventDown)
-	assert.Nil(t, res)
+	found := false
+	for row := 0; row < ds.ExtTable.GetRowCount()-1; row++ {
+		nextCell := ds.ExtTable.GetCell(row+1, 1)
+		if nextCell == nil {
+			continue
+		}
+		ref, ok := nextCell.Reference.(*viewers.ExtensionsGroup)
+		if !ok || ref == nil || len(ref.ExtStats) != 1 {
+			continue
+		}
+		ds.ExtTable.Select(row, 0)
+		res := ds.InputCapture(eventDown)
+		assert.Nil(t, res)
+		found = true
+		break
+	}
+	if !found {
+		t.Fatal("expected a single-extension group for KeyDown test")
+	}
 
 	ds.ExtTable.Select(1, 0)
 	_ = ds.InputCapture(eventUp)
@@ -299,7 +314,7 @@ func TestFilesPanel_GetCurrentEntry_ExtraBranches(t *testing.T) {
 
 	rows := &FileRows{
 		VisibleEntries: []files.EntryWithDirPath{
-			{DirEntry: mockDirEntry{name: "file.txt", isDir: false}},
+			files.NewEntryWithDirPath(mockDirEntry{name: "file.txt", isDir: false}, ""),
 		},
 	}
 	fp.rows = rows
@@ -365,29 +380,29 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 	ctx := context.Background()
 
 	fp.nav = nil
-	fp.updateGitStatuses(ctx, &DirContext{})
+	fp.updateGitStatuses(ctx, &files.DirContext{})
 
 	fp.nav = nav
 	fp.rows = nil
-	fp.updateGitStatuses(ctx, &DirContext{})
+	fp.updateGitStatuses(ctx, &files.DirContext{})
 
-	fp.rows = NewFileRows(&DirContext{})
+	fp.rows = NewFileRows(&files.DirContext{})
 	fp.updateGitStatuses(ctx, nil)
 
 	nav.store = mockStore{root: url.URL{Scheme: "http"}}
-	fp.rows = NewFileRows(&DirContext{})
-	nonFileDir := &DirContext{Path: t.TempDir()}
+	fp.rows = NewFileRows(&files.DirContext{})
+	nonFileDir := &files.DirContext{Path: t.TempDir()}
 	fp.updateGitStatuses(ctx, nonFileDir)
 
 	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
-	noRepoDir := &DirContext{Path: t.TempDir()}
+	noRepoDir := &files.DirContext{Path: t.TempDir()}
 	fp.updateGitStatuses(ctx, noRepoDir)
 
 	badRepoDir := t.TempDir()
 	gitDir := filepath.Join(badRepoDir, ".git")
 	mkdirErr := os.Mkdir(gitDir, 0755)
 	assert.NoError(t, mkdirErr)
-	badRepoContext := &DirContext{Path: badRepoDir}
+	badRepoContext := &files.DirContext{Path: badRepoDir}
 	fp.updateGitStatuses(ctx, badRepoContext)
 
 	repoDir := t.TempDir()
@@ -398,12 +413,9 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 	writeErr := os.WriteFile(filePath, []byte("content"), 0644)
 	assert.NoError(t, writeErr)
 
-	dirContext := &DirContext{Path: repoDir}
+	dirContext := &files.DirContext{Path: repoDir}
 	rows := NewFileRows(dirContext)
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("file.txt", false),
-		Dir:      repoDir,
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), repoDir)
 	rows.AllEntries = []files.EntryWithDirPath{entry}
 	rows.VisibleEntries = rows.AllEntries
 	fp.rows = rows
@@ -447,12 +459,9 @@ func TestFilesPanel_UpdateGitStatuses_Branches(t *testing.T) {
 	writeErr := os.WriteFile(filePath, []byte("content"), 0644)
 	assert.NoError(t, writeErr)
 
-	dirContext := &DirContext{Path: repoDir}
+	dirContext := &files.DirContext{Path: repoDir}
 	rows := NewFileRows(dirContext)
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("file.txt", false),
-		Dir:      repoDir,
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), repoDir)
 	rows.AllEntries = []files.EntryWithDirPath{entry}
 	rows.VisibleEntries = rows.AllEntries
 	fp.rows = rows
@@ -534,10 +543,10 @@ func TestFilesPanel_SelectionChanged_ExtraBranches(t *testing.T) {
 	dirEntry := files.NewDirEntry("sub", true)
 	modTime := files.ModTime(time.Now())
 	fileEntry := files.NewDirEntry("file.txt", false, files.Size(1), modTime)
-	rows := NewFileRows(&DirContext{Path: tempDir})
+	rows := NewFileRows(&files.DirContext{Path: tempDir})
 	rows.AllEntries = []files.EntryWithDirPath{
-		{DirEntry: dirEntry, Dir: tempDir},
-		{DirEntry: fileEntry, Dir: tempDir},
+		files.NewEntryWithDirPath(dirEntry, tempDir),
+		files.NewEntryWithDirPath(fileEntry, tempDir),
 	}
 	rows.VisibleEntries = rows.AllEntries
 	fp.rows = rows
@@ -548,12 +557,12 @@ func TestFilesPanel_SelectionChanged_ExtraBranches(t *testing.T) {
 	fp.selectionChanged(1, 0)
 
 	dirCell := tview.NewTableCell("dir")
-	dirCell.SetReference(&rows.AllEntries[0])
+	dirCell.SetReference(rows.AllEntries[0])
 	fp.table.SetCell(1, 0, dirCell)
 	fp.selectionChanged(1, 0)
 
 	fileCell := tview.NewTableCell("file")
-	fileCell.SetReference(&rows.AllEntries[1])
+	fileCell.SetReference(rows.AllEntries[1])
 	fp.table.SetCell(2, 0, fileCell)
 	fp.selectionChanged(2, 0)
 }
@@ -995,7 +1004,7 @@ func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
 		t.Fatal("expected entry to be non-nil after setting reference")
 	}
 	expectedDir := path.Dir("/root")
-	assert.Equal(t, expectedDir, entry.Dir)
+	assert.Equal(t, expectedDir, entry.DirPath())
 }
 
 func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
@@ -1288,8 +1297,8 @@ func TestFilesPanel_SelectionChanged_ErrorPath(t *testing.T) {
 	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 
-	rows := NewFileRows(&DirContext{Path: "/non-existent"})
-	entry := files.EntryWithDirPath{DirEntry: files.NewDirEntry("missing.txt", false), Dir: "/non-existent"}
+	rows := NewFileRows(&files.DirContext{Path: "/non-existent"})
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("missing.txt", false), "/non-existent")
 	rows.VisibleEntries = []files.EntryWithDirPath{entry}
 	fp.rows = rows
 	fp.table.SetContent(rows)
@@ -1405,9 +1414,9 @@ func TestFilesPanel_SelectionChangedNavFunc_SetsPreview(t *testing.T) {
 
 	modTime := files.ModTime(time.Now())
 	dirEntry := files.NewDirEntry("file.txt", false, files.Size(1), modTime)
-	entry := files.EntryWithDirPath{DirEntry: dirEntry, Dir: "/tmp"}
+	entry := files.NewEntryWithDirPath(dirEntry, "/tmp")
 	cell := tview.NewTableCell("file")
-	cell.SetReference(&entry)
+	cell.SetReference(entry)
 	fp.table.SetCell(1, 0, cell)
 	fp.selectionChangedNavFunc(1, 0)
 }
@@ -1444,7 +1453,7 @@ func TestNavigator_ShowDir_ReadError(t *testing.T) {
 		root:       url.URL{Scheme: "file", Path: "/"},
 		readDirErr: errors.New("read error"),
 	}
-	nav.current.dir = "/tmp"
+	nav.current.dir = "/other"
 
 	node := tview.NewTreeNode("node")
 	node.SetReference("/tmp")
@@ -1469,7 +1478,7 @@ func TestDirSummary_InputCapture_Left(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
@@ -1582,13 +1591,10 @@ func TestNavigator_Delete_WithError(t *testing.T) {
 	nav.store = errStore
 	nav.activeCol = 1
 
-	dirContext := &DirContext{Path: "/tmp", Store: errStore}
+	dirContext := &files.DirContext{Path: "/tmp", Store: errStore}
 	rows := NewFileRows(dirContext)
 	dirEntry := files.NewDirEntry("file.txt", false)
-	entry := files.EntryWithDirPath{
-		DirEntry: dirEntry,
-		Dir:      "/tmp",
-	}
+	entry := files.NewEntryWithDirPath(dirEntry, "/tmp")
 	rows.AllEntries = []files.EntryWithDirPath{entry}
 	rows.VisibleEntries = rows.AllEntries
 	info := files.NewFileInfo(dirEntry)
@@ -1707,10 +1713,10 @@ func TestFilesPanel_SelectionChanged_WithDirAndFile(t *testing.T) {
 	dirEntry := files.NewDirEntry("dir", true)
 	modTime := files.ModTime(time.Now())
 	fileEntry := files.NewDirEntry("file.txt", false, files.Size(1), modTime)
-	rows := NewFileRows(&DirContext{Path: tempDir})
+	rows := NewFileRows(&files.DirContext{Path: tempDir})
 	rows.VisibleEntries = []files.EntryWithDirPath{
-		{DirEntry: dirEntry, Dir: tempDir},
-		{DirEntry: fileEntry, Dir: tempDir},
+		files.NewEntryWithDirPath(dirEntry, tempDir),
+		files.NewEntryWithDirPath(fileEntry, tempDir),
 	}
 	fp.rows = rows
 	fp.table.SetContent(rows)
@@ -1724,7 +1730,7 @@ func TestDirSummary_InputCapture_NoGroupRefs(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	cell := tview.NewTableCell("no-ref")
 	ds.ExtTable.SetCell(0, 1, cell)
@@ -1862,8 +1868,8 @@ func TestFilesPanel_SelectionChanged_WithError(t *testing.T) {
 	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 
-	rows := NewFileRows(&DirContext{Path: "/missing"})
-	entry := files.EntryWithDirPath{DirEntry: files.NewDirEntry("missing.txt", false), Dir: "/missing"}
+	rows := NewFileRows(&files.DirContext{Path: "/missing"})
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("missing.txt", false), "/missing")
 	rows.VisibleEntries = []files.EntryWithDirPath{entry}
 	fp.rows = rows
 	fp.table.SetContent(rows)
@@ -1876,7 +1882,7 @@ func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
@@ -1894,7 +1900,7 @@ func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
@@ -1913,7 +1919,7 @@ func TestDirSummary_InputCapture_AllBranches(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	groupOne := &viewers.ExtensionsGroup{ExtStats: []*viewers.ExtStat{{ID: ".a"}}}
 	groupTwo := &viewers.ExtensionsGroup{ExtStats: []*viewers.ExtStat{{ID: ".a"}, {ID: ".b"}}}
@@ -2135,12 +2141,9 @@ func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 	writeErr := os.WriteFile(filePath, []byte("content"), 0644)
 	assert.NoError(t, writeErr)
 
-	dirContext := &DirContext{Path: repoDir}
+	dirContext := &files.DirContext{Path: repoDir}
 	rows := NewFileRows(dirContext)
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("file.txt", false),
-		Dir:      repoDir,
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), repoDir)
 	rows.AllEntries = []files.EntryWithDirPath{entry}
 	rows.VisibleEntries = rows.AllEntries
 	fp.rows = rows
@@ -2171,9 +2174,9 @@ func TestFilesPanel_SelectionChangedNavFunc_WithRef(t *testing.T) {
 
 	modTime := files.ModTime(time.Now())
 	dirEntry := files.NewDirEntry("file.txt", false, files.Size(1), modTime)
-	entry := files.EntryWithDirPath{DirEntry: dirEntry, Dir: "/tmp"}
+	entry := files.NewEntryWithDirPath(dirEntry, "/tmp")
 	cell := tview.NewTableCell("file")
-	cell.SetReference(&entry)
+	cell.SetReference(entry)
 	fp.table.SetCell(1, 0, cell)
 	fp.selectionChangedNavFunc(1, 0)
 }
@@ -2183,7 +2186,7 @@ func TestDirSummary_InputCapture_SkipGroupWithMultipleExt(t *testing.T) {
 	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
-	nav.files.rows = NewFileRows(&DirContext{Path: "/test"})
+	nav.files.rows = NewFileRows(&files.DirContext{Path: "/test"})
 
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.go", isDir: false},

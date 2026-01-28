@@ -41,6 +41,13 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, queue
 			var err error
 			data, err = p.readFile(entry, 10*1024) // First 10KB
 			if err != nil {
+				errText := fmt.Sprintf("Failed to read file %s: %s", entry.FullName(), err.Error())
+				queueUpdateDraw(func() {
+					if !p.isCurrentPreview(previewID) {
+						return
+					}
+					p.showError(errText)
+				})
 				return
 			}
 		}
@@ -85,8 +92,6 @@ func (p *TextPreviewer) readFile(entry files.EntryWithDirPath, max int) (data []
 	fullName := entry.FullName()
 	data, err = fsutils.ReadFileData(fullName, max)
 	if err != nil && !errors.Is(err, io.EOF) {
-		errText := fmt.Sprintf("Failed to read file %s: %s", fullName, err.Error())
-		p.showError(errText)
 		return
 	}
 	return

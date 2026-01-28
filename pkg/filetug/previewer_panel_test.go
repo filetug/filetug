@@ -1,6 +1,7 @@
 package filetug
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,27 +11,11 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
-
-type mockDirEntryForPreviewer struct {
-	os.DirEntry
-	name string
-}
-
-func (m mockDirEntryForPreviewer) Name() string { return m.name }
-func (m mockDirEntryForPreviewer) IsDir() bool  { return false }
-func (m mockDirEntryForPreviewer) Type() os.FileMode {
-	return 0
-}
-func (m mockDirEntryForPreviewer) Info() (os.FileInfo, error) {
-	entry := files.NewDirEntry(m.name, false)
-	modTime := files.ModTime(time.Now())
-	info := files.NewFileInfo(entry, files.Size(0), modTime)
-	return info, nil
-}
 
 func waitForText(t *testing.T, getText func() string, needle string) {
 	t.Helper()
@@ -45,6 +30,14 @@ func waitForText(t *testing.T, getText func() string, needle string) {
 }
 
 func TestPreviewer(t *testing.T) {
+	oldGetState := getState
+	getState = func() (*ftstate.State, error) {
+		return nil, errors.New("disabled")
+	}
+	defer func() {
+		getState = oldGetState
+	}()
+
 	app := tview.NewApplication()
 	nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
 	if nav == nil {
@@ -54,10 +47,20 @@ func TestPreviewer(t *testing.T) {
 	p := nav.previewer
 
 	previewFile := func(name, fullName string) {
-		p.PreviewEntry(files.EntryWithDirPath{
-			DirEntry: mockDirEntryForPreviewer{name: name},
-			Dir:      filepath.Dir(fullName),
-		})
+		dirPath := filepath.Dir(fullName)
+		var entry files.EntryWithDirPath
+		if entries, err := os.ReadDir(dirPath); err == nil {
+			for _, dirEntry := range entries {
+				if dirEntry.Name() == name {
+					entry = files.NewEntryWithDirPath(dirEntry, dirPath)
+					break
+				}
+			}
+		}
+		if entry == nil {
+			entry = files.NewEntryWithDirPath(files.NewDirEntry(name, false), dirPath)
+		}
+		p.PreviewEntry(entry)
 	}
 	previewText := func() string {
 		if tv, ok := p.previewer.Main().(*tview.TextView); ok {
@@ -109,6 +112,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_PlainText", func(t *testing.T) {
+		p.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.txt")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -156,6 +160,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_NoLexer", func(t *testing.T) {
+		p.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -209,6 +214,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_Log", func(t *testing.T) {
+		p.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.log")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())

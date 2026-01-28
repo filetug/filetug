@@ -165,34 +165,37 @@ func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 	}
 	p.SetTitle(name)
 	var previewer viewers.Previewer
-	switch name {
-	case ".DS_Store":
-		if _, ok := p.previewer.(*viewers.DsstorePreviewer); !ok {
-			previewer = viewers.NewDsstorePreviewer()
-		}
-	default:
-		nameExt := filepath.Ext(name)
-		ext := strings.ToLower(nameExt)
-		switch ext {
-		case ".json":
-			if _, ok := p.previewer.(*viewers.JsonPreviewer); !ok {
-				previewer = viewers.NewJsonPreviewer()
-				p.setPreviewer(previewer)
-			}
-		case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".riff", ".tiff", ".vp8", ".webp":
-			if _, ok := p.previewer.(*viewers.ImagePreviewer); !ok {
-				previewer = viewers.NewImagePreviewer()
+	if info != nil && info.IsDir() {
+		previewer = viewers.NewDirSummary(p.nav.app)
+	} else {
+		switch name {
+		case ".DS_Store":
+			if _, ok := p.previewer.(*viewers.DsstorePreviewer); !ok {
+				previewer = viewers.NewDsstorePreviewer()
 			}
 		default:
-			if _, ok := p.previewer.(*viewers.TextPreviewer); !ok {
-				previewer = viewers.NewTextPreviewer()
+			nameExt := filepath.Ext(name)
+			ext := strings.ToLower(nameExt)
+			switch ext {
+			case ".json":
+				if _, ok := p.previewer.(*viewers.JsonPreviewer); !ok {
+					previewer = viewers.NewJsonPreviewer()
+					p.setPreviewer(previewer)
+				}
+			case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".riff", ".tiff", ".vp8", ".webp":
+				if _, ok := p.previewer.(*viewers.ImagePreviewer); !ok {
+					previewer = viewers.NewImagePreviewer()
+				}
+			default:
+				if _, ok := p.previewer.(*viewers.TextPreviewer); !ok {
+					previewer = viewers.NewTextPreviewer()
+				}
 			}
 		}
 	}
+
 	if previewer != nil {
 		p.setPreviewer(previewer)
-	}
-	if p.previewer != nil {
 		p.previewer.Preview(entry, nil, p.nav.queueUpdateDraw)
 	}
 }

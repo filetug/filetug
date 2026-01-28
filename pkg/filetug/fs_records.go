@@ -19,7 +19,7 @@ import (
 
 var _ tview.TableContent = (*FileRows)(nil)
 
-func NewFileRows(dir *DirContext) *FileRows {
+func NewFileRows(dir *files.DirContext) *FileRows {
 	if dir.Path != "/" {
 		dir.Path = strings.TrimSuffix(dir.Path, "/")
 	}
@@ -39,7 +39,7 @@ type FileRows struct {
 	tview.TableContentReadOnly
 	hideParent     bool
 	store          files.Store
-	Dir            *DirContext
+	Dir            *files.DirContext
 	AllEntries     []files.EntryWithDirPath
 	VisibleEntries []files.EntryWithDirPath
 	Infos          []os.FileInfo
@@ -220,7 +220,7 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 		}
 		color := GetColorByFileExt(name)
 		cell.SetTextColor(color)
-		cell.SetReference(&dirEntry)
+		cell.SetReference(dirEntry)
 	}
 	return cell
 }

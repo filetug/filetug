@@ -47,17 +47,25 @@ func (t *Tree) onStoreChange() {
 
 var spinner = []rune("▏▎▍▌▋▊▉█")
 
+type loadingUpdater struct {
+	node *tview.TreeNode
+	text string
+}
+
+func (u loadingUpdater) Update() {
+	u.node.SetText(u.text)
+}
+
 func (t *Tree) doLoadingAnimation(loading *tview.TreeNode) {
 	time.Sleep(50 * time.Millisecond)
 	if children := t.rootNode.GetChildren(); len(children) == 1 && children[0] == loading {
 		q, r := t.loadingProgress/len(spinner), t.loadingProgress%len(spinner)
 		progressBar := strings.Repeat("█", q) + string(spinner[r])
+		update := loadingUpdater{node: loading, text: " Loading... " + progressBar}
 		if t.nav != nil && t.nav.queueUpdateDraw != nil {
-			t.nav.queueUpdateDraw(func() {
-				loading.SetText(" Loading... " + progressBar)
-			})
+			t.nav.queueUpdateDraw(update.Update)
 		} else {
-			loading.SetText(" Loading... " + progressBar)
+			update.Update()
 		}
 		t.loadingProgress += 1
 		t.doLoadingAnimation(loading)
@@ -100,35 +108,8 @@ func (t *Tree) changed(node *tview.TreeNode) {
 		var ctx context.Context
 		ctx, t.nav.cancel = context.WithCancel(context.Background())
 		t.nav.showDir(ctx, node, dir, false)
-		t.updateDirSummaryPreview(node)
 		ftstate.SaveSelectedTreeDir(dir)
 	}
-}
-
-func (t *Tree) updateDirSummaryPreview(node *tview.TreeNode) {
-	if t.nav == nil || t.nav.dirSummary == nil || node == nil {
-		return
-	}
-	ref, ok := node.GetReference().(string)
-	if !ok || ref == "" {
-		return
-	}
-	dirPath := fsutils.ExpandHome(ref)
-	if dirPath != "/" {
-		dirPath = strings.TrimSuffix(dirPath, "/")
-	}
-	if t.nav.store == nil {
-		t.nav.dirSummary.SetDir(dirPath, nil)
-		return
-	}
-	ctx := context.Background()
-	entries, err := t.nav.store.ReadDir(ctx, dirPath)
-	if err != nil {
-		t.nav.dirSummary.SetDir(dirPath, nil)
-		return
-	}
-	sortedEntries := sortDirChildren(entries)
-	t.nav.dirSummary.SetDir(dirPath, sortedEntries)
 }
 
 func (t *Tree) setError(node *tview.TreeNode, err error) {
@@ -351,7 +332,7 @@ func (t *Tree) GetCurrentEntry() files.EntryWithDirPath {
 	return files.NewEntryWithDirPath(&treeDirEntry{name: baseName, isDir: true}, path.Dir(p))
 }
 
-func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirContext *DirContext) {
+func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext) {
 	node.ClearChildren()
 
 	var repo *git.Repository
@@ -362,7 +343,8 @@ func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirConte
 		}
 	}
 
-	for _, child := range dirContext.children {
+	children := dirContext.Children()
+	for _, child := range children {
 		name := child.Name()
 		if strings.HasPrefix(name, ".") {
 			continue

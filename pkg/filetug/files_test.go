@@ -70,7 +70,7 @@ func TestFilesPanel_SetRows(t *testing.T) {
 	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
 
-	dir := &DirContext{Path: "/test"}
+	dir := &files.DirContext{Path: "/test"}
 	rows := NewFileRows(dir)
 
 	fp.SetRows(rows, true)
@@ -83,7 +83,7 @@ func TestFilesPanel_SetFilter(t *testing.T) {
 	app := tview.NewApplication()
 	nav := setupNavigatorForFilesTest(app)
 	fp := newFiles(nav)
-	fp.rows = NewFileRows(&DirContext{})
+	fp.rows = NewFileRows(&files.DirContext{})
 
 	filter := ftui.Filter{ShowHidden: true}
 	fp.SetFilter(filter)
@@ -96,10 +96,10 @@ func TestFilesPanel_Selection(t *testing.T) {
 	fp := newFiles(nav)
 
 	entries := []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "file1.txt", isDir: false}},
-		{DirEntry: mockDirEntry{name: "file2.txt", isDir: false}},
+		files.NewEntryWithDirPath(mockDirEntry{name: "file1.txt", isDir: false}, ""),
+		files.NewEntryWithDirPath(mockDirEntry{name: "file2.txt", isDir: false}, ""),
 	}
-	rows := NewFileRows(&DirContext{Path: "/test"})
+	rows := NewFileRows(&files.DirContext{Path: "/test"})
 	rows.AllEntries = entries
 	rows.VisibleEntries = entries
 	rows.VisualInfos = make([]os.FileInfo, len(entries))
@@ -147,10 +147,10 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 
 	// For other tests that might need rows
 	entries := []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "file1.txt", isDir: false}},
-		{DirEntry: mockDirEntry{name: "dir1", isDir: true}},
+		files.NewEntryWithDirPath(mockDirEntry{name: "file1.txt", isDir: false}, ""),
+		files.NewEntryWithDirPath(mockDirEntry{name: "dir1", isDir: true}, ""),
 	}
-	rows := NewFileRows(&DirContext{Path: "/test"})
+	rows := NewFileRows(&files.DirContext{Path: "/test"})
 	rows.AllEntries = entries
 	rows.VisibleEntries = entries
 	rows.VisualInfos = make([]os.FileInfo, len(entries))
@@ -244,7 +244,7 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 	})
 
 	t.Run("KeyEnter_FileEntry", func(t *testing.T) {
-		dir := &DirContext{
+		dir := &files.DirContext{
 			Store: &mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}},
 			Path:  "/tmp",
 		}
@@ -287,13 +287,13 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 		}
 		fullNav := NewNavigator(app)
 		fp.nav = fullNav
-		fp.rows = NewFileRows(&DirContext{
+		fp.rows = NewFileRows(&files.DirContext{
 			Store: &mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}},
 			Path:  tempDir,
 		})
-		entry := files.EntryWithDirPath{DirEntry: linkEntry, Dir: tempDir}
+		entry := files.NewEntryWithDirPath(linkEntry, tempDir)
 		cell := tview.NewTableCell("link")
-		cell.SetReference(&entry)
+		cell.SetReference(entry)
 		fp.table.SetCell(0, 0, cell)
 		fp.table.Select(0, 0)
 		event := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
@@ -321,9 +321,9 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	nav.store = store
 
 	entries := []files.EntryWithDirPath{
-		{DirEntry: files.NewDirEntry("child", true), Dir: "/test"},
+		files.NewEntryWithDirPath(files.NewDirEntry("child", true), "/test"),
 	}
-	rows := NewFileRows(&DirContext{Store: store, Path: "/test"})
+	rows := NewFileRows(&files.DirContext{Store: store, Path: "/test"})
 	rows.AllEntries = entries
 	rows.VisibleEntries = entries
 	rows.VisualInfos = make([]os.FileInfo, len(entries))
@@ -427,10 +427,7 @@ func TestFilesPanel_updatePreviewForEntry_FileNoPreviewer(t *testing.T) {
 	nav.right = NewContainer(2, nav)
 	fp := newFiles(nav)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("file.txt", false),
-		Dir:      "/tmp",
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), "/tmp")
 	fp.updatePreviewForEntry(entry)
 	assert.Equal(t, "file.txt", fp.currentFileName)
 	assert.Nil(t, nav.right.content)
@@ -464,10 +461,7 @@ func TestFilesPanel_updatePreviewForEntry_FileWithPreviewer(t *testing.T) {
 		return
 	}
 
-	entry := files.EntryWithDirPath{
-		DirEntry: fileEntry,
-		Dir:      tempDir,
-	}
+	entry := files.NewEntryWithDirPath(fileEntry, tempDir)
 	fp.updatePreviewForEntry(entry)
 	assert.Equal(t, nav.previewer, nav.right.content)
 }
@@ -479,20 +473,14 @@ func TestFilesPanel_updatePreviewForEntry_Dir(t *testing.T) {
 	nav.dirSummary = newTestDirSummary(nav)
 	fp := newFiles(nav)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("dir", true),
-		Dir:      "/tmp",
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("dir", true), "/tmp")
 	fp.updatePreviewForEntry(entry)
 	assert.Equal(t, nav.dirSummary, nav.right.content)
 }
 
 func TestFilesPanel_updatePreviewForEntry_NoNav(t *testing.T) {
 	fp := &filesPanel{}
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("file.txt", false),
-		Dir:      "/tmp",
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), "/tmp")
 	fp.updatePreviewForEntry(entry)
 }
 
@@ -503,10 +491,7 @@ func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 	nav.dirSummary = newTestDirSummary(nav)
 	fp := newFiles(nav)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("dir", true),
-		Dir:      "/tmp",
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("dir", true), "/tmp")
 	fp.showDirSummary(entry)
 	assert.Equal(t, nav.dirSummary, nav.right.content)
 	assert.Len(t, nav.dirSummary.ExtStats, 0)
@@ -524,10 +509,7 @@ func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 	nav.store = store
 	fp := newFiles(nav)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: files.NewDirEntry("dir", true),
-		Dir:      "/tmp",
-	}
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("dir", true), "/tmp")
 	fp.showDirSummary(entry)
 	assert.Equal(t, nav.dirSummary, nav.right.content)
 	assert.Len(t, nav.dirSummary.ExtStats, 0)
@@ -574,12 +556,9 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 		},
 	}
 	nav.store = store
-	fp.rows = NewFileRows(&DirContext{Store: store, Path: tempDir})
+	fp.rows = NewFileRows(&files.DirContext{Store: store, Path: tempDir})
 
-	entry := files.EntryWithDirPath{
-		DirEntry: linkEntry,
-		Dir:      tempDir,
-	}
+	entry := files.NewEntryWithDirPath(linkEntry, tempDir)
 	fp.showDirSummary(entry)
 	assert.Equal(t, linkPath, store.readDirPath)
 }

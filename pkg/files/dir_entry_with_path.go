@@ -35,8 +35,10 @@ func (c entryWithDirPath) String() string {
 
 func NewEntryWithDirPath(entry os.DirEntry, dirPath string) EntryWithDirPath {
 	name := entry.Name()
-	if namePath, _ := path.Split(name); namePath != "" {
-		panic("entry name should have no path: " + name)
+	if name != "/" {
+		if namePath, _ := path.Split(name); namePath != "" {
+			panic("entry name should have no path: " + name)
+		}
 	}
 	return &entryWithDirPath{
 		dirPath:  dirPath,

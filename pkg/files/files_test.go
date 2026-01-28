@@ -10,7 +10,7 @@ import (
 func TestDirEntry(t *testing.T) {
 	t.Run("file", func(t *testing.T) {
 		name := "testfile"
-		isDir := false
+		const isDir = false
 		de := NewDirEntry(name, isDir)
 
 		if de.Name() != name {
@@ -33,7 +33,7 @@ func TestDirEntry(t *testing.T) {
 
 	t.Run("directory", func(t *testing.T) {
 		name := "testdir"
-		isDir := true
+		const isDir = true
 		de := NewDirEntry(name, isDir)
 
 		if de.Name() != name {
@@ -49,7 +49,7 @@ func TestDirEntry(t *testing.T) {
 
 	t.Run("with_info", func(t *testing.T) {
 		name := "testfile"
-		isDir := false
+		const isDir = false
 		size := int64(123)
 		modTime := time.Now()
 		de := NewDirEntry(name, isDir, Size(size), ModTime(modTime))
@@ -140,8 +140,8 @@ func TestEntryWithDirPath(t *testing.T) {
 	dir := "/home/user"
 	e := NewEntryWithDirPath(entry, dir)
 
-	if e.Dir != dir {
-		t.Errorf("expected Dir = %v, got %v", dir, e.Dir)
+	if e.DirPath() != dir {
+		t.Errorf("expected Dir = %v, got %v", dir, e.DirPath())
 	}
 	if e.Name() != "test.txt" {
 		t.Errorf("expected Name() = %v, got %v", "test.txt", e.Name())

@@ -150,10 +150,7 @@ func TestImagePreviewerNewAndPreview(t *testing.T) {
 	tmpDir := t.TempDir()
 	path := createImageFile(t, tmpDir, "preview.png", 20, 10, "png")
 	_ = path
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "preview.png"},
-		Dir:      tmpDir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "preview.png"}, tmpDir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {

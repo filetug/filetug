@@ -221,10 +221,7 @@ func TestDirSummary_PreviewAndOptions(t *testing.T) {
 	writeErr := os.WriteFile(filePath, []byte("hello"), 0644)
 	assert.NoError(t, writeErr)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "temp", isDir: true},
-		Dir:      tempDir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "temp", isDir: true}, tempDir)
 	ds.Preview(entry, nil, ds.queueUpdateDraw)
 
 	ds.queueUpdate(func() {})
@@ -302,18 +299,28 @@ func TestDirSummary_Preview_FileEntryAndError(t *testing.T) {
 	writeErr := os.WriteFile(filePath, []byte("log"), 0644)
 	assert.NoError(t, writeErr)
 
-	fileEntry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "b.log", isDir: false},
-		Dir:      tempDir,
-	}
-	ds.Preview(fileEntry, nil, nil)
+	entries, err := os.ReadDir(tempDir)
+	assert.NoError(t, err)
+	ds.SetDir(tempDir, entries)
 	assert.NotEmpty(t, ds.ExtGroups)
 
-	badEntry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "missing", isDir: true},
-		Dir:      tempDir + "/nope",
-	}
+	fileEntry := files.NewEntryWithDirPath(mockDirEntry{name: "b.log", isDir: false}, tempDir)
+	ds.Preview(fileEntry, nil, nil)
+
+	badEntry := files.NewEntryWithDirPath(mockDirEntry{name: "missing", isDir: true}, tempDir+"/nope")
 	ds.Preview(badEntry, nil, nil)
+}
+
+func TestDirSummary_Preview_DirContext(t *testing.T) {
+	app := tview.NewApplication()
+	ds := NewDirSummary(app)
+
+	dirContext := files.NewDirContext(nil, "/test", []os.DirEntry{
+		mockDirEntry{name: "a.txt", isDir: false},
+	})
+
+	ds.Preview(dirContext, nil, nil)
+	assert.NotEmpty(t, ds.ExtGroups)
 }
 
 func TestDirSummary_QueueUpdate_NoQueue(t *testing.T) {

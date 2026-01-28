@@ -5,11 +5,13 @@ import (
 	"errors"
 	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/gdamore/tcell/v2"
@@ -138,10 +140,7 @@ func TestNavigator_goDir(t *testing.T) {
 
 	t.Run("onDataLoaded_showNodeError", func(t *testing.T) {
 		node := tview.NewTreeNode("test").SetReference("/test")
-		dirContext := &DirContext{
-			Path:     "/test",
-			children: []os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}},
-		}
+		dirContext := files.NewDirContext(nav.store, "/test", []os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}})
 
 		ctx := context.Background()
 		nav.onDataLoaded(ctx, node, dirContext, true)
@@ -151,16 +150,23 @@ func TestNavigator_goDir(t *testing.T) {
 		nav.showNodeError(node, err)
 		nav.showNodeError(nil, err)
 	})
+
+	t.Run("onDataLoaded_updatesPreviewer", func(t *testing.T) {
+		tempDir := t.TempDir()
+		node := tview.NewTreeNode("temp").SetReference(tempDir)
+		dirContext := files.NewDirContext(osfile.NewStore("/"), tempDir,
+			[]os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}})
+		ctx := context.Background()
+		nav.onDataLoaded(ctx, node, dirContext, false)
+		assert.Equal(t, filepath.Base(tempDir), nav.previewer.GetTitle())
+	})
 }
 
 func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
 	app := tview.NewApplication()
 	nav := NewNavigator(app)
 	node := tview.NewTreeNode("test").SetReference("/test")
-	dirContext := &DirContext{
-		Path:     "/test",
-		children: []os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}},
-	}
+	dirContext := files.NewDirContext(nil, "/test", []os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}})
 	ctx := context.Background()
 	nav.onDataLoaded(ctx, node, dirContext, true)
 }

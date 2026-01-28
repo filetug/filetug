@@ -109,10 +109,10 @@ func (d *DirSummaryPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, qu
 	if entry.IsDir() {
 		dirPath = entry.FullName()
 	}
-	entries, err := os.ReadDir(dirPath)
-	if err != nil {
-		d.SetDir(dirPath, nil)
-		return
+	dirContext, ok := entry.(*files.DirContext)
+	var entries []os.DirEntry
+	if ok {
+		entries = dirContext.Children()
 	}
 	d.SetDir(dirPath, entries)
 }
@@ -129,6 +129,7 @@ func (d *DirSummaryPreviewer) Focus(delegate func(p tview.Primitive)) {
 	d.ExtTable.Focus(delegate)
 }
 
+// UpdateTable exported for tests - try to move/refactor tests and remove
 func (d *DirSummaryPreviewer) UpdateTable() {
 	d.updateTable()
 }
@@ -234,7 +235,7 @@ func (d *DirSummaryPreviewer) SetDir(dirPath string, entries []os.DirEntry) {
 		})
 	}
 
-	d.updateTable()
+	//d.updateTable()
 
 	hasRepo := gitutils.GetRepositoryRoot(dirPath) != ""
 	d.setTabs(hasRepo)

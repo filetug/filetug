@@ -110,7 +110,7 @@ func (f *filesPanel) SetRows(rows *FileRows, showDirs bool) {
 
 }
 
-func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *DirContext) {
+func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.DirContext) {
 	if f.nav == nil || f.rows == nil || dirContext == nil {
 		return
 	}

@@ -2,16 +2,13 @@ package filetug
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/filetug/filetug/pkg/files/osfile"
-	"github.com/filetug/filetug/pkg/filetug/ftstate"
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
@@ -78,13 +75,23 @@ func TestTree(t *testing.T) {
 		tree.rootNode.AddChild(loading)
 
 		queued := false
+		done := make(chan struct{})
+		var once sync.Once
 		nav.queueUpdateDraw = func(f func()) {
 			queued = true
 			f()
 			tree.rootNode.ClearChildren()
+			once.Do(func() {
+				close(done)
+			})
 		}
 
-		tree.doLoadingAnimation(loading)
+		go tree.doLoadingAnimation(loading)
+		select {
+		case <-done:
+		case <-time.After(200 * time.Millisecond):
+			t.Fatal("timeout waiting for queueUpdateDraw")
+		}
 		assert.True(t, queued)
 	})
 
@@ -137,106 +144,6 @@ func TestTree(t *testing.T) {
 		// Test with string reference
 		node := tview.NewTreeNode("test").SetReference("/test")
 		tree.changed(node)
-	})
-
-	t.Run("changed_updatesDirSummaryPreview", func(t *testing.T) {
-		nav := NewNavigator(app)
-		nav.store = osfile.NewStore("/")
-		nav.dirSummary = newTestDirSummary(nav)
-		tree := NewTree(nav)
-
-		tempDir := t.TempDir()
-		err := os.WriteFile(filepath.Join(tempDir, "alpha.txt"), []byte("data"), 0644)
-		assert.NoError(t, err)
-
-		done := make(chan struct{})
-		var once sync.Once
-		nav.queueUpdateDraw = func(f func()) {
-			f()
-			once.Do(func() {
-				close(done)
-			})
-		}
-
-		node := tview.NewTreeNode("temp").SetReference(tempDir)
-		tree.changed(node)
-
-		select {
-		case <-done:
-		case <-time.After(200 * time.Millisecond):
-			t.Fatal("timeout waiting for dir summary update")
-		}
-
-		if assert.Len(t, nav.dirSummary.ExtStats, 1) {
-			assert.Equal(t, ".txt", nav.dirSummary.ExtStats[0].ID)
-		}
-	})
-
-	t.Run("updateDirSummaryPreview_usesNodeReference", func(t *testing.T) {
-		nav := NewNavigator(app)
-		nav.dirSummary = newTestDirSummary(nav)
-		nav.store = osfile.NewStore("/")
-		tree := NewTree(nav)
-
-		tempDir := t.TempDir()
-		err := os.WriteFile(filepath.Join(tempDir, "alpha.txt"), []byte("data"), 0644)
-		assert.NoError(t, err)
-
-		nav.current.dir = t.TempDir()
-		node := tview.NewTreeNode("temp").SetReference(tempDir)
-
-		tree.updateDirSummaryPreview(node)
-
-		if assert.Len(t, nav.dirSummary.ExtStats, 1) {
-			assert.Equal(t, ".txt", nav.dirSummary.ExtStats[0].ID)
-		}
-	})
-
-	t.Run("updateDirSummaryPreview_earlyReturn", func(t *testing.T) {
-		nav := NewNavigator(app)
-		tree := NewTree(nav)
-		tree.updateDirSummaryPreview(nil)
-	})
-
-	t.Run("updateDirSummaryPreview_emptyRef", func(t *testing.T) {
-		nav := NewNavigator(app)
-		nav.dirSummary = newTestDirSummary(nav)
-		tree := NewTree(nav)
-		node := tview.NewTreeNode("empty").SetReference("")
-		tree.updateDirSummaryPreview(node)
-	})
-
-	t.Run("updateDirSummaryPreview_nonStringRef", func(t *testing.T) {
-		nav := NewNavigator(app)
-		nav.dirSummary = newTestDirSummary(nav)
-		tree := NewTree(nav)
-		node := tview.NewTreeNode("bad").SetReference(123)
-		tree.updateDirSummaryPreview(node)
-	})
-
-	t.Run("updateDirSummaryPreview_storeNil", func(t *testing.T) {
-		oldGetState := getState
-		getState = func() (*ftstate.State, error) {
-			return nil, errors.New("disabled")
-		}
-		defer func() {
-			getState = oldGetState
-		}()
-		nav := NewNavigator(app)
-		nav.dirSummary = newTestDirSummary(nav)
-		nav.store = nil
-		tree := NewTree(nav)
-		node := tview.NewTreeNode("temp").SetReference(t.TempDir())
-		tree.updateDirSummaryPreview(node)
-	})
-
-	t.Run("updateDirSummaryPreview_readDirError", func(t *testing.T) {
-		nav := NewNavigator(app)
-		nav.dirSummary = newTestDirSummary(nav)
-		nav.store = &mockStoreWithHooks{readDirErr: errors.New("read failed")}
-		tree := NewTree(nav)
-		node := tview.NewTreeNode("temp").SetReference(t.TempDir())
-		tree.updateDirSummaryPreview(node)
 	})
 
 	t.Run("setError", func(t *testing.T) {
@@ -319,28 +226,25 @@ func TestTree(t *testing.T) {
 
 	t.Run("setDirContext", func(t *testing.T) {
 		root := tree.tv.GetRoot()
-		dc := &DirContext{
-			Path: "/test",
-			children: []os.DirEntry{
-				mockDirEntry{name: "dir1", isDir: true},
-				mockDirEntry{name: "file1", isDir: false},
-				mockDirEntry{name: ".hidden", isDir: true},
-				mockDirEntry{name: "Library", isDir: true},
-				mockDirEntry{name: "Users", isDir: true},
-				mockDirEntry{name: "Applications", isDir: true},
-				mockDirEntry{name: "Music", isDir: true},
-				mockDirEntry{name: "Movies", isDir: true},
-				mockDirEntry{name: "Pictures", isDir: true},
-				mockDirEntry{name: "Desktop", isDir: true},
-				mockDirEntry{name: "DataTug", isDir: true},
-				mockDirEntry{name: "Documents", isDir: true},
-				mockDirEntry{name: "Public", isDir: true},
-				mockDirEntry{name: "Temp", isDir: true},
-				mockDirEntry{name: "System", isDir: true},
-				mockDirEntry{name: "bin", isDir: true},
-				mockDirEntry{name: "private", isDir: true},
-			},
-		}
+		dc := files.NewDirContext(nil, "/test", []os.DirEntry{
+			mockDirEntry{name: "dir1", isDir: true},
+			mockDirEntry{name: "file1", isDir: false},
+			mockDirEntry{name: ".hidden", isDir: true},
+			mockDirEntry{name: "Library", isDir: true},
+			mockDirEntry{name: "Users", isDir: true},
+			mockDirEntry{name: "Applications", isDir: true},
+			mockDirEntry{name: "Music", isDir: true},
+			mockDirEntry{name: "Movies", isDir: true},
+			mockDirEntry{name: "Pictures", isDir: true},
+			mockDirEntry{name: "Desktop", isDir: true},
+			mockDirEntry{name: "DataTug", isDir: true},
+			mockDirEntry{name: "Documents", isDir: true},
+			mockDirEntry{name: "Public", isDir: true},
+			mockDirEntry{name: "Temp", isDir: true},
+			mockDirEntry{name: "System", isDir: true},
+			mockDirEntry{name: "bin", isDir: true},
+			mockDirEntry{name: "private", isDir: true},
+		})
 		tree.setDirContext(context.Background(), root, dc)
 	})
 

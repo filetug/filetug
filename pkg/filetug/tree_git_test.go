@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
@@ -51,11 +52,7 @@ func TestTree_SetDirContext_GitOptimization(t *testing.T) {
 		t.Fatalf("Failed to read dir: %v", err)
 	}
 
-	dirContext := &DirContext{
-		Path:     tempDir,
-		children: dirEntries,
-		Store:    nav.store,
-	}
+	dirContext := files.NewDirContext(nav.store, tempDir, dirEntries)
 
 	ctx := context.Background()
 	tree.setDirContext(ctx, node, dirContext)

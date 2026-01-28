@@ -75,10 +75,7 @@ func TestTextPreviewerPreviewPlainText(t *testing.T) {
 	previewer := NewTextPreviewer()
 	data := []byte("plain text")
 	dir := filepath.Dir("note.unknownext")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "note.unknownext"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -98,10 +95,7 @@ func TestTextPreviewerPreviewWithLexer(t *testing.T) {
 	previewer := NewTextPreviewer()
 	data := []byte("package main\n")
 	dir := filepath.Dir("main.go")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "main.go"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "main.go"}, dir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -127,10 +121,7 @@ func TestTextPreviewerPreviewWithLexerError(t *testing.T) {
 	previewer := NewTextPreviewer()
 	data := []byte("content")
 	dir := filepath.Dir("file.errlex")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "file.errlex"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "file.errlex"}, dir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -154,10 +145,7 @@ func TestTextPreviewerPreviewReadsFile(t *testing.T) {
 	err := os.WriteFile(path, content, 0644)
 	assert.NoError(t, err)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "note.unknownext"},
-		Dir:      tmpDir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, tmpDir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -178,24 +166,34 @@ func TestTextPreviewerPreviewReadFileError(t *testing.T) {
 	tmpDir := t.TempDir()
 	name := filepath.Base(tmpDir)
 	dir := filepath.Dir(tmpDir)
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: name, isDir: true},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: name, isDir: true}, dir)
 
-	queueUpdateDraw := func(func()) {}
+	queueUpdateDraw := func(fn func()) { fn() }
 	previewer.Preview(entry, nil, queueUpdateDraw)
 	waitForText(t, previewer, "Failed to read file")
+}
+
+func TestTextPreviewerPreviewReadFileError_Stale(t *testing.T) {
+	previewer := NewTextPreviewer()
+	dir := t.TempDir()
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.txt"}, dir)
+
+	allow := make(chan struct{})
+	queueUpdateDraw := func(fn func()) {
+		<-allow
+		fn()
+	}
+
+	previewer.Preview(entry, nil, queueUpdateDraw)
+	previewer.Preview(entry, []byte("fresh"), func(fn func()) { fn() })
+	close(allow)
 }
 
 func TestTextPreviewerPreviewQueueUpdateNil(t *testing.T) {
 	previewer := NewTextPreviewer()
 	data := []byte("queue nil")
 	dir := filepath.Dir("note.unknownext")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "note.unknownext"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
 
 	previewer.Preview(entry, data, nil)
 	waitForText(t, previewer, "queue nil")
@@ -204,10 +202,7 @@ func TestTextPreviewerPreviewQueueUpdateNil(t *testing.T) {
 func TestTextPreviewerPreviewStalePlain(t *testing.T) {
 	previewer := NewTextPreviewer()
 	dir := filepath.Dir("note.unknownext")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "note.unknownext"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
 
 	allowFirst := make(chan struct{})
 	doneFirst := make(chan struct{})
@@ -237,14 +232,8 @@ func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
 	previewer := NewTextPreviewer()
 	lexerDir := filepath.Dir("main.go")
 	plainDir := filepath.Dir("note.unknownext")
-	lexerEntry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "main.go"},
-		Dir:      lexerDir,
-	}
-	plainEntry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "note.unknownext"},
-		Dir:      plainDir,
-	}
+	lexerEntry := files.NewEntryWithDirPath(mockDirEntry{name: "main.go"}, lexerDir)
+	plainEntry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, plainDir)
 
 	allowFirst := make(chan struct{})
 	doneFirst := make(chan struct{})
@@ -297,10 +286,7 @@ func TestJsonPreviewerPreviewReadsFile(t *testing.T) {
 	err := os.WriteFile(path, content, 0644)
 	assert.NoError(t, err)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "data.unknownext"},
-		Dir:      tmpDir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "data.unknownext"}, tmpDir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -317,10 +303,7 @@ func TestJsonPreviewerPreviewReadsFile(t *testing.T) {
 
 func TestJsonPreviewerPreviewReadFileError(t *testing.T) {
 	previewer := NewJsonPreviewer()
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "missing.json"},
-		Dir:      t.TempDir(),
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.json"}, t.TempDir())
 	queueUpdateDraw := func(func()) {}
 	previewer.Preview(entry, nil, queueUpdateDraw)
 }
@@ -328,10 +311,7 @@ func TestJsonPreviewerPreviewWithData(t *testing.T) {
 	previewer := NewJsonPreviewer()
 	data := []byte("{\"a\":1}")
 	dir := filepath.Dir("data.unknownext")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "data.unknownext"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "data.unknownext"}, dir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -364,10 +344,7 @@ func TestDsstorePreviewerPreviewSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	dir := filepath.Dir("test.DS_Store")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "test.DS_Store"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "test.DS_Store"}, dir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -406,10 +383,7 @@ func TestDsstorePreviewerPreviewReadsFile(t *testing.T) {
 	err = os.WriteFile(path, data, 0644)
 	assert.NoError(t, err)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "good.DS_Store"},
-		Dir:      tmpDir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "good.DS_Store"}, tmpDir)
 
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
@@ -426,10 +400,7 @@ func TestDsstorePreviewerPreviewReadsFile(t *testing.T) {
 
 func TestDsstorePreviewerPreviewReadFileError(t *testing.T) {
 	previewer := NewDsstorePreviewer()
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "missing.DS_Store"},
-		Dir:      t.TempDir(),
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.DS_Store"}, t.TempDir())
 	queueUpdateDraw := func(func()) {}
 	previewer.Preview(entry, nil, queueUpdateDraw)
 }
@@ -437,10 +408,7 @@ func TestDsstorePreviewerPreviewReadFileError(t *testing.T) {
 func TestDsstorePreviewerPreviewError(t *testing.T) {
 	previewer := NewDsstorePreviewer()
 	dir := filepath.Dir("bad.DS_Store")
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: "bad.DS_Store"},
-		Dir:      dir,
-	}
+	entry := files.NewEntryWithDirPath(mockDirEntry{name: "bad.DS_Store"}, dir)
 
 	data := []byte("not a dsstore")
 	queueUpdateDraw := func(func()) {}

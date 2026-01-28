@@ -1,53 +1,50 @@
 package filetug
 
 import (
+	"net/url"
 	"os"
+	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/stretchr/testify/assert"
 )
 
-// mockStoreForDirContext is a mock implementation of files.Store
-type mockStoreForDirContext struct {
-	files.Store
-}
-
-func (m *mockStoreForDirContext) RootTitle() string {
-	return "Mock Store"
-}
-
-// mockDirEntryForDirContext is a mock implementation of os.DirEntry
-type mockDirEntryForDirContext struct {
-	name string
-}
-
-func (m mockDirEntryForDirContext) Name() string               { return m.name }
-func (m mockDirEntryForDirContext) IsDir() bool                { return false }
-func (m mockDirEntryForDirContext) Type() os.FileMode          { return 0 }
-func (m mockDirEntryForDirContext) Info() (os.FileInfo, error) { return nil, nil }
-
-func TestNewDirContext(t *testing.T) {
-	store := &mockStoreForDirContext{}
-	path := "/test/path"
-	children := []os.DirEntry{
-		mockDirEntryForDirContext{name: "file1"},
-		mockDirEntryForDirContext{name: "file2"},
+func TestDirContextEntryMethods(t *testing.T) {
+	tempDir := filepath.ToSlash(t.TempDir())
+	ctx := &files.DirContext{
+		Store: osfile.NewStore("/"),
+		Path:  tempDir,
 	}
 
-	dc := newDirContext(store, path, children)
+	assert.Equal(t, path.Dir(tempDir), ctx.DirPath())
+	assert.Equal(t, tempDir, ctx.FullName())
+	assert.Equal(t, tempDir, ctx.String())
+	assert.Equal(t, path.Base(tempDir), ctx.Name())
+	assert.True(t, ctx.IsDir())
+	assert.Equal(t, os.ModeDir, ctx.Type())
+	info, err := ctx.Info()
+	assert.NoError(t, err)
+	assert.NotNil(t, info)
 
-	if dc.Store != store {
-		t.Errorf("Expected store %v, got %v", store, dc.Store)
-	}
-	if dc.Path != path {
-		t.Errorf("Expected path %s, got %s", path, dc.Path)
-	}
-	if len(dc.children) != len(children) {
-		t.Errorf("Expected %d children, got %d", len(children), len(dc.children))
-	}
-	for i, child := range children {
-		if dc.children[i].Name() != child.Name() {
-			t.Errorf("Expected child %d name %s, got %s", i, child.Name(), dc.children[i].Name())
-		}
-	}
+	root := &files.DirContext{Path: "/"}
+	assert.Equal(t, "/", root.Name())
+
+	trailing := &files.DirContext{Path: tempDir + "/"}
+	assert.Equal(t, path.Base(tempDir), trailing.Name())
+
+	empty := &files.DirContext{}
+	assert.Equal(t, "", empty.DirPath())
+	assert.Equal(t, "", empty.Name())
+	info, err = empty.Info()
+	assert.NoError(t, err)
+	assert.Nil(t, info)
+
+	nonFileStore := mockStore{root: url.URL{Scheme: "ftp"}}
+	nonFileCtx := &files.DirContext{Store: nonFileStore, Path: tempDir}
+	info, err = nonFileCtx.Info()
+	assert.NoError(t, err)
+	assert.Nil(t, info)
 }

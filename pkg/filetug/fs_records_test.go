@@ -53,18 +53,18 @@ func (m mockDirEntry) Info() (os.FileInfo, error) {
 }
 
 func TestNewFileRows(t *testing.T) {
-	dir := &DirContext{Path: "/test"}
+	dir := &files.DirContext{Path: "/test"}
 	fr := NewFileRows(dir)
 	assert.NotNil(t, fr)
 	assert.Equal(t, dir, fr.Dir)
 }
 
 func TestFileRows_SetFilter(t *testing.T) {
-	fr := NewFileRows(&DirContext{})
+	fr := NewFileRows(&files.DirContext{})
 	fr.AllEntries = []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "file.txt", isDir: false}},
-		{DirEntry: mockDirEntry{name: ".hidden", isDir: false}},
-		{DirEntry: mockDirEntry{name: "dir", isDir: true}},
+		files.NewEntryWithDirPath(mockDirEntry{name: "file.txt", isDir: false}, ""),
+		files.NewEntryWithDirPath(mockDirEntry{name: ".hidden", isDir: false}, ""),
+		files.NewEntryWithDirPath(mockDirEntry{name: "dir", isDir: true}, ""),
 	}
 	fr.Infos = make([]os.FileInfo, len(fr.AllEntries))
 
@@ -84,9 +84,9 @@ func TestFileRows_SetFilter(t *testing.T) {
 
 func TestFileRows_GetRowCount(t *testing.T) {
 	store := mockStore{root: url.URL{Path: "/"}}
-	fr := NewFileRows(&DirContext{Store: store, Path: "/home"})
+	fr := NewFileRows(&files.DirContext{Store: store, Path: "/home"})
 	fr.VisibleEntries = []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "f1", isDir: false}},
+		files.NewEntryWithDirPath(mockDirEntry{name: "f1", isDir: false}, ""),
 	}
 	fr.VisualInfos = make([]os.FileInfo, 1)
 	// With parent row (..)
@@ -99,9 +99,9 @@ func TestFileRows_GetRowCount(t *testing.T) {
 
 func TestFileRows_GetCell(t *testing.T) {
 	store := mockStore{root: url.URL{Path: "/"}}
-	fr := NewFileRows(&DirContext{Store: store, Path: "/home"})
+	fr := NewFileRows(&files.DirContext{Store: store, Path: "/home"})
 	fr.VisibleEntries = []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "file.go", isDir: false}, Dir: "/home"},
+		files.NewEntryWithDirPath(mockDirEntry{name: "file.go", isDir: false}, "/home"),
 	}
 	entry := files.NewDirEntry("file.go", false)
 	modTime := files.ModTime(time.Now())
@@ -131,7 +131,7 @@ func TestFileRows_GetCell(t *testing.T) {
 
 func TestFileRows_getTopRowNameParentReference(t *testing.T) {
 	store := mockStore{root: url.URL{Path: "/"}}
-	dir := &DirContext{Store: store, Path: "/home/user"}
+	dir := &files.DirContext{Store: store, Path: "/home/user"}
 	fr := NewFileRows(dir)
 
 	cell := fr.getTopRowName()
@@ -152,9 +152,9 @@ func TestFileRows_getTopRowNameParentReference(t *testing.T) {
 
 func TestFileRows_SetGitStatusText(t *testing.T) {
 	store := mockStore{root: url.URL{Path: "/"}}
-	fr := NewFileRows(&DirContext{Store: store, Path: "/home"})
+	fr := NewFileRows(&files.DirContext{Store: store, Path: "/home"})
 	fr.VisibleEntries = []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "file.go", isDir: false}, Dir: "/home"},
+		files.NewEntryWithDirPath(mockDirEntry{name: "file.go", isDir: false}, "/home"),
 	}
 	fr.VisualInfos = []os.FileInfo{
 		files.NewFileInfo(files.NewDirEntry("file.go", false), files.Size(1024), files.ModTime(time.Now())),
@@ -184,9 +184,9 @@ func TestFileRows_SetGitStatusText(t *testing.T) {
 
 func TestFileRows_Extra(t *testing.T) {
 	store := mockStore{root: url.URL{Path: "/"}}
-	fr := NewFileRows(&DirContext{Store: store, Path: "/"})
+	fr := NewFileRows(&files.DirContext{Store: store, Path: "/"})
 	fr.VisibleEntries = []files.EntryWithDirPath{
-		{DirEntry: mockDirEntry{name: "dir1", isDir: true}},
+		files.NewEntryWithDirPath(mockDirEntry{name: "dir1", isDir: true}, ""),
 	}
 	fr.VisualInfos = make([]os.FileInfo, 1)
 
@@ -242,7 +242,7 @@ func TestFileRows_Extra(t *testing.T) {
 		assert.Nil(t, fr.GetCell(-1, 0))
 
 		// i >= len(r.VisibleEntries)
-		fr.VisibleEntries = []files.EntryWithDirPath{{DirEntry: mockDirEntry{name: "f1"}}}
+		fr.VisibleEntries = []files.EntryWithDirPath{files.NewEntryWithDirPath(mockDirEntry{name: "f1"}, "")}
 		assert.Nil(t, fr.GetCell(2, 0))
 
 		// Err != nil and col != nameColIndex
@@ -255,7 +255,7 @@ func TestFileRows_Extra(t *testing.T) {
 		assert.Nil(t, fr.GetCell(0, 1))
 
 		// dirEntry.IsDir() true for column 0
-		fr.VisibleEntries = []files.EntryWithDirPath{{DirEntry: mockDirEntry{name: "my_dir", isDir: true}}}
+		fr.VisibleEntries = []files.EntryWithDirPath{files.NewEntryWithDirPath(mockDirEntry{name: "my_dir", isDir: true}, "")}
 		fr.VisualInfos = make([]os.FileInfo, 1)
 		cell := fr.GetCell(0, 0)
 		assert.Contains(t, cell.Text, "📁")
@@ -267,13 +267,13 @@ func TestFileRows_Extra(t *testing.T) {
 		assert.NotNil(t, cell)
 
 		// dirEntry.Info() error
-		fr.VisibleEntries = []files.EntryWithDirPath{{DirEntry: mockDirEntry{name: "error.txt"}}}
+		fr.VisibleEntries = []files.EntryWithDirPath{files.NewEntryWithDirPath(mockDirEntry{name: "error.txt"}, "")}
 		fr.VisualInfos = make([]os.FileInfo, 1)
 		cell = fr.GetCell(0, 1)
 		assert.NotNil(t, cell)
 
 		// fi.ModTime() in the future
-		fr.VisibleEntries = []files.EntryWithDirPath{{DirEntry: mockDirEntry{name: "future.txt"}}}
+		fr.VisibleEntries = []files.EntryWithDirPath{files.NewEntryWithDirPath(mockDirEntry{name: "future.txt"}, "")}
 		futureTime := time.Now().Add(48 * time.Hour)
 		fr.VisualInfos = []os.FileInfo{
 			files.NewFileInfo(files.NewDirEntry("future.txt", false), files.ModTime(futureTime)),
@@ -323,15 +323,15 @@ func TestFileRows_isSymlinkToDir(t *testing.T) {
 	findEntry := func(name string) files.EntryWithDirPath {
 		for _, entry := range entries {
 			if entry.Name() == name {
-				return files.EntryWithDirPath{DirEntry: entry, Dir: tmpDir}
+				return files.NewEntryWithDirPath(entry, tmpDir)
 			}
 		}
 		t.Fatalf("missing entry %s", name)
-		return files.EntryWithDirPath{}
+		return nil
 	}
 
 	fileStore := mockStore{root: url.URL{Scheme: "file"}}
-	rows := NewFileRows(&DirContext{Store: fileStore, Path: tmpDir})
+	rows := NewFileRows(&files.DirContext{Store: fileStore, Path: tmpDir})
 
 	t.Run("dir symlink", func(t *testing.T) {
 		entry := findEntry("link-dir")
@@ -356,7 +356,7 @@ func TestFileRows_isSymlinkToDir(t *testing.T) {
 	t.Run("non-file store", func(t *testing.T) {
 		entry := findEntry("link-dir")
 		remoteStore := mockStore{root: url.URL{Scheme: "ftp"}}
-		remoteRows := NewFileRows(&DirContext{Store: remoteStore, Path: tmpDir})
+		remoteRows := NewFileRows(&files.DirContext{Store: remoteStore, Path: tmpDir})
 		assert.False(t, remoteRows.isSymlinkToDir(entry))
 	})
 }

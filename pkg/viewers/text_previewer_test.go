@@ -32,13 +32,12 @@ func TestTextPreviewerReadFileError(t *testing.T) {
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: filepath.Base(tmpDir), isDir: true},
-		Dir:      filepath.Dir(tmpDir),
-	}
+	entry := files.NewEntryWithDirPath(
+		mockDirEntry{name: filepath.Base(tmpDir), isDir: true},
+		filepath.Dir(tmpDir),
+	)
 	_, err := previewer.readFile(entry, 0)
 	assert.Error(t, err)
-	assert.Contains(t, previewer.GetText(false), "Failed to read file")
 }
 
 func TestTextPreviewerReadFile(t *testing.T) {
@@ -51,10 +50,10 @@ func TestTextPreviewerReadFile(t *testing.T) {
 	err := os.WriteFile(tmpFile.Name(), []byte(content), 0644)
 	assert.NoError(t, err)
 
-	entry := files.EntryWithDirPath{
-		DirEntry: mockDirEntry{name: filepath.Base(tmpFile.Name())},
-		Dir:      filepath.Dir(tmpFile.Name()),
-	}
+	entry := files.NewEntryWithDirPath(
+		mockDirEntry{name: filepath.Base(tmpFile.Name())},
+		filepath.Dir(tmpFile.Name()),
+	)
 
 	data, err := previewer.readFile(entry, 0)
 	assert.NoError(t, err)

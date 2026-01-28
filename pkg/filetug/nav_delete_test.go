@@ -42,7 +42,8 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 		nav.activeCol = 1
 
 		// Use real DirContext to avoid nil dereference in GetCurrentEntry
-		rows := NewFileRows(&DirContext{Path: tmpDir, Store: nav.store, children: entries})
+		dirContext := files.NewDirContext(nav.store, tmpDir, entries)
+		rows := NewFileRows(dirContext)
 		nav.files.SetRows(rows, false)
 		nav.files.Focus(func(p tview.Primitive) {})
 
@@ -87,16 +88,16 @@ func TestFilesPanel_GetCurrentEntry_EdgeCases(t *testing.T) {
 		mEntry := mockDirEntry{name: "test.txt"}
 		rows := &FileRows{
 			VisibleEntries: []files.EntryWithDirPath{
-				{DirEntry: mEntry},
+				files.NewEntryWithDirPath(mEntry, ""),
 			},
-			Dir: &DirContext{Path: "/some/path"},
+			Dir: &files.DirContext{Path: "/some/path"},
 		}
 		fp.rows = rows
 		fp.table.Select(0, 0)
 
 		entry := fp.GetCurrentEntry()
 		assert.True(t, entry != nil)
-		assert.Equal(t, "/some/path", entry.Dir)
+		assert.Equal(t, "/some/path", entry.DirPath())
 		assert.Equal(t, "test.txt", entry.Name())
 	})
 }

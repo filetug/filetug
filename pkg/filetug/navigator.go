@@ -429,8 +429,11 @@ var saveCurrentDir = ftstate.SaveCurrentDir
 // The `isTreeRootChanged bool` argument is needed do distinguish root dir change from
 // the case we simply select the root node in the tree.
 func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir string, isTreeRootChanged bool) {
-
-	nav.current.dir = fsutils.ExpandHome(dir)
+	expandedDir := fsutils.ExpandHome(dir)
+	if nav.current.dir == expandedDir {
+		return // TODO: Investigate and document why this happens or fix
+	}
+	nav.current.dir = expandedDir
 	if node != nil {
 		node.SetReference(nav.current.dir)
 	}
@@ -446,7 +449,6 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir str
 
 	nav.setBreadcrumbs()
 	nav.right.SetContent(nav.dirSummary)
-	nav.previewer.textView.SetText("").SetTextColor(tcell.ColorWhiteSmoke)
 
 	go func() {
 		dirContext, err := nav.getDirData(ctx)
@@ -460,7 +462,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir str
 	}()
 }
 
-func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, dirContext *DirContext, isTreeRootChanged bool) {
+func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext, isTreeRootChanged bool) {
 	nav.dirSummary.SetDir(dirContext.Path, dirContext.Children())
 
 	//nav.filesPanel.Clear()
@@ -472,7 +474,9 @@ func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, di
 	if isTreeRootChanged {
 		nav.dirsTree.setDirContext(ctx, node, dirContext)
 	}
-	nav.previewer.PreviewEntry(dirContext)
+	if nav.previewer != nil {
+		nav.previewer.PreviewEntry(dirContext)
+	}
 	nav.files.updateGitStatuses(ctx, dirContext)
 }
 
@@ -481,7 +485,7 @@ func (nav *Navigator) showNodeError(node *tview.TreeNode, err error) {
 		return
 	}
 	nav.dirsTree.setError(node, err)
-	dirRecords := NewFileRows(&DirContext{
+	dirRecords := NewFileRows(&files.DirContext{
 		Store: nav.store,
 		Path:  getNodePath(node),
 	})
@@ -531,15 +535,17 @@ func (nav *Navigator) setBreadcrumbs() {
 	}
 }
 
-func (nav *Navigator) getDirData(ctx context.Context) (dirContext *DirContext, err error) {
-	dirContext = newDirContext(nav.store, nav.current.dir, nil)
-	dirContext.children, err = nav.store.ReadDir(ctx, nav.current.dir)
+func (nav *Navigator) getDirData(ctx context.Context) (dirContext *files.DirContext, err error) {
+	dirContext = files.NewDirContext(nav.store, nav.current.dir, nil)
+	var children []os.DirEntry
+	children, err = nav.store.ReadDir(ctx, nav.current.dir)
 	if err != nil {
 		return nil, err
 	}
 	// Tree is always sorted by name and files are usually as well
 	// So let's sort once here and pass sorted to both Tree and filesPanel.
-	dirContext.children = sortDirChildren(dirContext.children)
+	children = sortDirChildren(children)
+	dirContext.SetChildren(children)
 	return
 }
 
