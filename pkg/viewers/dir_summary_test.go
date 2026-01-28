@@ -581,6 +581,37 @@ func TestDirSummary_SelectionChanged_NoFilterSetter(t *testing.T) {
 	ds.selectionChanged(0, 0)
 }
 
+func TestDirSummary_SelectionChanged_MarksSelectedRow(t *testing.T) {
+	app := tview.NewApplication()
+	ds := NewDirSummary(app)
+
+	ds.ExtGroups = []*ExtensionsGroup{
+		{
+			ID:    "Text",
+			Title: "Texts",
+			GroupStats: &GroupStats{
+				Count:     1,
+				TotalSize: 10,
+			},
+			ExtStats: []*ExtStat{
+				{
+					ID: ".txt",
+					GroupStats: GroupStats{
+						Count:     1,
+						TotalSize: 10,
+					},
+				},
+			},
+		},
+	}
+
+	ds.UpdateTable()
+	ds.selectionChanged(1, 0)
+
+	arrowCell := ds.ExtTable.GetCell(1, 0)
+	assert.Equal(t, "⇐", arrowCell.Text)
+}
+
 func TestDirSummary_UpdateTable_MixedGroups(t *testing.T) {
 	app := tview.NewApplication()
 	ds := NewDirSummary(app)

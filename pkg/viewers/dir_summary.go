@@ -406,7 +406,7 @@ func (d *DirSummaryPreviewer) selectionChanged(row int, _ int) {
 		switch ref := cell1.Reference.(type) {
 		case string:
 			filter.Extensions = []string{ref}
-			cell0 := d.ExtTable.GetCell(i, 0)
+			cell0 := d.ExtTable.GetCell(i+1, 0)
 			color := d.colorByExt(ref)
 			cell0.SetText("⇐").SetTextColor(color)
 		case *ExtensionsGroup:
