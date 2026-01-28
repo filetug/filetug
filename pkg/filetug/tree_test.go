@@ -141,13 +141,14 @@ func TestTree(t *testing.T) {
 		root := tree.tv.GetRoot()
 		tree.changed(root)
 
-		// Test with string reference
-		node := tview.NewTreeNode("test").SetReference("/test")
+		nodeContext := files.NewDirContext(nil, "/test", nil)
+		node := tview.NewTreeNode("test").SetReference(nodeContext)
 		tree.changed(node)
 	})
 
 	t.Run("setError", func(t *testing.T) {
-		node := tview.NewTreeNode("test").SetReference("/test")
+		nodeContext := files.NewDirContext(nil, "/test", nil)
+		node := tview.NewTreeNode("test").SetReference(nodeContext)
 		tree.setError(node, fmt.Errorf("test error"))
 	})
 
@@ -158,7 +159,8 @@ func TestTree(t *testing.T) {
 
 	t.Run("inputCapture", func(t *testing.T) {
 		root := tree.tv.GetRoot()
-		root.SetReference("/test")
+		rootContext := files.NewDirContext(nil, "/test", nil)
+		root.SetReference(rootContext)
 		tree.tv.SetCurrentNode(root)
 
 		// Test Right
@@ -196,8 +198,10 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("highlightTreeNodes_skipsRoot", func(t *testing.T) {
-		root := tview.NewTreeNode("..").SetReference("/Users/demo")
-		child := tview.NewTreeNode("alpha").SetReference("/Users/demo/alpha")
+		rootContext := files.NewDirContext(nil, "/Users/demo", nil)
+		childContext := files.NewDirContext(nil, "/Users/demo/alpha", nil)
+		root := tview.NewTreeNode("..").SetReference(rootContext)
+		child := tview.NewTreeNode("alpha").SetReference(childContext)
 		root.AddChild(child)
 
 		searchCtx := &searchContext{pattern: "al"}
@@ -210,7 +214,8 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("highlightTreeNodes_rootMatchIgnored", func(t *testing.T) {
-		root := tview.NewTreeNode("..").SetReference("/alpha")
+		rootContext := files.NewDirContext(nil, "/alpha", nil)
+		root := tview.NewTreeNode("..").SetReference(rootContext)
 		searchCtx := &searchContext{pattern: "al"}
 		highlightTreeNodes(root, searchCtx, true)
 
@@ -221,7 +226,12 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("setCurrentDir", func(t *testing.T) {
-		tree.setCurrentDir("/")
+		dirContext := files.NewDirContext(tree.nav.store, "/", nil)
+		tree.setCurrentDir(dirContext)
+	})
+
+	t.Run("setCurrentDir_Nil", func(t *testing.T) {
+		tree.setCurrentDir(nil)
 	})
 
 	t.Run("setDirContext", func(t *testing.T) {
@@ -254,11 +264,30 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("getNodePath", func(t *testing.T) {
+		emptyPath := getNodePath(nil)
+		assert.Equal(t, "", emptyPath)
+
 		root := tree.tv.GetRoot()
-		root.SetReference("/")
+		rootContext := files.NewDirContext(tree.nav.store, "/", nil)
+		root.SetReference(rootContext)
 		child := tview.NewTreeNode("child")
-		child.SetReference("/child")
+		childContext := files.NewDirContext(tree.nav.store, "/child", nil)
+		child.SetReference(childContext)
 		root.AddChild(child)
-		getNodePath(child)
+		childPath := getNodePath(child)
+		assert.Equal(t, "/child", childPath)
+
+		badRefNode := tview.NewTreeNode("bad")
+		badRefNode.SetReference("bad")
+		badPath := getNodePath(badRefNode)
+		assert.Equal(t, "", badPath)
+	})
+
+	t.Run("GetCurrentEntry_NonDirContext", func(t *testing.T) {
+		node := tview.NewTreeNode("bad")
+		node.SetReference("bad")
+		tree.tv.SetCurrentNode(node)
+		entry := tree.GetCurrentEntry()
+		assert.Nil(t, entry)
 	})
 }

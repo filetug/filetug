@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/assert/v2"
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/gdamore/tcell/v2"
@@ -168,7 +169,8 @@ func TestNavigator_ShowNodeError_Extra(t *testing.T) {
 	nav.right = NewContainer(2, nav)
 	nav.previewer = newPreviewerPanel(nav)
 
-	node := tview.NewTreeNode("test").SetReference("/test")
+	nodeContext := files.NewDirContext(nav.store, "/test", nil)
+	node := tview.NewTreeNode("test").SetReference(nodeContext)
 	nav.showNodeError(node, os.ErrNotExist)
 	assert.Equal(t, "file does not exist", nav.previewer.textView.GetText(true))
 }
@@ -185,7 +187,8 @@ func TestNavigator_ShowDir_GitStatusCall(t *testing.T) {
 	ctx := context.Background()
 
 	// This should trigger go nav.updateGitStatus
-	nav.showDir(ctx, node, "/", true)
+	dirContext := files.NewDirContext(nav.store, "/", nil)
+	nav.showDir(ctx, node, dirContext, true)
 	time.Sleep(100 * time.Millisecond)
 }
 

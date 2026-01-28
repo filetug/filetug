@@ -29,6 +29,10 @@ type mockDirEntryWithInfo struct {
 
 func (m mockDirEntryWithInfo) Info() (os.FileInfo, error) { return m.info, m.err }
 
+func newDirContext(path string, entries []os.DirEntry) *files.DirContext {
+	return files.NewDirContext(nil, path, entries)
+}
+
 func TestNewDirSummary(t *testing.T) {
 	app := tview.NewApplication()
 	ds := NewDirSummary(app)
@@ -51,7 +55,8 @@ func TestDirSummary_SetDir(t *testing.T) {
 		mockDirEntry{name: "data.json", isDir: false},
 	}
 
-	ds.SetDirEntries("/test", entries)
+	dirContext := newDirContext("/test", entries)
+	ds.SetDirEntries(dirContext)
 
 	var imageGroup *ExtensionsGroup
 	for _, g := range ds.ExtGroups {
@@ -129,7 +134,8 @@ func TestDirSummary_Extra(t *testing.T) {
 			mockDirEntry{name: "image1.png", isDir: false},
 			mockDirEntry{name: "video1.mp4", isDir: false},
 		}
-		ds.SetDirEntries("/test/selection", entries)
+		dirContext := newDirContext("/test/selection", entries)
+		ds.SetDirEntries(dirContext)
 
 		ds.selectionChanged(1, 0)
 		assert.Len(t, lastFilter.Extensions, 1)
@@ -144,7 +150,8 @@ func TestDirSummary_Extra(t *testing.T) {
 			mockDirEntry{name: "image2.jpg", isDir: false},
 			mockDirEntry{name: "video1.mp4", isDir: false},
 		}
-		ds.SetDirEntries("/test/input", entriesSkip)
+		dirContext := newDirContext("/test/input", entriesSkip)
+		ds.SetDirEntries(dirContext)
 
 		eventLeft := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 		assert.Nil(t, ds.inputCapture(eventLeft))
@@ -173,7 +180,8 @@ func TestDirSummary_Extra(t *testing.T) {
 		entriesSingle := []os.DirEntry{
 			mockDirEntry{name: "video1.mp4", isDir: false},
 		}
-		ds.SetDirEntries("/test/input/single", entriesSingle)
+		dirContext = newDirContext("/test/input/single", entriesSingle)
+		ds.SetDirEntries(dirContext)
 		ds.ExtTable.Select(1, 0)
 		assert.Nil(t, ds.inputCapture(eventUp))
 
@@ -196,7 +204,8 @@ func TestDirSummary_Extra(t *testing.T) {
 				info:         nil,
 			},
 		}
-		ds.SetDirEntries("/test/sizes", entries)
+		dirContext := newDirContext("/test/sizes", entries)
+		ds.SetDirEntries(dirContext)
 		err := ds.GetSizes()
 		assert.Error(t, err)
 	})
@@ -237,7 +246,8 @@ func TestDirSummary_InputCapture_LeftWithoutFocus(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newDirContext("/test", entries)
+	ds.SetDirEntries(dirContext)
 
 	left := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 	res := ds.InputCapture(left)
@@ -259,7 +269,8 @@ func TestDirSummary_SetDir_WithRepo(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
 	}
-	ds.SetDirEntries(tempDir, entries)
+	dirContext := newDirContext(tempDir, entries)
+	ds.SetDirEntries(dirContext)
 	assert.NotNil(t, ds.tabs)
 }
 
@@ -302,7 +313,8 @@ func TestDirSummary_Preview_FileEntryAndError(t *testing.T) {
 
 	entries, err := os.ReadDir(tempDir)
 	assert.NoError(t, err)
-	ds.SetDirEntries(tempDir, entries)
+	dirContext := newDirContext(tempDir, entries)
+	ds.SetDirEntries(dirContext)
 	assert.NotEmpty(t, ds.ExtGroups)
 
 	fileEntry := files.NewEntryWithDirPath(mockDirEntry{name: "b.log", isDir: false}, tempDir)
@@ -341,7 +353,8 @@ func TestDirSummary_InputCapture_Edges(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newDirContext("/test", entries)
+	ds.SetDirEntries(dirContext)
 	ds.ExtTable.Select(0, 0)
 
 	up := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
@@ -427,7 +440,8 @@ func TestDirSummary_GetSizes_NilAndTypedNil(t *testing.T) {
 			info:         typedNil,
 		},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newDirContext("/test", entries)
+	ds.SetDirEntries(dirContext)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -508,7 +522,8 @@ func TestDirSummary_SetDir_GetSizesErrorInQueue(t *testing.T) {
 			err:          assert.AnError,
 		},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newDirContext("/test", entries)
+	ds.SetDirEntries(dirContext)
 }
 
 func TestDirSummary_UpdateTable_SingleCountForGroup(t *testing.T) {
@@ -557,7 +572,8 @@ func TestDirSummary_SetDirEntries_StaleQueueUpdate(t *testing.T) {
 		mockDirEntry{name: "a.txt", isDir: false},
 	}
 
-	ds.SetDirEntries("/first", entries)
+	dirContext := newDirContext("/first", entries)
+	ds.SetDirEntries(dirContext)
 	var firstUpdate func()
 	select {
 	case firstUpdate = <-queueUpdates:
@@ -565,7 +581,8 @@ func TestDirSummary_SetDirEntries_StaleQueueUpdate(t *testing.T) {
 		t.Fatal("timed out waiting for first queue update")
 	}
 
-	ds.SetDirEntries("/second", entries)
+	dirContext = newDirContext("/second", entries)
+	ds.SetDirEntries(dirContext)
 	firstUpdate()
 
 	select {

@@ -138,7 +138,8 @@ func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		f.activateFavorite(currentFav, false)
 		return nil
 	case tcell.KeyEscape:
-		f.nav.goDir(f.prev.dir)
+		dirContext := files.NewDirContext(f.nav.store, f.prev.dir, nil)
+		f.nav.goDir(dirContext)
 		f.nav.left.SetContent(f.nav.dirsTree)
 		f.nav.setAppFocus(f.nav.dirsTree)
 		return nil
@@ -156,9 +157,11 @@ func (f *favorites) activateFavorite(item favorite, previewMode bool) {
 	dirPath := f.setStore(item)
 	if previewMode {
 		ctx := context.Background()
-		f.nav.showDir(ctx, nil, dirPath, false)
+		dirContext := files.NewDirContext(f.nav.store, dirPath, nil)
+		f.nav.showDir(ctx, nil, dirContext, false)
 	} else {
-		f.nav.goDir(dirPath)
+		dirContext := files.NewDirContext(f.nav.store, dirPath, nil)
+		f.nav.goDir(dirContext)
 		f.nav.left.SetContent(f.nav.dirsTree)
 		f.nav.setAppFocus(f.nav.dirsTree)
 	}

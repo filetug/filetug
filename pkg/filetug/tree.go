@@ -104,11 +104,11 @@ func NewTree(nav *Navigator) *Tree {
 func (t *Tree) changed(node *tview.TreeNode) {
 	ref := node.GetReference()
 
-	if dir, ok := ref.(string); ok {
+	if dirContext, ok := ref.(*files.DirContext); ok {
 		var ctx context.Context
 		ctx, t.nav.cancel = context.WithCancel(context.Background())
-		t.nav.showDir(ctx, node, dir, false)
-		ftstate.SaveSelectedTreeDir(dir)
+		t.nav.showDir(ctx, node, dirContext, false)
+		ftstate.SaveSelectedTreeDir(dirContext.Path)
 	}
 }
 
@@ -126,7 +126,15 @@ func (t *Tree) setError(node *tview.TreeNode, err error) {
 }
 
 func getNodePath(node *tview.TreeNode) string {
-	return node.GetReference().(string)
+	if node == nil {
+		return ""
+	}
+	ref := node.GetReference()
+	dirContext, ok := ref.(*files.DirContext)
+	if !ok || dirContext == nil {
+		return ""
+	}
+	return dirContext.Path
 }
 
 func (t *Tree) focus() {
@@ -165,24 +173,29 @@ func (t *Tree) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		currentNode := t.tv.GetCurrentNode()
 		refValue := currentNode.GetReference()
 		switch ref := refValue.(type) {
-		case string:
-			parentDir, _ := path.Split(ref)
-			t.nav.goDir(parentDir)
+		case *files.DirContext:
+			parentDir, _ := path.Split(ref.Path)
+			parentContext := files.NewDirContext(t.nav.store, parentDir, nil)
+			t.nav.goDir(parentContext)
 			return nil
 		}
 		return event
 	case tcell.KeyEnter:
 		currentNode := t.tv.GetCurrentNode()
 		switch ref := currentNode.GetReference().(type) {
-		case string:
-			if ref != "/" {
-				ref = strings.TrimSuffix(ref, "/")
+		case *files.DirContext:
+			dirPath := ref.Path
+			if dirPath != "/" {
+				dirPath = strings.TrimSuffix(dirPath, "/")
 			}
 			if currentNode == t.tv.GetRoot() {
-				expandedRef := fsutils.ExpandHome(ref)
-				ref, _ = path.Split(expandedRef)
+				expandedRef := fsutils.ExpandHome(dirPath)
+				var parentDir string
+				parentDir, _ = path.Split(expandedRef)
+				dirPath = parentDir
 			}
-			t.nav.goDir(ref)
+			dirContext := files.NewDirContext(t.nav.store, dirPath, nil)
+			t.nav.goDir(dirContext)
 			return nil
 		}
 		return event
@@ -245,8 +258,8 @@ type searchContext struct {
 func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext, isRoot bool) {
 	if !isRoot {
 		r := n.GetReference()
-		if s, ok := r.(string); ok {
-			_, name := path.Split(s)
+		if dirContext, ok := r.(*files.DirContext); ok {
+			_, name := path.Split(dirContext.Path)
 			lowerName := strings.ToLower(name)
 			if strings.Contains(lowerName, searchCtx.pattern) {
 				i := strings.Index(lowerName, searchCtx.pattern)
@@ -273,7 +286,10 @@ func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext, isRoot bool
 
 var userHomeDir, _ = os.UserHomeDir()
 
-func (t *Tree) setCurrentDir(dir string) {
+func (t *Tree) setCurrentDir(dirContext *files.DirContext) {
+	if dirContext == nil {
+		return
+	}
 	t.SetSearch("")
 	t.rootNode.ClearChildren()
 
@@ -283,15 +299,15 @@ func (t *Tree) setCurrentDir(dir string) {
 	}
 
 	var panelTitle, text string
-	if dir == root.Path {
-		if dir == "/" {
+	if dirContext.Path == root.Path {
+		if dirContext.Path == "/" {
 			text = "/"
 		} else {
 			text = strings.TrimSuffix(root.Path, "/")
 		}
 	} else {
 		text = ".."
-		trimmedDir := strings.TrimSuffix(dir, "/")
+		trimmedDir := strings.TrimSuffix(dirContext.Path, "/")
 		_, panelTitle = path.Split(trimmedDir)
 		if root.Scheme == "file" && trimmedDir == userHomeDir {
 			panelTitle = "~"
@@ -300,7 +316,7 @@ func (t *Tree) setCurrentDir(dir string) {
 	t.SetTitle(panelTitle)
 
 	t.rootNode.SetText(text)
-	t.rootNode.SetReference(dir)
+	t.rootNode.SetReference(dirContext)
 	t.rootNode.SetColor(tcell.ColorWhite)
 }
 
@@ -327,9 +343,11 @@ func (t *Tree) GetCurrentEntry() files.EntryWithDirPath {
 	if ref == nil {
 		return nil
 	}
-	p := ref.(string)
-	baseName := path.Base(p)
-	return files.NewEntryWithDirPath(&treeDirEntry{name: baseName, isDir: true}, path.Dir(p))
+	dirContext, ok := ref.(*files.DirContext)
+	if !ok || dirContext == nil {
+		return nil
+	}
+	return dirContext
 }
 
 func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext) {
@@ -384,7 +402,8 @@ func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirConte
 			}
 			prefix := emoji + name
 			n := tview.NewTreeNode(prefix)
-			n.SetReference(childPath)
+			childContext := files.NewDirContext(dirContext.Store, childPath, nil)
+			n.SetReference(childContext)
 			node.AddChild(n)
 
 			fullPath := fsutils.ExpandHome(childPath)

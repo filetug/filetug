@@ -98,12 +98,14 @@ func TestNavigator_ShowDir_GitStatusText(t *testing.T) {
 
 	// Create a tree node for the subdirectory as it would be in the tree
 	// In the tree, it would have a prefix like "📁subdir1"
-	node := tview.NewTreeNode("📁" + subDirName).SetReference(subDirPath)
+	nodeContext := files.NewDirContext(nav.store, subDirPath, nil)
+	node := tview.NewTreeNode("📁" + subDirName).SetReference(nodeContext)
 
 	ctx := context.Background()
 
 	// When showDir is called (e.g., when a node is selected)
-	nav.showDir(ctx, node, subDirPath, false)
+	dirContext := files.NewDirContext(nav.store, subDirPath, nil)
+	nav.showDir(ctx, node, dirContext, false)
 
 	// Wait for goroutines
 	time.Sleep(200 * time.Millisecond)

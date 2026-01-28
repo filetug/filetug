@@ -29,7 +29,7 @@ type GitDirStatusPreviewer struct {
 	*sneatv.Boxed
 	table *tview.Table
 
-	dir string
+	dirContext *files.DirContext
 
 	entries []gitDirStatusEntry
 
@@ -79,11 +79,15 @@ func NewGitDirStatusPreviewer() *GitDirStatusPreviewer {
 }
 
 func (p *GitDirStatusPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, queueUpdateDraw func(func())) {
-	dirPath := entry.DirPath()
-	if entry.IsDir() {
-		dirPath = entry.FullName()
+	dirContext, ok := entry.(*files.DirContext)
+	if !ok {
+		dirPath := entry.DirPath()
+		if entry.IsDir() {
+			dirPath = entry.FullName()
+		}
+		dirContext = files.NewDirContext(nil, dirPath, nil)
 	}
-	p.SetDir(dirPath, queueUpdateDraw)
+	p.SetDir(dirContext, queueUpdateDraw)
 }
 
 func (p *GitDirStatusPreviewer) Main() tview.Primitive {
@@ -94,8 +98,8 @@ func (p *GitDirStatusPreviewer) Meta() tview.Primitive {
 	return nil
 }
 
-func (p *GitDirStatusPreviewer) SetDir(dirPath string, queueUpdateDraw func(func())) {
-	p.dir = dirPath
+func (p *GitDirStatusPreviewer) SetDir(dirContext *files.DirContext, queueUpdateDraw func(func())) {
+	p.dirContext = dirContext
 	p.queueUpdateDraw = queueUpdateDraw
 	p.setMessage("Loading...", tcell.ColorLightGray)
 	go p.refresh()
@@ -128,7 +132,15 @@ func (p *GitDirStatusPreviewer) handleInput(event *tcell.EventKey) *tcell.EventK
 }
 
 func (p *GitDirStatusPreviewer) refresh() {
-	result, err := p.statusLoader(p.dir)
+	if p.dirContext == nil {
+		p.queueUpdate(func() {
+			p.entries = nil
+			p.setMessage("Not a git repository", tcell.ColorGray)
+		})
+		return
+	}
+	dirPath := p.dirContext.Path
+	result, err := p.statusLoader(dirPath)
 	if err != nil {
 		p.queueUpdate(func() {
 			p.setError(err)

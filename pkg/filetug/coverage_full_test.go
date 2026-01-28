@@ -55,6 +55,10 @@ func newTestDirSummary(nav *Navigator) *viewers.DirSummaryPreviewer {
 	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
 	return viewers.NewDirSummary(nav.app, filterSetter, focusLeft, colorByExt)
 }
+
+func newTestDirContext(store files.Store, dirPath string, entries []os.DirEntry) *files.DirContext {
+	return files.NewDirContext(store, dirPath, entries)
+}
 func (m *mockStoreWithHooks) RootURL() url.URL { return m.root }
 
 func (m *mockStoreWithHooks) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
@@ -227,7 +231,8 @@ func TestDirSummary_UpdateTableAndGetSizes_Coverage(t *testing.T) {
 	typedNilEntry := mockDirEntryInfo{name: "typednil.txt", info: typedNil}
 	okInfo := mockDirEntryInfo{name: "size.txt", info: mockFileInfo{size: 5}}
 	entries := []os.DirEntry{nilInfoEntry, typedNilEntry, okInfo}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -243,7 +248,8 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 		mockDirEntry{name: "a.txt", isDir: false},
 		mockDirEntry{name: "b.png", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 	ds.UpdateTable()
 
 	eventDown := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
@@ -934,9 +940,11 @@ func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
-	root.SetReference("/root")
+	rootContext := newTestDirContext(nil, "/root", nil)
+	root.SetReference(rootContext)
 	child := tview.NewTreeNode("child")
-	child.SetReference("/root/child")
+	childContext := newTestDirContext(nil, "/root/child", nil)
+	child.SetReference(childContext)
 	root.AddChild(child)
 	tree.tv.SetCurrentNode(child)
 
@@ -997,7 +1005,8 @@ func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
 	entry = tree.GetCurrentEntry()
 	assert.Nil(t, entry)
 
-	root.SetReference("/root")
+	rootContext = newTestDirContext(nil, "/root", nil)
+	root.SetReference(rootContext)
 	entry = tree.GetCurrentEntry()
 	if entry == nil {
 		t.Fatal("expected entry to be non-nil after setting reference")
@@ -1012,7 +1021,8 @@ func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
 	tree := NewTree(nav)
 
 	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
-	tree.setCurrentDir("/")
+	dirContext := newTestDirContext(nav.store, "/", nil)
+	tree.setCurrentDir(dirContext)
 
 	oldHome := userHomeDir
 	userHomeDir = "/home/user"
@@ -1020,8 +1030,10 @@ func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
 		userHomeDir = oldHome
 	}()
 
-	tree.setCurrentDir("/home/user")
-	tree.setCurrentDir("/tmp")
+	dirContext = newTestDirContext(nav.store, "/home/user", nil)
+	tree.setCurrentDir(dirContext)
+	dirContext = newTestDirContext(nav.store, "/tmp", nil)
+	tree.setCurrentDir(dirContext)
 
 	loading := tview.NewTreeNode(" Loading...")
 	tree.rootNode.ClearChildren()
@@ -1177,7 +1189,8 @@ func TestNavigator_ShowDir_NodeNil(t *testing.T) {
 	}
 	nav.store = mockStore{root: url.URL{Scheme: "http"}}
 	ctx := context.Background()
-	nav.showDir(ctx, nil, "/tmp", false)
+	dirContext := newTestDirContext(nav.store, "/tmp", nil)
+	nav.showDir(ctx, nil, dirContext, false)
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -1339,9 +1352,11 @@ func TestTree_InputCapture_KeyUp_NotRoot(t *testing.T) {
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
-	root.SetReference("/root")
+	rootContext := newTestDirContext(nil, "/root", nil)
+	root.SetReference(rootContext)
 	child := tview.NewTreeNode("child")
-	child.SetReference("/root/child")
+	childContext := newTestDirContext(nil, "/root/child", nil)
+	child.SetReference(childContext)
 	root.AddChild(child)
 	tree.tv.SetCurrentNode(child)
 
@@ -1384,9 +1399,11 @@ func TestTree_SetSearch_Recursion(t *testing.T) {
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
-	root.SetReference("/root")
+	rootContext := newTestDirContext(nil, "/root", nil)
+	root.SetReference(rootContext)
 	child := tview.NewTreeNode("alpha")
-	child.SetReference("/root/alpha")
+	childContext := newTestDirContext(nil, "/root/alpha", nil)
+	child.SetReference(childContext)
 	root.AddChild(child)
 
 	tree.SetSearch("zz")
@@ -1401,7 +1418,8 @@ func TestDirSummary_GetSizes_Error(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "bad.txt", err: errors.New("fail")},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 	err := ds.GetSizes()
 	assert.Error(t, err)
 }
@@ -1434,10 +1452,12 @@ func TestNavigator_ShowDir_Error(t *testing.T) {
 	nav.current.dir = "/tmp"
 
 	node := tview.NewTreeNode("node")
-	node.SetReference("/tmp")
+	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
+	node.SetReference(nodeContext)
 
 	ctx := context.Background()
-	nav.showDir(ctx, node, "/tmp", false)
+	dirContext := newTestDirContext(nav.store, "/tmp", nil)
+	nav.showDir(ctx, node, dirContext, false)
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -1455,10 +1475,12 @@ func TestNavigator_ShowDir_ReadError(t *testing.T) {
 	nav.current.dir = "/other"
 
 	node := tview.NewTreeNode("node")
-	node.SetReference("/tmp")
+	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
+	node.SetReference(nodeContext)
 
 	ctx := context.Background()
-	nav.showDir(ctx, node, "/tmp", true)
+	dirContext := newTestDirContext(nav.store, "/tmp", nil)
+	nav.showDir(ctx, node, dirContext, true)
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -1482,7 +1504,8 @@ func TestDirSummary_InputCapture_Left(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 
 	left := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 	res := ds.InputCapture(left)
@@ -1563,7 +1586,8 @@ func TestTree_InputCapture_LeftWithRoot(t *testing.T) {
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
-	root.SetReference("/root/child")
+	rootContext := newTestDirContext(nil, "/root/child", nil)
+	root.SetReference(rootContext)
 	tree.tv.SetCurrentNode(root)
 
 	left := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
@@ -1634,7 +1658,8 @@ func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "nil.txt", info: nil},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -1645,7 +1670,8 @@ func TestNavigator_ShowDir_NoNode(t *testing.T) {
 	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
 
 	ctx := context.Background()
-	nav.showDir(ctx, nil, "/tmp", true)
+	dirContext := newTestDirContext(nav.store, "/tmp", nil)
+	nav.showDir(ctx, nil, dirContext, true)
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -1691,8 +1717,10 @@ func TestNavigator_ShowDir_SetsBreadcrumbs(t *testing.T) {
 	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
 	ctx := context.Background()
 	node := tview.NewTreeNode("node")
-	node.SetReference("/tmp")
-	nav.showDir(ctx, node, "/tmp", true)
+	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
+	node.SetReference(nodeContext)
+	dirContext := newTestDirContext(nav.store, "/tmp", nil)
+	nav.showDir(ctx, node, dirContext, true)
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -1804,10 +1832,12 @@ func TestNavigator_ShowDir_ErrorNode(t *testing.T) {
 	}
 	nav.current.dir = "/tmp"
 	node := tview.NewTreeNode("node")
-	node.SetReference("/tmp")
+	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
+	node.SetReference(nodeContext)
 
 	ctx := context.Background()
-	nav.showDir(ctx, node, "/tmp", true)
+	dirContext := newTestDirContext(nav.store, "/tmp", nil)
+	nav.showDir(ctx, node, dirContext, true)
 	time.Sleep(50 * time.Millisecond)
 }
 
@@ -1825,9 +1855,11 @@ func TestTree_SetSearch_FirstPrefixed(t *testing.T) {
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
-	root.SetReference("/root")
+	rootContext := newTestDirContext(nil, "/root", nil)
+	root.SetReference(rootContext)
 	child := tview.NewTreeNode("alpha")
-	child.SetReference("/root/alpha")
+	childContext := newTestDirContext(nil, "/root/alpha", nil)
+	child.SetReference(childContext)
 	root.AddChild(child)
 
 	tree.SetSearch("al")
@@ -1840,9 +1872,11 @@ func TestTree_SetSearch_FirstContains(t *testing.T) {
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
-	root.SetReference("/root")
+	rootContext := newTestDirContext(nil, "/root", nil)
+	root.SetReference(rootContext)
 	child := tview.NewTreeNode("alpha")
-	child.SetReference("/root/alpha")
+	childContext := newTestDirContext(nil, "/root/alpha", nil)
+	child.SetReference(childContext)
 	root.AddChild(child)
 
 	tree.SetSearch("lp")
@@ -1886,7 +1920,8 @@ func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 
 	up := tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
 	ds.ExtTable.Select(0, 0)
@@ -1904,7 +1939,8 @@ func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "image.png", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 
 	down := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
 	rowCount := ds.ExtTable.GetRowCount()
@@ -2065,7 +2101,8 @@ func TestTree_SetCurrentDir_Root(t *testing.T) {
 	nav := NewNavigator(app)
 	tree := NewTree(nav)
 	nav.store = mockStore{root: url.URL{Path: "/"}}
-	tree.setCurrentDir("/")
+	dirContext := newTestDirContext(nav.store, "/", nil)
+	tree.setCurrentDir(dirContext)
 }
 
 func TestTree_SetCurrentDir_NonSlashRoot(t *testing.T) {
@@ -2073,7 +2110,8 @@ func TestTree_SetCurrentDir_NonSlashRoot(t *testing.T) {
 	nav := NewNavigator(app)
 	tree := NewTree(nav)
 	nav.store = mockStore{root: url.URL{Path: "/root/"}}
-	tree.setCurrentDir("/root/")
+	dirContext := newTestDirContext(nav.store, "/root/", nil)
+	tree.setCurrentDir(dirContext)
 }
 
 func TestDirSummary_GetSizes_TypedNilInfo(t *testing.T) {
@@ -2085,7 +2123,8 @@ func TestDirSummary_GetSizes_TypedNilInfo(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "typednil.txt", info: typedNil},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 	err := ds.GetSizes()
 	assert.NoError(t, err)
 }
@@ -2193,7 +2232,8 @@ func TestDirSummary_InputCapture_SkipGroupWithMultipleExt(t *testing.T) {
 		mockDirEntry{name: "c.png", isDir: false},
 		mockDirEntry{name: "d.jpg", isDir: false},
 	}
-	ds.SetDirEntries("/test", entries)
+	dirContext := newTestDirContext(nil, "/test", entries)
+	ds.SetDirEntries(dirContext)
 
 	ds.ExtTable.Select(1, 0)
 	down := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)

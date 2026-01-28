@@ -228,7 +228,8 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 			return event
 		}
 		fullPath := entry.FullName()
-		f.nav.goDir(fullPath)
+		dirContext := files.NewDirContext(f.nav.store, fullPath, nil)
+		f.nav.goDir(dirContext)
 		return nil
 	default:
 		return event
@@ -390,15 +391,18 @@ func (f *filesPanel) showDirSummary(entry files.EntryWithDirPath) {
 	}
 
 	if nav.store == nil {
-		nav.dirSummary.SetDirEntries(dirPath, nil)
+		dirContext := files.NewDirContext(nil, dirPath, nil)
+		nav.dirSummary.SetDirEntries(dirContext)
 		return
 	}
 	ctx := context.Background()
 	entries, err := nav.store.ReadDir(ctx, dirPath)
 	if err != nil {
-		nav.dirSummary.SetDirEntries(dirPath, nil)
+		dirContext := files.NewDirContext(nav.store, dirPath, nil)
+		nav.dirSummary.SetDirEntries(dirContext)
 		return
 	}
 	sortedEntries := sortDirChildren(entries)
-	nav.dirSummary.SetDirEntries(dirPath, sortedEntries)
+	dirContext := files.NewDirContext(nav.store, dirPath, sortedEntries)
+	nav.dirSummary.SetDirEntries(dirContext)
 }

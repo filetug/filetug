@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/filetug/ftui"
@@ -54,6 +55,8 @@ type DirSummaryPreviewer struct {
 	app *tview.Application
 
 	dirPath string
+
+	tableMu sync.Mutex
 
 	extByID  map[string]*ExtStat
 	ExtStats []*ExtStat
@@ -105,16 +108,17 @@ func NewDirSummary(app *tview.Application, options ...DirSummaryOption) *DirSumm
 
 func (d *DirSummaryPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, queueUpdateDraw func(func())) {
 	d.queueUpdateDraw = queueUpdateDraw
+	dirContext, ok := entry.(*files.DirContext)
+	if ok {
+		d.SetDirEntries(dirContext)
+		return
+	}
 	dirPath := entry.DirPath()
 	if entry.IsDir() {
 		dirPath = entry.FullName()
 	}
-	dirContext, ok := entry.(*files.DirContext)
-	var entries []os.DirEntry
-	if ok {
-		entries = dirContext.Children()
-	}
-	d.SetDirEntries(dirPath, entries)
+	fallbackContext := files.NewDirContext(nil, dirPath, nil)
+	d.SetDirEntries(fallbackContext)
 }
 
 func (d *DirSummaryPreviewer) Main() tview.Primitive {
@@ -156,7 +160,13 @@ type ExtStat struct {
 	entries []os.DirEntry
 }
 
-func (d *DirSummaryPreviewer) SetDirEntries(dirPath string, entries []os.DirEntry) {
+func (d *DirSummaryPreviewer) SetDirEntries(dirContext *files.DirContext) {
+	var dirPath string
+	var entries []os.DirEntry
+	if dirContext != nil {
+		dirPath = dirContext.Path
+		entries = dirContext.Children()
+	}
 	if dirPath == d.dirPath {
 		return
 	}
@@ -242,8 +252,8 @@ func (d *DirSummaryPreviewer) SetDirEntries(dirPath string, entries []os.DirEntr
 
 	hasRepo := gitutils.GetRepositoryRoot(dirPath) != ""
 	d.setTabs(hasRepo)
-	if hasRepo {
-		d.GitPreviewer.SetDir(dirPath, d.queueUpdateDraw)
+	if hasRepo && dirContext != nil {
+		d.GitPreviewer.SetDir(dirContext, d.queueUpdateDraw)
 	}
 
 	if d.queueUpdateDraw == nil {
@@ -378,6 +388,8 @@ func (d *DirSummaryPreviewer) selectionChanged(row int, _ int) {
 }
 
 func (d *DirSummaryPreviewer) updateTable() {
+	d.tableMu.Lock()
+	defer d.tableMu.Unlock()
 	d.ExtTable.Clear()
 	const cellTextColor = tcell.ColorLightGray
 

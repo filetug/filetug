@@ -25,7 +25,8 @@ func TestGitDirStatusPreviewer_SetDirAndRefresh(t *testing.T) {
 		return gitDirStatusResult{}, nil
 	}
 
-	p.SetDir("/tmp", func(f func()) { f() })
+	dirContext := files.NewDirContext(nil, "/tmp", nil)
+	p.SetDir(dirContext, func(f func()) { f() })
 	<-started
 	cell := p.table.GetCell(0, 0)
 	assert.Equal(t, "Loading...", cell.Text)
@@ -35,8 +36,16 @@ func TestGitDirStatusPreviewer_SetDirAndRefresh(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 }
 
+func TestGitDirStatusPreviewer_Refresh_NoDirContext(t *testing.T) {
+	p := NewGitDirStatusPreviewer()
+	p.refresh()
+	cell := p.table.GetCell(0, 0)
+	assert.Equal(t, "Not a git repository", cell.Text)
+}
+
 func TestGitDirStatusPreviewer_RefreshBranches(t *testing.T) {
 	p := NewGitDirStatusPreviewer()
+	p.dirContext = files.NewDirContext(nil, "/repo", nil)
 
 	p.statusLoader = func(_ string) (gitDirStatusResult, error) {
 		return gitDirStatusResult{}, nil
@@ -75,6 +84,7 @@ func TestGitDirStatusPreviewer_RefreshBranches(t *testing.T) {
 
 func TestGitDirStatusPreviewer_HandleInput(t *testing.T) {
 	p := NewGitDirStatusPreviewer()
+	p.dirContext = files.NewDirContext(nil, "/repo", nil)
 
 	p.entries = []gitDirStatusEntry{
 		{fullPath: "/repo/file.txt", displayName: "file.txt", staged: false, badge: gitBadge{text: "A"}},

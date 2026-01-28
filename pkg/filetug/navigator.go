@@ -210,7 +210,8 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 			currentUrl.Path = "/"
 			nav.store = httpfile.NewStore(*currentUrl)
 		}
-		nav.goDir(dirPath)
+		dirContext := files.NewDirContext(nav.store, dirPath, nil)
+		nav.goDir(dirContext)
 		if stateErr == nil {
 			if state.CurrentDirEntry != "" {
 				nav.files.SetCurrentFile(state.CurrentDirEntry)
@@ -286,10 +287,12 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 				nav.resize(decrease)
 				return nil
 			case '/', 'r', 'R':
-				nav.goDir("/")
+				dirContext := files.NewDirContext(nav.store, "/", nil)
+				nav.goDir(dirContext)
 				return nil
 			case '~', 'h', 'H':
-				nav.goDir("~")
+				dirContext := files.NewDirContext(nav.store, "~", nil)
+				nav.goDir(dirContext)
 				return nil
 			case 'x', 'X':
 				nav.stopApp()
@@ -325,13 +328,16 @@ func (nav *Navigator) resize(mode resizeMode) {
 	nav.createColumns()
 }
 
-func (nav *Navigator) goDir(dir string) {
+func (nav *Navigator) goDir(dirContext *files.DirContext) {
+	if dirContext == nil {
+		return
+	}
 	ctx := context.Background()
-	nav.dirsTree.setCurrentDir(dir)
-	nav.showDir(ctx, nav.dirsTree.rootNode, dir, true)
+	nav.dirsTree.setCurrentDir(dirContext)
+	nav.showDir(ctx, nav.dirsTree.rootNode, dirContext, true)
 	root := nav.store.RootURL()
 	rootValue := root.String()
-	saveCurrentDir(rootValue, dir)
+	saveCurrentDir(rootValue, dirContext.Path)
 }
 
 func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository, fullPath string, node *tview.TreeNode, prefix string) {
@@ -428,14 +434,20 @@ var saveCurrentDir = ftstate.SaveCurrentDir
 // showDir updates all panels.
 // The `isTreeRootChanged bool` argument is needed do distinguish root dir change from
 // the case we simply select the root node in the tree.
-func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir string, isTreeRootChanged bool) {
-	expandedDir := fsutils.ExpandHome(dir)
+func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext, isTreeRootChanged bool) {
+	if dirContext == nil {
+		return
+	}
+	expandedDir := fsutils.ExpandHome(dirContext.Path)
+	if expandedDir != dirContext.Path {
+		dirContext = files.NewDirContext(dirContext.Store, expandedDir, dirContext.Children())
+	}
 	if nav.current.dir == expandedDir {
 		return // TODO: Investigate and document why this happens or fix
 	}
 	nav.current.dir = expandedDir
 	if node != nil {
-		node.SetReference(nav.current.dir)
+		node.SetReference(dirContext)
 	}
 	if nav.store.RootURL().Scheme == "file" && node != nil {
 		name := node.GetText()
@@ -463,7 +475,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dir str
 }
 
 func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext, isTreeRootChanged bool) {
-	nav.dirSummary.SetDirEntries(dirContext.Path, dirContext.Children())
+	nav.dirSummary.SetDirEntries(dirContext)
 
 	//nav.filesPanel.Clear()
 	nav.files.table.SetSelectable(true, false)
@@ -506,7 +518,8 @@ func (nav *Navigator) setBreadcrumbs() {
 		rootTitle := nav.store.RootTitle()
 		rootTitle = strings.TrimSuffix(rootTitle, "/")
 		rootBreadcrumb := crumbs.NewBreadcrumb(rootTitle, func() error {
-			nav.goDir(rootPath)
+			dirContext := files.NewDirContext(nav.store, rootPath, nil)
+			nav.goDir(dirContext)
 			return nil
 		})
 		nav.breadcrumbs.Push(rootBreadcrumb)
@@ -528,7 +541,8 @@ func (nav *Navigator) setBreadcrumbs() {
 		breadPaths = append(breadPaths, p)
 		breadPath := path.Join(breadPaths...)
 		breadcrumb := crumbs.NewBreadcrumb(p, func() error {
-			nav.goDir(breadPath)
+			dirContext := files.NewDirContext(nav.store, breadPath, nil)
+			nav.goDir(dirContext)
 			return nil
 		})
 		nav.breadcrumbs.Push(breadcrumb)

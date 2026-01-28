@@ -4,6 +4,7 @@ import (
 	"context"
 	"path"
 
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -124,7 +125,8 @@ func (p *NewPanel) createDir() {
 	}
 
 	p.nav.right.SetContent(p.nav.dirSummary)
-	p.nav.goDir(fullPath)
+	dirContext := files.NewDirContext(p.nav.store, fullPath, nil)
+	p.nav.goDir(dirContext)
 }
 
 func (p *NewPanel) createFile() {
@@ -144,7 +146,8 @@ func (p *NewPanel) createFile() {
 
 	p.nav.right.SetContent(p.nav.dirSummary)
 	ctx = context.Background()
-	p.nav.showDir(ctx, p.nav.dirsTree.rootNode, currentDir, false)
+	dirContext := files.NewDirContext(p.nav.store, currentDir, nil)
+	p.nav.showDir(ctx, p.nav.dirsTree.rootNode, dirContext, false)
 	p.nav.files.SetCurrentFile(name)
 	p.nav.setAppFocus(p.nav.files.Boxed)
 }
