@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -36,24 +37,32 @@ func (m mockStore) Delete(ctx context.Context, path string) error {
 
 func TestDirContextMethods(t *testing.T) {
 	tempDir := filepath.ToSlash(t.TempDir())
-	ctx := NewDirContext(mockStore{root: url.URL{Scheme: "file"}}, tempDir, nil)
+	dir := NewDirContext(mockStore{root: url.URL{Scheme: "file"}}, tempDir, nil)
 
-	ctx.SetChildren([]os.DirEntry{NewDirEntry("a.txt", false)})
-	assert.Len(t, ctx.Children(), 1)
+	beforeSet := time.Now()
+	dir.SetChildren([]os.DirEntry{NewDirEntry("a.txt", false)})
+	afterSet := time.Now()
+	assert.Len(t, dir.Children(), 1)
+	timestamp := dir.Timestamp()
+	assert.False(t, timestamp.IsZero())
+	onOrAfter := timestamp.After(beforeSet) || timestamp.Equal(beforeSet)
+	assert.True(t, onOrAfter)
+	onOrBefore := timestamp.Before(afterSet) || timestamp.Equal(afterSet)
+	assert.True(t, onOrBefore)
 
-	entries := ctx.Entries()
+	entries := dir.Entries()
 	if assert.Len(t, entries, 1) {
 		assert.Equal(t, "a.txt", entries[0].Name())
 		assert.Equal(t, tempDir, entries[0].DirPath())
 	}
 
-	assert.Equal(t, path.Dir(tempDir), ctx.DirPath())
-	assert.Equal(t, tempDir, ctx.FullName())
-	assert.Equal(t, tempDir, ctx.String())
-	assert.Equal(t, path.Base(tempDir), ctx.Name())
-	assert.True(t, ctx.IsDir())
-	assert.Equal(t, os.ModeDir, ctx.Type())
-	info, err := ctx.Info()
+	assert.Equal(t, path.Dir(tempDir), dir.DirPath())
+	assert.Equal(t, tempDir, dir.FullName())
+	assert.Equal(t, tempDir, dir.String())
+	assert.Equal(t, path.Base(tempDir), dir.Name())
+	assert.True(t, dir.IsDir())
+	assert.Equal(t, os.ModeDir, dir.Type())
+	info, err := dir.Info()
 	assert.NoError(t, err)
 	assert.NotNil(t, info)
 

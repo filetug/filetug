@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 var _ EntryWithDirPath = (*DirContext)(nil)
@@ -12,64 +13,70 @@ type DirContext struct {
 	Store    Store
 	Path     string
 	children []os.DirEntry
+	time     time.Time
 }
 
-func (c *DirContext) SetChildren(entries []os.DirEntry) {
-	c.children = entries
+func (d *DirContext) Timestamp() time.Time {
+	return d.time
 }
 
-func (c *DirContext) Entries() []EntryWithDirPath {
-	entries := make([]EntryWithDirPath, len(c.children))
-	for i, child := range c.children {
-		entries[i] = NewEntryWithDirPath(child, c.Path)
+func (d *DirContext) SetChildren(entries []os.DirEntry) {
+	d.time = time.Now()
+	d.children = entries
+}
+
+func (d *DirContext) Entries() []EntryWithDirPath {
+	entries := make([]EntryWithDirPath, len(d.children))
+	for i, child := range d.children {
+		entries[i] = NewEntryWithDirPath(child, d.Path)
 	}
 	return entries
 }
 
-func (c *DirContext) Children() []os.DirEntry {
-	return c.children
+func (d *DirContext) Children() []os.DirEntry {
+	return d.children
 }
 
-func (c *DirContext) DirPath() string {
-	if c.Path == "" {
+func (d *DirContext) DirPath() string {
+	if d.Path == "" {
 		return ""
 	}
-	return path.Dir(c.Path)
+	return path.Dir(d.Path)
 }
 
-func (c *DirContext) FullName() string {
-	return c.Path
+func (d *DirContext) FullName() string {
+	return d.Path
 }
 
-func (c *DirContext) String() string {
-	return c.Path
+func (d *DirContext) String() string {
+	return d.Path
 }
 
-func (c *DirContext) Name() string {
-	if c.Path == "" {
+func (d *DirContext) Name() string {
+	if d.Path == "" {
 		return ""
 	}
-	if c.Path == "/" {
+	if d.Path == "/" {
 		return "/"
 	}
-	trimmed := strings.TrimSuffix(c.Path, "/")
+	trimmed := strings.TrimSuffix(d.Path, "/")
 	return path.Base(trimmed)
 }
 
-func (c *DirContext) IsDir() bool {
+func (d *DirContext) IsDir() bool {
 	return true
 }
 
-func (c *DirContext) Type() os.FileMode {
+func (d *DirContext) Type() os.FileMode {
 	return os.ModeDir
 }
 
-func (c *DirContext) Info() (os.FileInfo, error) {
-	if c.Path == "" {
+func (d *DirContext) Info() (os.FileInfo, error) {
+	if d.Path == "" {
 		return nil, nil
 	}
-	if c.Store != nil && c.Store.RootURL().Scheme == "file" {
-		return os.Stat(c.Path)
+	if d.Store != nil && d.Store.RootURL().Scheme == "file" {
+		return os.Stat(d.Path)
 	}
 	return nil, nil
 }
