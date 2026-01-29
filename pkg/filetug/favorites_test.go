@@ -3,6 +3,7 @@ package filetug
 import (
 	"testing"
 
+	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
@@ -28,18 +29,18 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("activateFavorite_preview", func(t *testing.T) {
-		fav := favorite{Store: "file:", Path: ".", Description: "test"}
+		fav := ftfav.Favorite{Store: "file:", Path: ".", Description: "test"}
 		f.activateFavorite(fav, true)
 	})
 
 	t.Run("activateFavorite_go", func(t *testing.T) {
-		fav := favorite{Store: "file:", Path: ".", Description: "test"}
+		fav := ftfav.Favorite{Store: "file:", Path: ".", Description: "test"}
 		f.activateFavorite(fav, false)
 	})
 
 	t.Run("setStore", func(t *testing.T) {
 		// Test different store schemes
-		testCases := []favorite{
+		testCases := []ftfav.Favorite{
 			{Store: "file:", Path: "/tmp"},
 			{Store: "https://example.com", Path: "/"},
 			{Store: "ftp://example.com", Path: "/"},
@@ -77,8 +78,8 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("setItems_coverage", func(t *testing.T) {
-		f.items = append(f.items, favorite{Store: "https://www.example.com", Path: "/abc", Description: "Example"})
-		f.items = append(f.items, favorite{Store: "file:", Path: "/some/path", Description: "Dir"})
+		f.items = append(f.items, ftfav.Favorite{Store: "https://www.example.com", Path: "/abc", Description: "Example"})
+		f.items = append(f.items, ftfav.Favorite{Store: "file:", Path: "/some/path", Description: "Dir"})
 		f.setItems()
 	})
 }
@@ -100,6 +101,6 @@ func TestFavorites_SetStore_InvalidURL(t *testing.T) {
 	nav := NewNavigator(app)
 	f := newFavorites(nav)
 
-	dirPath := f.setStore(favorite{Store: ":invalid:", Path: ""})
+	dirPath := f.setStore(ftfav.Favorite{Store: ":invalid:", Path: ""})
 	assert.Equal(t, "", dirPath)
 }

@@ -2,34 +2,26 @@ package filetug
 
 import (
 	"context"
-	"fmt"
 	"net/url"
-	"os"
 	"strings"
 
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/ftpfile"
 	"github.com/filetug/filetug/pkg/files/httpfile"
 	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/filetug/filetug/pkg/fsutils"
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-type favorite struct {
-	Store       string `json:"Store,omitempty" yaml:"Store,omitempty"`
-	Path        string `json:"path" yaml:"path"`
-	Shortcut    rune   `json:"Shortcut" yaml:"Shortcut"`
-	Description string `json:"Description" yaml:"Description"`
-}
-
 type favorites struct {
 	*sneatv.Boxed
 	flex  *tview.Flex
 	nav   *Navigator
 	list  *tview.List
-	items []favorite
+	items []ftfav.Favorite
 	prev  current
 }
 
@@ -39,15 +31,16 @@ func (f *favorites) ShowFavorites() {
 	f.nav.setAppFocus(f.list)
 }
 
-func builtInFavorites() []favorite {
-	return []favorite{
-		{Store: "file:", Path: "/", Shortcut: '/', Description: "root"},
-		{Store: "file:", Path: "~", Shortcut: 'h', Description: "User's home directory"},
-		{Store: "file:", Path: "~/Documents", Description: "Documents"},
-		{Store: "file:", Path: "~/projects", Description: "Projects"},
-		{Store: "file:", Path: "~/.filetug", Description: "FileTug settings dir"},
-		{Store: "https://www.kernel.org/pub/", Path: "/pub/", Description: "The Linux Kernel Archives"},
-		{Store: "ftp://demo:password@test.rebex.net", Description: "The Linux Kernel Archives"},
+func builtInFavorites() []ftfav.Favorite {
+	testFtpServerUrl, _ := url.Parse("ftp://demo:password@test.rebex.net")
+	return []ftfav.Favorite{
+		{Store: url.URL{Scheme: "file"}, Path: "/", Shortcut: '/', Description: "root"},
+		{Store: url.URL{Scheme: "file"}, Path: "~", Shortcut: 'h', Description: "User's home directory"},
+		{Store: url.URL{Scheme: "file"}, Path: "~/Documents", Description: "Documents"},
+		{Store: url.URL{Scheme: "file"}, Path: "~/projects", Description: "Projects"},
+		{Store: url.URL{Scheme: "file"}, Path: "~/.filetug", Description: "FileTug settings dir"},
+		{Store: url.URL{Scheme: "https", Host: "www.kernel.org", Path: "/pub/"}, Path: "/pub/", Description: "The Linux Kernel Archives"},
+		{Store: *testFtpServerUrl, Description: "The Linux Kernel Archives"},
 	}
 }
 func newFavorites(nav *Navigator) *favorites {
@@ -80,15 +73,15 @@ func (f *favorites) setItems() {
 	f.list.Clear()
 	i := 0
 	for _, item := range f.items {
-		if item.Store == "" {
-			item.Store = "file:"
+		if item.Store.String() == "" {
+			item.Store.Scheme = "file"
 		}
-		if !strings.HasPrefix(item.Store, "file:") || (item.Path != "~" && item.Path != "/") {
+		if item.Store.Scheme != "file" || (item.Path != "~" && item.Path != "/") {
 			i++
 		}
 		var mainText string
 
-		if strings.HasPrefix(item.Store, "file:") {
+		if item.Store.Scheme == "file" {
 			switch item.Path {
 			case "/":
 				mainText = "/ [darkgray::i] root"
@@ -98,7 +91,7 @@ func (f *favorites) setItems() {
 				mainText = item.Path
 			}
 		} else {
-			storeURL, _ := url.Parse(item.Store)
+			storeURL := item.Store
 			storeURL.User = nil
 			scheme := storeURL.Scheme
 			storeURL.Scheme = ""
@@ -124,7 +117,7 @@ func (f *favorites) setItems() {
 	}
 }
 
-func (f *favorites) selected(item favorite) {
+func (f *favorites) selected(item ftfav.Favorite) {
 	f.activateFavorite(item, false)
 }
 
@@ -155,7 +148,7 @@ func (f *favorites) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	}
 }
 
-func (f *favorites) activateFavorite(item favorite, previewMode bool) {
+func (f *favorites) activateFavorite(item ftfav.Favorite, previewMode bool) {
 	dirPath := f.setStore(item)
 	if previewMode {
 		ctx := context.Background()
@@ -169,20 +162,16 @@ func (f *favorites) activateFavorite(item favorite, previewMode bool) {
 	}
 }
 
-func (f *favorites) setStore(item favorite) (dirPath string) {
+func (f *favorites) setStore(item ftfav.Favorite) (dirPath string) {
 	dirPath = item.Path
-	root, err := url.Parse(item.Store)
-	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "failed to parse favorite store %q: %v\n", item.Store, err)
-		return dirPath
-	}
+	root := item.Store
 	if storeRootUrl := f.nav.store.RootURL(); storeRootUrl.String() != root.String() {
 		var store files.Store
 		switch strings.ToLower(root.Scheme) {
 		case "http", "https":
-			store = httpfile.NewStore(*root)
+			store = httpfile.NewStore(root)
 		case "ftp", "ftps":
-			store = ftpfile.NewStore(*root)
+			store = ftpfile.NewStore(root)
 		case "file":
 			if root.Path == "" {
 				root.Path = "/"

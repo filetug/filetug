@@ -15,6 +15,7 @@ import (
 	"unsafe"
 
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/filetug/filetug/pkg/gitutils"
@@ -284,7 +285,7 @@ func TestFavorites_SetItems_ExtraBranches(t *testing.T) {
 	nav := NewNavigator(app)
 	f := newFavorites(nav)
 
-	f.items = []favorite{
+	f.items = []ftfav.Favorite{
 		{Store: "", Path: "/", Description: "root"},
 		{Store: "file:", Path: "~", Description: "home"},
 		{Store: "file:", Path: "/tmp", Description: "tmp"},
