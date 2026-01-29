@@ -98,13 +98,10 @@ func TestFavoritesPanel_AddCurrentFavorite_Success(t *testing.T) {
 	panel := newTestFavoritesPanel(nav)
 	panel.addFormVisible = true
 	panel.flex.AddItem(panel.addContainer, 3, 0, false)
-	panel.addDescription.SetText("  test desc  ")
-
 	panel.addCurrentFavorite()
 
 	assert.True(t, addCalled)
 	assert.Len(t, panel.items, 1)
-	assert.Equal(t, "test desc", panel.items[0].Description)
 	assert.False(t, panel.addFormVisible)
 	assert.True(t, focusCalled)
 }
@@ -240,19 +237,7 @@ func TestFavoritesPanel_NewFavoritesPanel_InputCaptures(t *testing.T) {
 	}
 	panel := newFavoritesPanel(nav)
 
-	inputHandler := panel.addDescription.InputHandler()
-	inputHandler(tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone), func(p tview.Primitive) {})
-	assert.Equal(t, panel.addButton, focused)
-
-	inputHandler(tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone), func(p tview.Primitive) {})
-	assert.Equal(t, panel.list, focused)
-
-	inputHandler(tcell.NewEventKey(tcell.KeyRune, 'x', tcell.ModNone), func(p tview.Primitive) {})
-
 	buttonHandler := panel.addButton.InputHandler()
-	buttonHandler(tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone), func(p tview.Primitive) {})
-	assert.Equal(t, panel.addDescription, focused)
-
 	buttonHandler(tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone), func(p tview.Primitive) {})
 	assert.Equal(t, panel.list, focused)
 
@@ -386,19 +371,16 @@ func TestFavoritesPanel_DeleteCurrentFavorite_Error(t *testing.T) {
 func newTestFavoritesPanel(nav *Navigator) *favoritesPanel {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 	list := tview.NewList()
-	addDescription := tview.NewInputField()
 	addButton := tview.NewButton("Add current dir to favorites")
 	addContainer := tview.NewFlex().SetDirection(tview.FlexRow)
-	addContainer.AddItem(addDescription, 1, 0, false)
 	addContainer.AddItem(addButton, 1, 0, false)
 
 	return &favoritesPanel{
-		Boxed:          sneatv.NewBoxed(flex),
-		flex:           flex,
-		list:           list,
-		nav:            nav,
-		addContainer:   addContainer,
-		addDescription: addDescription,
-		addButton:      addButton,
+		Boxed:        sneatv.NewBoxed(flex),
+		flex:         flex,
+		list:         list,
+		nav:          nav,
+		addContainer: addContainer,
+		addButton:    addButton,
 	}
 }

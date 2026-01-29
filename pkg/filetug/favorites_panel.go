@@ -26,7 +26,6 @@ type favoritesPanel struct {
 	items          []ftfav.Favorite
 	prev           current
 	addContainer   *tview.Flex
-	addDescription *tview.InputField
 	addFormVisible bool
 	addButton      *tview.Button
 }
@@ -63,20 +62,16 @@ func newFavoritesPanel(nav *Navigator) *favoritesPanel {
 	list := tview.NewList()
 	list.SetSecondaryTextColor(tcell.ColorGray)
 	footer := tview.NewTextView().SetText("<esc> to go back").SetTextColor(tcell.ColorGray)
-	addDescription := tview.NewInputField()
-	addDescription.SetLabel("Description")
 	addButton := tview.NewButton("Add current dir to favorites")
 	addContainer := tview.NewFlex().SetDirection(tview.FlexRow)
-	addContainer.AddItem(addDescription, 1, 0, false)
 	addContainer.AddItem(addButton, 1, 0, false)
 	f := &favoritesPanel{
-		flex:           flex,
-		list:           list,
-		nav:            nav,
-		items:          builtInFavorites(),
-		addContainer:   addContainer,
-		addDescription: addDescription,
-		addButton:      addButton,
+		flex:         flex,
+		list:         list,
+		nav:          nav,
+		items:        builtInFavorites(),
+		addContainer: addContainer,
+		addButton:    addButton,
 		Boxed: sneatv.NewBoxed(
 			flex,
 			sneatv.WithLeftBorder(1, -1),
@@ -84,32 +79,11 @@ func newFavoritesPanel(nav *Navigator) *favoritesPanel {
 		),
 	}
 	addButton.SetSelectedFunc(f.addCurrentFavorite)
-	addDescription.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEscape:
-			if f.nav != nil {
-				f.nav.setAppFocus(f.list)
-			}
-			return nil
-		case tcell.KeyTab, tcell.KeyDown:
-			if f.nav != nil {
-				f.nav.setAppFocus(f.addButton)
-			}
-			return nil
-		default:
-			return event
-		}
-	})
 	addButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
 			if f.nav != nil {
 				f.nav.setAppFocus(f.list)
-			}
-			return nil
-		case tcell.KeyTab, tcell.KeyUp:
-			if f.nav != nil {
-				f.nav.setAppFocus(f.addDescription)
 			}
 			return nil
 		default:
@@ -210,7 +184,7 @@ func (f *favoritesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyTab:
 		if f.addFormVisible {
-			f.nav.setAppFocus(f.addDescription)
+			f.nav.setAppFocus(f.addButton)
 			return nil
 		}
 		return event
@@ -239,7 +213,6 @@ func (f *favoritesPanel) updateAddCurrentForm() {
 		return
 	}
 	if showAddForm {
-		f.addDescription.SetText("")
 		f.flex.AddItem(f.addContainer, 3, 0, false)
 		f.addFormVisible = true
 		return
@@ -296,9 +269,6 @@ func (f *favoritesPanel) addCurrentFavorite() {
 	if !ok {
 		return
 	}
-	description := f.addDescription.GetText()
-	description = strings.TrimSpace(description)
-	currentFavorite.Description = description
 	err := addFavorite(currentFavorite)
 	if err != nil {
 		_, _ = fmt.Fprintf(os.Stderr, "add favorite failed: %v\n", err)
