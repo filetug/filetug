@@ -49,7 +49,7 @@ func builtInFavorites() []ftfav.Favorite {
 	return []ftfav.Favorite{
 		{Store: url.URL{Scheme: "file"}, Path: "/", Shortcut: '/', Description: "root"},
 		{Store: url.URL{Scheme: "file"}, Path: "~", Shortcut: 'h', Description: "User's home directory"},
-		{Store: url.URL{Scheme: "file"}, Path: "~/.filetug", Description: "FileTug settings dir"},
+		//{Store: url.URL{Scheme: "file"}, Path: "~/.filetug", Description: "FileTug settings dir"},
 		//{Store: url.URL{Scheme: "file"}, Path: "~/Documents", Description: "Documents"},
 		//{Store: url.URL{Scheme: "file"}, Path: "~/projects", Description: "Projects"},
 		//{Store: *testHttpsServerUrl, Path: "/pub/", Description: "The Linux Kernel Archives"},
