@@ -189,7 +189,7 @@ func mapFavoriteToPersisted(item Favorite) favorite {
 
 func defaultFavorites() []Favorite {
 	ftpURL, _ := parseURL("ftp://demo:password@test.rebex.net")
-	httpsURL, _ := parseURL("https://www.kernel.org/pub/")
+	httpsURL, _ := parseURL("https://cdn.kernel.org/pub/")
 	defaults := []Favorite{
 		{
 			Store:       url.URL{Scheme: "file"},
@@ -201,6 +201,7 @@ func defaultFavorites() []Favorite {
 		},
 		{
 			Store: *httpsURL,
+			Path:  httpsURL.Path,
 		},
 	}
 	return defaults

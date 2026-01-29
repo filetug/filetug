@@ -99,8 +99,9 @@ func (h HttpStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, err
 			continue
 		}
 		isDir := strings.HasSuffix(href, "/")
-		name := strings.TrimSuffix(href, "/")
-		dirEntry := files.NewDirEntry(name, isDir)
+		entryName := strings.TrimSuffix(href, "/")
+		entryName = strings.TrimPrefix(entryName, "/ƒ")
+		dirEntry := files.NewDirEntry(entryName, isDir)
 		entries = append(entries, dirEntry)
 	}
 

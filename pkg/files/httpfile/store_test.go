@@ -82,7 +82,7 @@ func Test_httpFileStore_ReadDir(t *testing.T) {
 		},
 	}
 
-	root, _ := url.Parse("https://cdn.kernel.org/")
+	root, _ := url.Parse("https://cdn.kernel.org/pub/")
 	store := NewStore(*root, WithHttpClient(mockClient))
 
 	t.Run("Root", func(t *testing.T) {
