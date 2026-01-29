@@ -55,6 +55,7 @@ func newFavorites(nav *Navigator) *favorites {
 	flex.SetTitle(" Favorites ")
 	list := tview.NewList()
 	list.SetSecondaryTextColor(tcell.ColorGray)
+	footer := tview.NewTextView().SetText("<esc> to go back").SetTextColor(tcell.ColorGray)
 	f := &favorites{
 		flex:  flex,
 		list:  list,
@@ -63,11 +64,12 @@ func newFavorites(nav *Navigator) *favorites {
 		Boxed: sneatv.NewBoxed(
 			flex,
 			sneatv.WithLeftBorder(1, -1),
+			sneatv.WithFooter(footer),
 		),
 	}
 	f.flex.AddItem(f.list, 0, 1, true)
-	hint := tview.NewTextView().SetText("<esc> to go back").SetTextColor(tcell.ColorGray)
-	f.flex.AddItem(hint, 1, 0, false)
+
+	//f.flex.AddItem(hint, 1, 0, false)
 	f.setItems()
 	f.list.SetInputCapture(f.inputCapture)
 	f.list.SetChangedFunc(f.changed)
