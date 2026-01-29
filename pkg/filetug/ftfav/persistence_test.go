@@ -1,6 +1,7 @@
 package ftfav
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -157,6 +158,34 @@ func Test_AddDelete_GetFavoritesError(t *testing.T) {
 
 	deleteErr := DeleteFavorite(Favorite{Path: "/tmp"})
 	assert.Error(t, deleteErr)
+}
+
+func Test_AddFavorite_ReplacesHomeDir(t *testing.T) {
+	tempDir := t.TempDir()
+	tempPath := filepath.Join(tempDir, "favorites.yaml")
+	oldPath := favoritesFilePath
+	favoritesFilePath = tempPath
+	defer func() {
+		favoritesFilePath = oldPath
+	}()
+
+	err := os.WriteFile(tempPath, []byte(""), 0o644)
+	assert.NoError(t, err)
+
+	homeDir, err := os.UserHomeDir()
+	assert.NoError(t, err)
+
+	store := url.URL{Scheme: "file"}
+	err = AddFavorite(Favorite{Store: store, Path: filepath.Join(homeDir, "docs")})
+	assert.NoError(t, err)
+	err = AddFavorite(Favorite{Store: store, Path: homeDir})
+	assert.NoError(t, err)
+
+	favorites, err := GetFavorites()
+	assert.NoError(t, err)
+	assert.Len(t, favorites, 2)
+	assert.Equal(t, filepath.Join("~", "docs"), favorites[0].Path)
+	assert.Equal(t, "~", favorites[1].Path)
 }
 
 func Test_WriteFavorites_MkdirError(t *testing.T) {

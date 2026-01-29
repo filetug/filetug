@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/filetug/filetug/pkg/filetug/ftsettings"
 	"gopkg.in/yaml.v3"
@@ -73,6 +74,22 @@ func GetFavorites() (favorites []Favorite, err error) {
 func AddFavorite(f Favorite) (err error) {
 	if favoritesFilePath == "" {
 		return errUserHomeDirIsUnknown
+	}
+	if f.Store.Scheme == "file" && f.Path != "" {
+		homeDir, homeErr := os.UserHomeDir()
+		if homeErr == nil && homeDir != "" {
+			cleanHome := filepath.Clean(homeDir)
+			cleanPath := filepath.Clean(f.Path)
+			if cleanPath == cleanHome {
+				f.Path = "~"
+			} else {
+				homePrefix := cleanHome + string(filepath.Separator)
+				if strings.HasPrefix(cleanPath, homePrefix) {
+					relative := strings.TrimPrefix(cleanPath, homePrefix)
+					f.Path = filepath.Join("~", relative)
+				}
+			}
+		}
 	}
 	favorites, err := GetFavorites()
 	if err != nil {
