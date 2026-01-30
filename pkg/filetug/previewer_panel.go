@@ -16,33 +16,47 @@ import (
 
 type previewerPanel struct {
 	*sneatv.Boxed
-	rows      *tview.Flex
-	nav       *Navigator
-	attrsRow  *tview.Flex
-	fsAttrs   *tview.Table
-	sizeCell  *tview.TableCell
-	modCell   *tview.TableCell
-	separator *tview.TextView
-	previewer viewers.Previewer
-	textView  *tview.TextView
+	rows         *tview.Flex
+	nav          *Navigator
+	attrsRow     *tview.Flex
+	fsAttrs      *tview.Table
+	sizeCell     *tview.TableCell
+	modCell      *tview.TableCell
+	separator    *tview.TextView
+	previewer    viewers.Previewer
+	textView     *tview.TextView
+	dirPreviewer *viewers.DirPreviewer
+	app          PreviewerApp
 }
 
-func newPreviewerPanel(nav *Navigator) *previewerPanel {
+type PreviewerApp interface {
+	viewers.DirPreviewerApp
+}
+
+func newPreviewerPanel(nav *Navigator, app PreviewerApp) *previewerPanel {
 	flex := tview.NewFlex()
 	flex.SetDirection(tview.FlexRow)
 	separator := tview.NewTextView()
 	separator.SetText(strings.Repeat("─", 20))
 	separator.SetTextColor(tcell.ColorGray)
+
+	filterSetter := viewers.WithDirSummaryFilterSetter(nav.files.SetFilter)
+	focusLeft := viewers.WithDirSummaryFocusLeft(func() {
+		nav.setAppFocus(nav.files)
+	})
+	queueUpdateDraw := viewers.WithDirSummaryQueueUpdateDraw(nav.queueUpdateDraw)
 	p := previewerPanel{
+		app: app,
 		Boxed: sneatv.NewBoxed(
 			flex,
 			sneatv.WithLeftBorder(0, -1),
 		),
-		rows:      flex,
-		attrsRow:  tview.NewFlex(),
-		separator: separator,
-		textView:  tview.NewTextView(),
-		nav:       nav,
+		dirPreviewer: viewers.NewDirPreviewer(app, filterSetter, focusLeft, queueUpdateDraw),
+		rows:         flex,
+		attrsRow:     tview.NewFlex(),
+		separator:    separator,
+		textView:     tview.NewTextView(),
+		nav:          nav,
 	}
 	p.attrsRow.SetDirection(tview.FlexRow)
 	p.fsAttrs = p.createAttrsTable()
@@ -170,42 +184,42 @@ func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {
 
 	var previewer viewers.Previewer
 
-	if info != nil && info.IsDir() {
-		previewer = p.nav.dirSummary
+	if entry.IsDir() {
+		previewer = p.dirPreviewer
 	} else {
-		switch name {
-		case ".DS_Store":
-			if dsStorePreviewer, ok := p.previewer.(*viewers.DsstorePreviewer); ok {
-				previewer = dsStorePreviewer
-			} else {
-				previewer = viewers.NewDsstorePreviewer()
-			}
-		default:
-			nameExt := filepath.Ext(name)
-			ext := strings.ToLower(nameExt)
-			switch ext {
-			case ".json", ".jsonb":
-				if jsonPreviewer, ok := p.previewer.(*viewers.JsonPreviewer); ok {
-					previewer = jsonPreviewer
-				} else {
-					previewer = viewers.NewJsonPreviewer()
-				}
-			case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".riff", ".tiff", ".vp8", ".webp":
-				if imagePreviewer, ok := p.previewer.(*viewers.ImagePreviewer); ok {
-					previewer = imagePreviewer
-				} else {
-					previewer = viewers.NewImagePreviewer()
-				}
-			default:
-				if textPreviewer, ok := p.previewer.(*viewers.TextPreviewer); ok {
-					previewer = textPreviewer
-				} else {
-					previewer = viewers.NewTextPreviewer()
-				}
-			}
-		}
+		previewer = p.getFilePreviewer(name)
 	}
 
 	p.setPreviewer(previewer)
-	p.previewer.Preview(entry, nil, nil, p.nav.queueUpdateDraw)
+	p.previewer.PreviewSingle(entry, nil, nil)
+}
+
+func (p *previewerPanel) getFilePreviewer(name string) viewers.Previewer {
+	switch name {
+	case ".DS_Store":
+		if dsStorePreviewer, ok := p.previewer.(*viewers.DsstorePreviewer); ok {
+			return dsStorePreviewer
+		}
+		return viewers.NewDsstorePreviewer(p.app.QueueUpdateDraw)
+	default:
+		nameExt := filepath.Ext(name)
+		ext := strings.ToLower(nameExt)
+		switch ext {
+		case ".json", ".jsonb":
+			if jsonPreviewer, ok := p.previewer.(*viewers.JsonPreviewer); ok {
+				return jsonPreviewer
+			}
+			return viewers.NewJsonPreviewer(p.app.QueueUpdateDraw)
+		case ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".riff", ".tiff", ".vp8", ".webp":
+			if imagePreviewer, ok := p.previewer.(*viewers.ImagePreviewer); ok {
+				return imagePreviewer
+			}
+			return viewers.NewImagePreviewer(p.app.QueueUpdateDraw)
+		default:
+			if textPreviewer, ok := p.previewer.(*viewers.TextPreviewer); ok {
+				return textPreviewer
+			}
+			return viewers.NewTextPreviewer(p.app.QueueUpdateDraw)
+		}
+	}
 }

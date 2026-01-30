@@ -40,18 +40,13 @@ func NewTab(id string, title string, closable bool, content tview.Primitive) *Ta
 	}
 }
 
-type tabsApp interface {
-	QueueUpdateDraw(f func()) *tview.Application
-	SetFocus(p tview.Primitive) *tview.Application
-}
-
 // Tabs is a tab container implemented using tview.Pages.
 type Tabs struct {
 	*tview.Flex
 	tabsOptions
 	TabsStyle
 
-	app tabsApp
+	app TabsApp
 
 	TextView *tview.TextView // TODO(help-wanted): exported as a workaround to set focus - needs fix!
 	pages    *tview.Pages
@@ -150,7 +145,7 @@ var RadioTabsStyle = TabsStyle{
 //}
 
 // NewTabs creates a new tab container.
-func NewTabs(app tabsApp, style TabsStyle, options ...TabsOption) *Tabs {
+func NewTabs(app TabsApp, style TabsStyle, options ...TabsOption) *Tabs {
 	pages := tview.NewPages()
 
 	t := &Tabs{

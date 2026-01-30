@@ -16,14 +16,14 @@ type DsstorePreviewer struct {
 	TextPreviewer
 }
 
-func NewDsstorePreviewer() *DsstorePreviewer {
-	previewer := NewTextPreviewer()
+func NewDsstorePreviewer(queueUpdateDraw func(func())) *DsstorePreviewer {
+	previewer := NewTextPreviewer(queueUpdateDraw)
 	return &DsstorePreviewer{
 		TextPreviewer: *previewer,
 	}
 }
 
-func (p DsstorePreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataErr error, queueUpdateDraw func(func())) {
+func (p DsstorePreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte, dataErr error) {
 	if data == nil {
 		fullName := entry.FullName()
 		var err error
@@ -46,5 +46,5 @@ func (p DsstorePreviewer) Preview(entry files.EntryWithDirPath, data []byte, dat
 	}
 	content := sb.String()
 	data = []byte(content)
-	p.TextPreviewer.Preview(entry, data, dataErr, queueUpdateDraw)
+	p.TextPreviewer.PreviewSingle(entry, data, dataErr)
 }

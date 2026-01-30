@@ -379,33 +379,28 @@ func (f *filesPanel) updatePreviewForEntry(entry files.EntryWithDirPath) {
 }
 
 func (f *filesPanel) showDirSummary(entry files.EntryWithDirPath) {
-	nav := f.nav
-	if nav == nil || nav.dirSummary == nil || nav.right == nil {
-		return
-	}
-	content := nav.dirSummary
-	nav.right.SetContent(content)
-
-	dirPath := entry.DirPath()
-	if entry.IsDir() {
-		dirPath = entry.FullName()
-	} else if f.rows != nil && f.rows.isSymlinkToDir(entry) {
-		dirPath = entry.FullName()
-	}
-
-	if nav.store == nil {
-		dirContext := files.NewDirContext(nil, dirPath, nil)
-		nav.dirSummary.SetDirEntries(dirContext)
-		return
-	}
-	ctx := context.Background()
-	entries, err := nav.store.ReadDir(ctx, dirPath)
-	if err != nil {
-		dirContext := files.NewDirContext(nav.store, dirPath, nil)
-		nav.dirSummary.SetDirEntries(dirContext)
-		return
-	}
-	sortedEntries := sortDirChildren(entries)
-	dirContext := files.NewDirContext(nav.store, dirPath, sortedEntries)
-	nav.dirSummary.SetDirEntries(dirContext)
+	f.nav.right.SetContent(f.nav.previewer)
+	f.nav.previewer.PreviewEntry(entry)
+	//dirPath := entry.DirPath()
+	//if entry.IsDir() {
+	//	dirPath = entry.FullName()
+	//} else if f.rows != nil && f.rows.isSymlinkToDir(entry) {
+	//	dirPath = entry.FullName()
+	//}
+	//
+	//if nav.store == nil {
+	//	dirContext := files.NewDirContext(nil, dirPath, nil)
+	//	nav.dirSummary.SetDirEntries(dirContext)
+	//	return
+	//}
+	//ctx := context.Background()
+	//entries, err := nav.store.ReadDir(ctx, dirPath)
+	//if err != nil {
+	//	dirContext := files.NewDirContext(nav.store, dirPath, nil)
+	//	nav.dirSummary.SetDirEntries(dirContext)
+	//	return
+	//}
+	//sortedEntries := sortDirChildren(entries)
+	//dirContext := files.NewDirContext(nav.store, dirPath, sortedEntries)
+	//nav.dirSummary.SetDirEntries(dirContext)
 }

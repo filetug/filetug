@@ -140,8 +140,8 @@ func getNodePath(node *tview.TreeNode) string {
 func (t *Tree) focus() {
 	t.nav.left.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
 	t.nav.activeCol = 0
-	t.nav.right.SetContent(t.nav.dirSummary)
-	t.nav.dirSummary.Blur()
+	t.nav.right.SetContent(t.nav.previewer)
+	t.nav.previewer.Blur()
 	t.nav.right.Blur()
 	t.nav.files.blur()
 	currentNode := t.tv.GetCurrentNode()

@@ -6,7 +6,7 @@ import (
 )
 
 type Previewer interface {
-	Preview(entry files.EntryWithDirPath, data []byte, dataErr error, queueUpdateDraw func(func()))
+	PreviewSingle(entry files.EntryWithDirPath, data []byte, dataErr error)
 	Meta() tview.Primitive
 	Main() tview.Primitive
 }

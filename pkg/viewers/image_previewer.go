@@ -21,23 +21,25 @@ import (
 var _ Previewer = (*ImagePreviewer)(nil)
 
 type ImagePreviewer struct {
-	metaTable *MetaTable
+	metaTable       *MetaTable
+	queueUpdateDraw func(func())
 }
 
-func NewImagePreviewer() *ImagePreviewer {
+func NewImagePreviewer(queueUpdateDraw func(func())) *ImagePreviewer {
 	previewer := &ImagePreviewer{
-		metaTable: NewMetaTable(),
+		metaTable:       NewMetaTable(),
+		queueUpdateDraw: queueUpdateDraw,
 	}
 	previewer.metaTable.SetSelectable(true, true)
 	return previewer
 }
 
-func (p ImagePreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ error, queueUpdateDraw func(func())) {
+func (p ImagePreviewer) PreviewSingle(entry files.EntryWithDirPath, _ []byte, _ error) {
 	go func() {
 		fullName := entry.FullName()
 		meta := p.GetMeta(fullName)
 		if meta != nil {
-			queueUpdateDraw(func() {
+			p.queueUpdateDraw(func() {
 				p.metaTable.SetMeta(meta)
 			})
 		}

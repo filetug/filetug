@@ -107,8 +107,9 @@ func TestNavigator_GitStatus(t *testing.T) {
 	// 1. Not in cache, git status returns nil
 	nav.updateGitStatus(ctx, nil, "/non-existent", node, "prefix: ")
 
-	// 2. In cache
+	nav.gitStatusCacheMu.Lock()
 	nav.gitStatusCache["/cached"] = &gitutils.RepoStatus{Branch: "main"}
+	nav.gitStatusCacheMu.Unlock()
 	nav.updateGitStatus(ctx, nil, "/cached", node, "prefix: ")
 
 	// 3. Cancelled context
@@ -266,7 +267,12 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	nav.showDir(ctx, nodeFirst, nav.NewDirContext("/first", nil), true)
 	firstSeen := <-seen
 	nav.showDir(ctx, nodeSecond, nav.NewDirContext("/second", nil), true)
-	secondSeen := <-seen
+	var secondSeen string
+	select {
+	case secondSeen = <-seen:
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for second ReadDir")
+	}
 	close(block)
 
 	if firstSeen != "/first" {
@@ -372,7 +378,6 @@ func TestNewNavigator_States(t *testing.T) {
 }
 
 func TestNavigator_updateGitStatus_Success(t *testing.T) {
-	app := tview.NewApplication()
 	nav := NewNavigator(nil)
 	node := tview.NewTreeNode("test")
 
@@ -384,7 +389,12 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	// Or we can just test the "app == nil" branch which is easy.
 
 	t.Run("NoApp", func(t *testing.T) {
-		nav.app = nil
+		oldQueueUpdateDraw := nav.queueUpdateDraw
+		nav.queueUpdateDraw = func(f func()) {
+			f()
+		}
+		defer func() { nav.queueUpdateDraw = oldQueueUpdateDraw }()
+
 		status := &gitutils.RepoStatus{Branch: "main"}
 		// Dir matches repo root to ensure status is shown even if clean
 		path := "/repo"
@@ -403,7 +413,6 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	})
 
 	t.Run("WithAppCached", func(t *testing.T) {
-		nav.app = app
 		oldQueueUpdateDraw := nav.queueUpdateDraw
 		nav.queueUpdateDraw = func(f func()) {
 			f()
@@ -428,7 +437,12 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	})
 
 	t.Run("PrefixAlreadyHasStatus", func(t *testing.T) {
-		nav.app = nil
+		oldQueueUpdateDraw := nav.queueUpdateDraw
+		nav.queueUpdateDraw = func(f func()) {
+			f()
+		}
+		defer func() { nav.queueUpdateDraw = oldQueueUpdateDraw }()
+
 		status := &gitutils.RepoStatus{Branch: "main"}
 		path := "/repo"
 		oldOsStat := gitutils.OsStat

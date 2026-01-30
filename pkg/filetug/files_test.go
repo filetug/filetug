@@ -19,9 +19,10 @@ import (
 
 func setupNavigatorForFilesTest(app *tview.Application) *Navigator {
 	nav := &Navigator{
-		app: app,
 		setAppFocus: func(p tview.Primitive) {
-			app.SetFocus(p)
+			if app != nil {
+				app.SetFocus(p)
+			}
 		},
 	}
 	nav.right = NewContainer(2, nav)
@@ -320,9 +321,10 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 func TestFilesPanel_OnStoreChange(t *testing.T) {
 	app := tview.NewApplication()
 	nav := &Navigator{
-		app: app,
 		setAppFocus: func(p tview.Primitive) {
-			app.SetFocus(p)
+			if app != nil {
+				app.SetFocus(p)
+			}
 		},
 	}
 	fp := newFiles(nav)

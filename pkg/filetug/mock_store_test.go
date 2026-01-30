@@ -20,6 +20,7 @@ func newMockStoreWithRoot(t *testing.T, rootURL url.URL) *files.MockStore {
 	store := newMockStore(t)
 	store.EXPECT().RootURL().Return(rootURL).AnyTimes()
 	store.EXPECT().RootTitle().Return("Mock").AnyTimes()
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	return store
 }
 
@@ -28,5 +29,6 @@ func newMockStoreWithRootTitle(t *testing.T, rootURL url.URL, title string) *fil
 	store := newMockStore(t)
 	store.EXPECT().RootURL().Return(rootURL).AnyTimes()
 	store.EXPECT().RootTitle().Return(title).AnyTimes()
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	return store
 }

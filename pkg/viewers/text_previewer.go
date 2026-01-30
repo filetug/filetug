@@ -19,11 +19,13 @@ var _ Previewer = (*TextPreviewer)(nil)
 
 type TextPreviewer struct {
 	*tview.TextView
-	previewID uint64
+	previewID       uint64
+	queueUpdateDraw func(func())
 }
 
-func NewTextPreviewer() *TextPreviewer {
+func NewTextPreviewer(queueUpdateDraw func(func())) *TextPreviewer {
 	return &TextPreviewer{
+		queueUpdateDraw: queueUpdateDraw,
 		TextView: tview.NewTextView().
 			SetDynamicColors(true).
 			SetWrap(true).
@@ -32,10 +34,7 @@ func NewTextPreviewer() *TextPreviewer {
 	}
 }
 
-func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataErr error, queueUpdateDraw func(func())) {
-	if queueUpdateDraw == nil {
-		queueUpdateDraw = func(f func()) { f() }
-	}
+func (p *TextPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte, dataErr error) {
 	previewID := atomic.AddUint64(&p.previewID, 1)
 	go func(previewID uint64) {
 		if data == nil {
@@ -43,7 +42,7 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataE
 			data, err = p.readFile(entry, 10*1024) // First 10KB
 			if err != nil && !errors.Is(err, io.EOF) {
 				errText := fmt.Sprintf("Failed to read file %s: %s", entry.FullName(), err.Error())
-				queueUpdateDraw(func() {
+				p.queueUpdateDraw(func() {
 					if !p.isCurrentPreview(previewID) {
 						return
 					}
@@ -60,7 +59,7 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataE
 		}
 		name := entry.Name()
 		if lexer := lexers.Match(name); lexer == nil {
-			queueUpdateDraw(func() {
+			p.queueUpdateDraw(func() {
 				if !p.isCurrentPreview(previewID) {
 					return
 				}
@@ -76,7 +75,7 @@ func (p *TextPreviewer) Preview(entry files.EntryWithDirPath, data []byte, dataE
 			})
 		} else {
 			colorized, err := chroma2tcell.Colorize(string(data), "dracula", lexer)
-			queueUpdateDraw(func() {
+			p.queueUpdateDraw(func() {
 				if !p.isCurrentPreview(previewID) {
 					return
 				}

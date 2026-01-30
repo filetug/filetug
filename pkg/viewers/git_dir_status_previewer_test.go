@@ -166,7 +166,7 @@ func TestGitDirStatusPreviewer_Preview(t *testing.T) {
 		return gitDirStatusResult{}, nil
 	}
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "repo", isDir: true}, "/tmp")
-	p.Preview(entry, nil, nil, func(f func()) { f() })
+	p.PreviewSingle(entry, nil, nil, func(f func()) { f() })
 	cell := p.table.GetCell(0, 0)
 	assert.Equal(t, "Loading...", cell.Text)
 }

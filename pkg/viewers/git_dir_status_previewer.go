@@ -78,7 +78,7 @@ func NewGitDirStatusPreviewer() *GitDirStatusPreviewer {
 	return p
 }
 
-func (p *GitDirStatusPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ error, queueUpdateDraw func(func())) {
+func (p *GitDirStatusPreviewer) PreviewSingle(entry files.EntryWithDirPath, _ []byte, _ error, queueUpdateDraw func(func())) {
 	dirContext, ok := entry.(*files.DirContext)
 	if !ok {
 		dirPath := entry.DirPath()

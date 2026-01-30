@@ -7,8 +7,7 @@ import (
 )
 
 func TestNewContainer(t *testing.T) {
-	app := tview.NewApplication()
-	nav := &Navigator{app: app}
+	nav := NewNavigator(nil)
 	index := 1
 	c := NewContainer(index, nav)
 
@@ -27,8 +26,7 @@ func TestNewContainer(t *testing.T) {
 }
 
 func TestContainer_SetContent(t *testing.T) {
-	app := tview.NewApplication()
-	nav := &Navigator{app: app}
+	nav := NewNavigator(nil)
 	c := NewContainer(1, nav)
 
 	p := tview.NewBox()
@@ -57,7 +55,6 @@ func TestContainer_SetContent(t *testing.T) {
 func TestContainer_Focus(t *testing.T) {
 	app := tview.NewApplication()
 	nav := &Navigator{
-		app: app,
 		setAppFocus: func(p tview.Primitive) {
 			app.SetFocus(p)
 		},

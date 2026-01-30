@@ -18,14 +18,14 @@ import (
 	"github.com/filetug/filetug/pkg/fsutils"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv/crumbs"
-	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
 )
 
 type Navigator struct {
-	app             *tview.Application                          // Should we get rid of it?
+	//app *tview.Application // We do not want to have refence to the tview.Application any more.
+
 	queueUpdateDraw func(f func())                              // replaced with mock in tests
 	setAppFocus     func(p tview.Primitive)                     // replaced with mock in tests
 	setAppRoot      func(root tview.Primitive, fullscreen bool) // replaced with mock in tests
@@ -61,7 +61,7 @@ type Navigator struct {
 
 	files *filesPanel
 
-	dirSummary *viewers.DirSummaryPreviewer
+	// dirSummary *viewers.DirPreviewer - we do not want this anymore as it's part of the previewerPanel now.
 
 	previewer *previewerPanel
 
@@ -110,7 +110,8 @@ var getDirStatus = gitutils.GetDirStatus
 var getFileStatus = gitutils.GetFileStatus
 
 func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator {
-	if app == nil {
+	isInTest := app == nil
+	if isInTest {
 		app = tview.NewApplication()
 	}
 	defaultStore := osfile.NewStore("/")
@@ -122,18 +123,22 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 	flex.SetDirection(tview.FlexRow)
 
 	nav := &Navigator{
-		app: app,
-		queueUpdateDraw: func(f func()) {
-			app.QueueUpdateDraw(f)
-		},
 		setAppFocus: func(p tview.Primitive) {
-			app.SetFocus(p)
+			if app != nil {
+				app.SetFocus(p)
+			}
 		},
 		setAppRoot: func(root tview.Primitive, fullscreen bool) {
-			app.SetRoot(root, fullscreen)
+			if app != nil {
+				app.SetRoot(root, fullscreen)
+			}
 		},
-		stopApp: app.Stop,
-		store:   defaultStore,
+		stopApp: func() {
+			if app != nil {
+				app.Stop()
+			}
+		},
+		store: defaultStore,
 		breadcrumbs: crumbs.NewBreadcrumbs(
 			rootBreadcrumb,
 			crumbs.WithSeparator("/"),
@@ -143,6 +148,15 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 		main:           tview.NewFlex(),
 		proportions:    make([]int, 3),
 		gitStatusCache: make(map[string]*gitutils.RepoStatus),
+	}
+	if isInTest {
+		nav.queueUpdateDraw = func(f func()) {
+			f()
+		}
+	} else {
+		nav.queueUpdateDraw = func(f func()) {
+			_ = app.QueueUpdateDraw(f)
+		}
 	}
 	nav.bottom = newBottom(nav)
 	nav.right = NewContainer(2, nav)
@@ -154,15 +168,9 @@ func NewNavigator(app *tview.Application, options ...NavigatorOption) *Navigator
 	copy(nav.proportions, defaultProportions)
 
 	nav.files = newFiles(nav)
-	nav.previewer = newPreviewerPanel(nav)
-	filterSetter := viewers.WithDirSummaryFilterSetter(nav.files.SetFilter)
-	focusLeft := viewers.WithDirSummaryFocusLeft(func() {
-		nav.setAppFocus(nav.files)
-	})
-	queueUpdateDraw := viewers.WithDirSummaryQueueUpdateDraw(nav.queueUpdateDraw)
-	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
-	nav.dirSummary = viewers.NewDirSummary(app, filterSetter, focusLeft, queueUpdateDraw, colorByExt)
-	nav.right.SetContent(nav.dirSummary)
+	nav.previewer = newPreviewerPanel(nav, ftApp{Application: app})
+
+	nav.right.SetContent(nav.previewer)
 
 	for _, option := range options {
 		option(&nav.o)
@@ -382,13 +390,9 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository,
 		return
 	}
 	statusText := nav.gitStatusText(status, fullPath, true)
-	if nav.app != nil {
-		nav.queueUpdateDraw(func() {
-			node.SetText(cleanPrefix + statusText)
-		})
-	} else {
+	nav.queueUpdateDraw(func() {
 		node.SetText(cleanPrefix + statusText)
-	}
+	})
 }
 
 const gitStatusSeparator = "[gray]┆[-]"
@@ -507,7 +511,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirCont
 	}
 
 	nav.setBreadcrumbs()
-	nav.right.SetContent(nav.dirSummary)
+	nav.right.SetContent(nav.previewer)
 
 	dirPath := expandedDir
 	go func() {
@@ -523,21 +527,24 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirCont
 }
 
 func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext, isTreeRootChanged bool) {
-	nav.dirSummary.SetDirEntries(dirContext)
-
-	//nav.filesPanel.Clear()
-	nav.files.table.SetSelectable(true, false)
-
-	dirRecords := NewFileRows(dirContext)
-	nav.files.SetRows(dirRecords, node != nav.dirsTree.rootNode)
-
-	if isTreeRootChanged {
-		nav.dirsTree.setDirContext(ctx, node, dirContext)
-	}
 	if nav.previewer != nil {
 		nav.previewer.PreviewEntry(dirContext)
 	}
-	nav.files.updateGitStatuses(ctx, dirContext)
+
+	//nav.filesPanel.Clear()
+	if nav.files != nil {
+		nav.files.table.SetSelectable(true, false)
+
+		dirRecords := NewFileRows(dirContext)
+		nav.files.SetRows(dirRecords, node != nil && node != nav.dirsTree.rootNode)
+	}
+
+	if isTreeRootChanged && node != nil && nav.dirsTree != nil {
+		nav.dirsTree.setDirContext(ctx, node, dirContext)
+	}
+	if nav.files != nil {
+		nav.files.updateGitStatuses(ctx, dirContext)
+	}
 }
 
 func (nav *Navigator) showNodeError(node *tview.TreeNode, err error) {

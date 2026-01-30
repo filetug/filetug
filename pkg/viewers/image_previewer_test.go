@@ -158,7 +158,7 @@ func TestImagePreviewerNewAndPreview(t *testing.T) {
 		close(done)
 	}
 
-	previewer.Preview(entry, nil, nil, queueUpdateDraw)
+	previewer.PreviewSingle(entry, nil, nil, queueUpdateDraw)
 	waitForUpdate(t, done)
 
 	rowCount := previewer.metaTable.GetRowCount()

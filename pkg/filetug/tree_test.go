@@ -40,10 +40,6 @@ func TestTree(t *testing.T) {
 		tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
 
-		// Mock app and queue
-		app := tview.NewApplication()
-		tree.nav.app = app
-
 		// We need to avoid infinite recursion and hangs.
 		// We want to test at least one iteration.
 		// We can use a channel to signal when SetText is called, but SetText doesn't have a callback.

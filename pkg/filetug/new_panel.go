@@ -60,7 +60,7 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 		case tcell.KeyEnter:
 			p.createFile()
 		case tcell.KeyEscape:
-			p.nav.right.SetContent(p.nav.dirSummary)
+			p.nav.right.SetContent(p.nav.previewer)
 			p.nav.SetFocus()
 		}
 	})
@@ -127,7 +127,7 @@ func (p *NewPanel) createDir() {
 		return
 	}
 
-	p.nav.right.SetContent(p.nav.dirSummary)
+	p.nav.right.SetContent(p.nav.previewer)
 	dirContext := files.NewDirContext(p.nav.store, fullPath, nil)
 	p.nav.goDir(dirContext)
 }
@@ -150,7 +150,7 @@ func (p *NewPanel) createFile() {
 		return
 	}
 
-	p.nav.right.SetContent(p.nav.dirSummary)
+	p.nav.right.SetContent(p.nav.previewer)
 	ctx = context.Background()
 	dirContext := files.NewDirContext(p.nav.store, currentDir, nil)
 	p.nav.showDir(ctx, p.nav.dirsTree.rootNode, dirContext, false)

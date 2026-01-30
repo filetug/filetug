@@ -28,7 +28,13 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func newTestDirSummary(nav *Navigator) *viewers.DirSummaryPreviewer {
+func newTestDirSummary(nav *Navigator) *viewers.DirPreviewer {
+	ctrl := gomock.NewController(nil)
+	app := viewers.NewMockDirPreviewerApp(ctrl)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).Do(func(f func()) {
+		f()
+	}).AnyTimes()
+
 	filterSetter := viewers.WithDirSummaryFilterSetter(func(filter ftui.Filter) {
 		if nav.files == nil {
 			return
@@ -36,8 +42,9 @@ func newTestDirSummary(nav *Navigator) *viewers.DirSummaryPreviewer {
 		nav.files.SetFilter(filter)
 	})
 	focusLeft := viewers.WithDirSummaryFocusLeft(func() {})
+	queueUpdateDraw := viewers.WithDirSummaryQueueUpdateDraw(nav.queueUpdateDraw)
 	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
-	return viewers.NewDirSummary(nav.app, filterSetter, focusLeft, colorByExt)
+	return viewers.NewDirPreviewer(app, filterSetter, focusLeft, queueUpdateDraw, colorByExt)
 }
 
 func newTestDirContext(store files.Store, dirPath string, entries []os.DirEntry) *files.DirContext {
@@ -165,6 +172,11 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
 		mockDirEntry{name: "b.png", isDir: false},
+		mockDirEntry{name: "c.jpg", isDir: false},
+		mockDirEntry{name: "d.pdf", isDir: false},
+		mockDirEntry{name: "e.zip", isDir: false},
+		mockDirEntry{name: "f.txt", isDir: false},
+		mockDirEntry{name: "g.go", isDir: false},
 	}
 	dirContext := newTestDirContext(nil, "/test", entries)
 	ds.SetDirEntries(dirContext)
@@ -768,6 +780,9 @@ func TestGeneratedNestedDirs_Coverage(t *testing.T) {
 
 func TestNewPanel_InputCapture_Create(t *testing.T) {
 	nav := NewNavigator(nil)
+	nav.queueUpdateDraw = func(f func()) {
+		f()
+	}
 
 	createdDirs := []string{}
 	createdFiles := []string{}
@@ -1166,20 +1181,25 @@ func TestNavigator_GitStatusText_HasChanges(t *testing.T) {
 
 func TestNavigator_SetBreadcrumbs_PathItems(t *testing.T) {
 	nav := NewNavigator(nil)
+	nav.queueUpdateDraw = func(f func()) { f() }
 	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root"})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root/dir//child", nil))
 	nav.setBreadcrumbs()
+	time.Sleep(10 * time.Millisecond)
 }
 
 func TestNavigator_SetBreadcrumbs_TitleTrim(t *testing.T) {
 	nav := NewNavigator(nil)
+	nav.queueUpdateDraw = func(f func()) { f() }
 	nav.store = newMockStoreWithRootTitle(t, url.URL{Path: "/root"}, "Root/")
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root/child", nil))
 	nav.setBreadcrumbs()
+	time.Sleep(10 * time.Millisecond)
 }
 
 func TestNavigator_BreadcrumbActions(t *testing.T) {
 	nav := NewNavigator(nil)
+	nav.queueUpdateDraw = func(f func()) { f() }
 	err := nav.breadcrumbs.GoHome()
 	assert.NoError(t, err)
 
@@ -1190,6 +1210,7 @@ func TestNavigator_BreadcrumbActions(t *testing.T) {
 	nav.setBreadcrumbs()
 	err = nav.breadcrumbs.GoHome()
 	assert.NoError(t, err)
+	time.Sleep(10 * time.Millisecond)
 
 	itemsField := reflect.ValueOf(nav.breadcrumbs).Elem().FieldByName("items")
 	itemsValue := reflect.NewAt(itemsField.Type(), unsafe.Pointer(itemsField.UnsafeAddr())).Elem()
@@ -1198,6 +1219,7 @@ func TestNavigator_BreadcrumbActions(t *testing.T) {
 		item := itemValue.Interface().(crumbs.Breadcrumb)
 		err = item.Action()
 		assert.NoError(t, err)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
@@ -1300,6 +1322,11 @@ func TestNavigator_SetBreadcrumbs_RootTitle(t *testing.T) {
 
 func TestNavigator_ShowScriptsPanel_Selection(t *testing.T) {
 	nav := NewNavigator(nil)
+	nav.queueUpdateDraw = func(f func()) {
+		f()
+	}
+	nav.dirSummary = newTestDirSummary(nav)
+
 	nav.showScriptsPanel()
 	panel := nav.right.content
 	scripts, ok := panel.(*scriptsPanel)
@@ -1331,16 +1358,33 @@ func TestDirSummary_GetSizes_Error(t *testing.T) {
 	ds := newTestDirSummary(nav)
 
 	entries := []os.DirEntry{
-		mockDirEntryInfo{name: "bad.txt", err: errors.New("fail")},
+		mockDirEntryInfo{name: "error.txt", info: nil},
 	}
 	dirContext := newTestDirContext(nil, "/test", entries)
 	ds.SetDirEntries(dirContext)
+
+	// mockDirEntryInfo.Info() will return nil which will cause GetSizes to skip it.
+	// We need something that returns an error from Info().
+	// But our mockDirEntryInfo only has Name, IsDir and Info fields.
+	// Let's use a custom mock.
+	errEntry := &errorDirEntry{}
+	dirContext.SetChildren([]os.DirEntry{errEntry})
+
 	err := ds.GetSizes()
 	assert.Error(t, err)
 }
 
+type errorDirEntry struct {
+	os.DirEntry
+}
+
+func (e *errorDirEntry) Name() string               { return "error.txt" }
+func (e *errorDirEntry) IsDir() bool                { return false }
+func (e *errorDirEntry) Info() (os.FileInfo, error) { return nil, errors.New("read error") }
+
 func TestFilesPanel_SelectionChangedNavFunc_SetsPreview(t *testing.T) {
 	nav := NewNavigator(nil)
+	nav.dirSummary = newTestDirSummary(nav)
 	fp := nav.files
 
 	modTime := files.ModTime(time.Now())
@@ -1710,7 +1754,7 @@ type mockPreviewer struct {
 	main tview.Primitive
 }
 
-func (m *mockPreviewer) Preview(entry files.EntryWithDirPath, _ []byte, _ error, _ func(func())) {
+func (m *mockPreviewer) PreviewSingle(entry files.EntryWithDirPath, _ []byte, _ error, _ func(func())) {
 	_ = entry
 }
 

@@ -14,14 +14,14 @@ type JsonPreviewer struct {
 	TextPreviewer
 }
 
-func NewJsonPreviewer() *JsonPreviewer {
-	textPreviewer := NewTextPreviewer()
+func NewJsonPreviewer(queueUpdateDraw func(func())) *JsonPreviewer {
+	textPreviewer := NewTextPreviewer(queueUpdateDraw)
 	return &JsonPreviewer{
 		TextPreviewer: *textPreviewer,
 	}
 }
 
-func (p JsonPreviewer) Preview(entry files.EntryWithDirPath, data []byte, _ error, queueUpdateDraw func(func())) {
+func (p JsonPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte, _ error) {
 	if data == nil {
 		var err error
 		data, err = p.readFile(entry, 0)
@@ -39,7 +39,7 @@ func (p JsonPreviewer) Preview(entry files.EntryWithDirPath, data []byte, _ erro
 		data = formatted
 		err = nil
 	}
-	p.TextPreviewer.Preview(entry, data, err, queueUpdateDraw)
+	p.TextPreviewer.PreviewSingle(entry, data, err)
 }
 
 const jsonIndent = "  "
