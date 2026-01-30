@@ -39,7 +39,7 @@ func TestDirContextEntryMethods(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, info)
 
-	nonFileStore := mockStore{root: url.URL{Scheme: "ftp"}}
+	nonFileStore := newMockStoreWithRoot(t, url.URL{Scheme: "ftp"})
 	nonFileCtx := files.NewDirContext(nonFileStore, tempDir, nil)
 	info, err = nonFileCtx.Info()
 	assert.NoError(t, err)

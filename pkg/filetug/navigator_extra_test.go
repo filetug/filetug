@@ -100,10 +100,7 @@ func TestNavigator_SetBreadcrumbs_EmptyRelative(t *testing.T) {
 	if nav == nil {
 		t.Fatal("navigator is nil")
 	}
-	mStore := &mockNavigatorStore{
-		rootURL: url.URL{Scheme: "file", Path: "/root"},
-	}
-	nav.store = mStore
+	nav.store = newMockStoreWithRootTitle(t, url.URL{Scheme: "file", Path: "/root"}, "Root")
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root", nil))
 
 	nav.setBreadcrumbs()
@@ -115,7 +112,7 @@ func TestNavigator_SetBreadcrumbs_NoCurrentDir(t *testing.T) {
 	if nav == nil {
 		t.Fatal("navigator is nil")
 	}
-	nav.store = mockStore{root: url.URL{Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/"})
 	nav.current.SetDir(nil)
 	nav.setBreadcrumbs()
 }

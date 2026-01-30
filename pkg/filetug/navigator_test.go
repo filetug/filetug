@@ -17,6 +17,7 @@ import (
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.uber.org/mock/gomock"
 )
 
 func TestOnMoveFocusUp(t *testing.T) {
@@ -170,83 +171,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 }
 
-var _ files.Store = (*mockReadDirStore)(nil)
-
-type mockReadDirStore struct {
-	root    url.URL
-	entries map[string][]os.DirEntry
-}
-
-func (m *mockReadDirStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (m *mockReadDirStore) RootTitle() string { return "Mock" }
-func (m *mockReadDirStore) RootURL() url.URL  { return m.root }
-func (m *mockReadDirStore) ReadDir(ctx context.Context, path string) ([]os.DirEntry, error) {
-	_, _ = ctx, path
-	entries, ok := m.entries[path]
-	if !ok {
-		return nil, nil
-	}
-	return entries, nil
-}
-func (m *mockReadDirStore) CreateDir(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (m *mockReadDirStore) CreateFile(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (m *mockReadDirStore) Delete(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-
-var _ files.Store = (*blockingReadDirStore)(nil)
-
-type blockingReadDirStore struct {
-	root      url.URL
-	entries   map[string][]os.DirEntry
-	firstPath string
-	block     chan struct{}
-	seen      chan string
-}
-
-func (b *blockingReadDirStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (b *blockingReadDirStore) RootTitle() string { return "Mock" }
-func (b *blockingReadDirStore) RootURL() url.URL  { return b.root }
-func (b *blockingReadDirStore) ReadDir(ctx context.Context, path string) ([]os.DirEntry, error) {
-	_, _ = ctx, path
-	if b.seen != nil {
-		b.seen <- path
-	}
-	if path == b.firstPath && b.block != nil {
-		<-b.block
-	}
-	entries, ok := b.entries[path]
-	if !ok {
-		return nil, nil
-	}
-	return entries, nil
-}
-func (b *blockingReadDirStore) CreateDir(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (b *blockingReadDirStore) CreateFile(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (b *blockingReadDirStore) Delete(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-
 func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
 	oldGetState := getState
 	getState = func() (*ftstate.State, error) { return nil, nil }
@@ -264,12 +188,15 @@ func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
 	entries := []os.DirEntry{
 		mockDirEntry{name: "child", isDir: true},
 	}
-	store := &mockReadDirStore{
-		root: url.URL{Scheme: "mock", Path: "/"},
-		entries: map[string][]os.DirEntry{
-			"/root": entries,
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "mock", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, path string) ([]os.DirEntry, error) {
+			if path == "/root" {
+				return entries, nil
+			}
+			return nil, nil
 		},
-	}
+	).AnyTimes()
 	nav.store = store
 	nav.current.SetDir(nav.NewDirContext("/root", nil))
 
@@ -308,13 +235,25 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 
 	firstEntries := []os.DirEntry{mockDirEntry{name: "firstChild", isDir: true}}
 	secondEntries := []os.DirEntry{mockDirEntry{name: "secondChild", isDir: true}}
-	store := &blockingReadDirStore{
-		root:      url.URL{Scheme: "mock", Path: "/"},
-		entries:   map[string][]os.DirEntry{"/first": firstEntries, "/second": secondEntries},
-		firstPath: "/first",
-		block:     make(chan struct{}),
-		seen:      make(chan string, 2),
-	}
+	firstPath := "/first"
+	block := make(chan struct{})
+	seen := make(chan string, 2)
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "mock", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, path string) ([]os.DirEntry, error) {
+			seen <- path
+			if path == firstPath {
+				<-block
+			}
+			if path == "/first" {
+				return firstEntries, nil
+			}
+			if path == "/second" {
+				return secondEntries, nil
+			}
+			return nil, nil
+		},
+	).AnyTimes()
 	nav.store = store
 	nav.queueUpdateDraw = func(f func()) {
 		f()
@@ -325,10 +264,10 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	nodeSecond := tview.NewTreeNode("second")
 
 	nav.showDir(ctx, nodeFirst, nav.NewDirContext("/first", nil), true)
-	firstSeen := <-store.seen
+	firstSeen := <-seen
 	nav.showDir(ctx, nodeSecond, nav.NewDirContext("/second", nil), true)
-	secondSeen := <-store.seen
-	close(store.block)
+	secondSeen := <-seen
+	close(block)
 
 	if firstSeen != "/first" {
 		t.Fatalf("expected first ReadDir to use /first, got %q", firstSeen)
@@ -354,10 +293,9 @@ func TestNavigator_setBreadcrumbs_Complex(t *testing.T) {
 	}
 
 	// Mock store with specific root
-	mStore := &mockNavigatorStore{
-		rootURL: url.URL{Scheme: "file", Path: "/root/dir"},
-	}
-	nav.store = mStore
+	store := newMockStoreWithRootTitle(t, url.URL{Scheme: "file", Path: "/root/dir"}, "Root")
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	nav.current.SetDir(nav.NewDirContext("/root/dir/subdir/subsubdir", nil))
 
 	nav.setBreadcrumbs()
@@ -431,34 +369,6 @@ func TestNewNavigator_States(t *testing.T) {
 		nav := NewNavigator(nil)
 		assert.True(t, nav != nil)
 	})
-}
-
-type mockNavigatorStore struct {
-	files.Store
-	rootURL url.URL
-}
-
-func (m *mockNavigatorStore) RootURL() url.URL {
-	return m.rootURL
-}
-
-func (m *mockNavigatorStore) RootTitle() string {
-	return "Root"
-}
-
-func (m *mockNavigatorStore) ReadDir(ctx context.Context, path string) ([]os.DirEntry, error) {
-	_, _ = ctx, path
-	return nil, nil
-}
-
-func (m *mockNavigatorStore) CreateDir(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-
-func (m *mockNavigatorStore) CreateFile(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
 }
 
 func TestNavigator_updateGitStatus_Success(t *testing.T) {
@@ -550,10 +460,9 @@ func TestNavigator_showDir_FileScheme(t *testing.T) {
 	node := tview.NewTreeNode("test")
 
 	// Mock store with file scheme
-	mStore := &mockNavigatorStore{
-		rootURL: url.URL{Scheme: "file", Path: "/"},
-	}
-	nav.store = mStore
+	store := newMockStoreWithRootTitle(t, url.URL{Scheme: "file", Path: "/"}, "Root")
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -568,9 +477,9 @@ func TestNavigator_showDir_EarlyReturnAndExpandHome(t *testing.T) {
 	nav.queueUpdateDraw = func(f func()) {
 		f()
 	}
-	nav.store = &mockNavigatorStore{
-		rootURL: url.URL{Scheme: "file", Path: "/"},
-	}
+	store := newMockStoreWithRootTitle(t, url.URL{Scheme: "file", Path: "/"}, "Root")
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 
 	ctx := context.Background()
 	nav.showDir(ctx, nil, nil, false)
@@ -586,9 +495,9 @@ func TestNavigator_showDir_EarlyReturnAndExpandHome(t *testing.T) {
 
 func TestNavigator_globalNavInputCapture(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = &mockNavigatorStore{
-		rootURL: url.URL{Scheme: "mock", Path: "/"},
-	}
+	store := newMockStoreWithRootTitle(t, url.URL{Scheme: "mock", Path: "/"}, "Root")
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	nav.queueUpdateDraw = func(f func()) {
 		f()
 	}

@@ -1,7 +1,6 @@
 package files
 
 import (
-	"context"
 	"net/url"
 	"os"
 	"path"
@@ -10,40 +9,17 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
-var _ Store = (*mockStore)(nil)
-
-type mockStore struct {
-	root url.URL
-}
-
-func (m mockStore) GetDirReader(_ context.Context, _ string) (DirReader, error) {
-	return nil, ErrNotImplemented
-}
-
-func (m mockStore) RootTitle() string { return "Mock" }
-func (m mockStore) RootURL() url.URL  { return m.root }
-func (m mockStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
-	return nil, nil
-}
-func (m mockStore) CreateDir(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (m mockStore) CreateFile(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (m mockStore) Delete(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-
 func TestDirContextMethods(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	tempDir := filepath.ToSlash(t.TempDir())
-	dir := NewDirContext(mockStore{root: url.URL{Scheme: "file"}}, tempDir, nil)
+	store := NewMockStore(ctrl)
+	store.EXPECT().RootURL().Return(url.URL{Scheme: "file"}).AnyTimes()
+	dir := NewDirContext(store, tempDir, nil)
 
 	beforeSet := time.Now()
 	dir.SetChildren([]os.DirEntry{NewDirEntry("a.txt", false)})
@@ -87,7 +63,8 @@ func TestDirContextMethods(t *testing.T) {
 	assert.Nil(t, info)
 	assert.Equal(t, "", empty.Path())
 
-	nonFileStore := mockStore{root: url.URL{Scheme: "ftp"}}
+	nonFileStore := NewMockStore(ctrl)
+	nonFileStore.EXPECT().RootURL().Return(url.URL{Scheme: "ftp"}).AnyTimes()
 	nonFileCtx := NewDirContext(nonFileStore, tempDir, nil)
 	info, err = nonFileCtx.Info()
 	assert.NoError(t, err)

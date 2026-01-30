@@ -14,6 +14,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func setupNavigatorForFilesTest(app *tview.Application) *Navigator {
@@ -27,39 +28,6 @@ func setupNavigatorForFilesTest(app *tview.Application) *Navigator {
 	nav.previewer = newPreviewerPanel(nav)
 	nav.dirsTree = &Tree{tv: tview.NewTreeView()}
 	return nav
-}
-
-var _ files.Store = (*trackingStore)(nil)
-
-type trackingStore struct {
-	root        url.URL
-	readDirPath string
-	entries     map[string][]os.DirEntry
-}
-
-func (t *trackingStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (t *trackingStore) RootTitle() string { return "Mock" }
-func (t *trackingStore) RootURL() url.URL  { return t.root }
-func (t *trackingStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
-	t.readDirPath = name
-	entries := t.entries[name]
-	return entries, nil
-}
-func (t *trackingStore) CreateDir(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
-}
-func (t *trackingStore) CreateFile(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
-}
-func (t *trackingStore) Delete(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
 }
 
 func TestNewFiles(t *testing.T) {
@@ -251,7 +219,8 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 	})
 
 	t.Run("KeyEnter_FileEntry", func(t *testing.T) {
-		dir := files.NewDirContext(&mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}}, "/tmp", nil)
+		store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+		dir := files.NewDirContext(store, "/tmp", nil)
 		fp.rows = NewFileRows(dir)
 		entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), "/tmp")
 		cell := tview.NewTableCell("file.txt")
@@ -291,7 +260,8 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 		}
 		fullNav := NewNavigator(nil)
 		fp.nav = fullNav
-		fp.rows = NewFileRows(files.NewDirContext(&mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}}, tempDir, nil))
+		store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+		fp.rows = NewFileRows(files.NewDirContext(store, tempDir, nil))
 		entry := files.NewEntryWithDirPath(linkEntry, tempDir)
 		cell := tview.NewTableCell("link")
 		cell.SetReference(entry)
@@ -312,13 +282,18 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	fp := newFiles(nav)
 	nav.files = fp
 
-	store := &trackingStore{
-		root: url.URL{Scheme: "file", Path: "/"},
-		entries: map[string][]os.DirEntry{
-			"/":           {mockDirEntry{name: "test", isDir: true}},
-			"/test/child": {mockDirEntry{name: "file.txt", isDir: false}},
-		},
+	readDirPath := ""
+	dirEntries := map[string][]os.DirEntry{
+		"/":           {mockDirEntry{name: "test", isDir: true}},
+		"/test/child": {mockDirEntry{name: "file.txt", isDir: false}},
 	}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, name string) ([]os.DirEntry, error) {
+			readDirPath = name
+			return dirEntries[name], nil
+		},
+	).AnyTimes()
 	nav.store = store
 
 	entries := []files.EntryWithDirPath{
@@ -334,12 +309,12 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	// Test row 0 (parent dir)
 	fp.selectionChanged(0, 0)
 	assert.Equal(t, nav.dirSummary, nav.right.content)
-	assert.Equal(t, "/", store.readDirPath)
+	assert.Equal(t, "/", readDirPath)
 
 	// Test dir row
 	fp.selectionChanged(1, 0)
 	assert.Equal(t, nav.dirSummary, nav.right.content)
-	assert.Equal(t, "/test/child", store.readDirPath)
+	assert.Equal(t, "/test/child", readDirPath)
 }
 
 func TestFilesPanel_OnStoreChange(t *testing.T) {
@@ -364,38 +339,6 @@ func TestFilesPanel_selectionChangedNavFunc(t *testing.T) {
 
 	fp.table.SetCell(1, 0, tview.NewTableCell(" file1.txt"))
 	fp.selectionChangedNavFunc(1, 0)
-}
-
-var _ files.Store = (*errorReadDirStore)(nil)
-
-type errorReadDirStore struct {
-	root        url.URL
-	readDirPath string
-	readErr     error
-}
-
-func (e *errorReadDirStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (e *errorReadDirStore) RootTitle() string { return "Mock" }
-func (e *errorReadDirStore) RootURL() url.URL  { return e.root }
-func (e *errorReadDirStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
-	e.readDirPath = name
-	return nil, e.readErr
-}
-func (e *errorReadDirStore) CreateDir(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
-}
-func (e *errorReadDirStore) CreateFile(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
-}
-func (e *errorReadDirStore) Delete(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
 }
 
 func TestFilesPanel_entryFromRow_MissingData(t *testing.T) {
@@ -509,10 +452,14 @@ func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 	nav := setupNavigatorForFilesTest(app)
 	nav.right = NewContainer(2, nav)
 	nav.dirSummary = newTestDirSummary(nav)
-	store := &errorReadDirStore{
-		root:    url.URL{Scheme: "file", Path: "/"},
-		readErr: assert.AnError,
-	}
+	readDirPath := ""
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, name string) ([]os.DirEntry, error) {
+			readDirPath = name
+			return nil, assert.AnError
+		},
+	).AnyTimes()
 	nav.store = store
 	fp := newFiles(nav)
 
@@ -520,7 +467,7 @@ func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 	fp.showDirSummary(entry)
 	assert.Equal(t, nav.dirSummary, nav.right.content)
 	assert.Len(t, nav.dirSummary.ExtStats, 0)
-	assert.Equal(t, "/tmp/dir", store.readDirPath)
+	assert.Equal(t, "/tmp/dir", readDirPath)
 }
 
 func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
@@ -556,16 +503,18 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 		return
 	}
 
-	store := &trackingStore{
-		root: url.URL{Scheme: "file", Path: "/"},
-		entries: map[string][]os.DirEntry{
-			linkPath: {},
+	readDirPath := ""
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, name string) ([]os.DirEntry, error) {
+			readDirPath = name
+			return []os.DirEntry{}, nil
 		},
-	}
+	).AnyTimes()
 	nav.store = store
 	fp.rows = NewFileRows(files.NewDirContext(store, tempDir, nil))
 
 	entry := files.NewEntryWithDirPath(linkEntry, tempDir)
 	fp.showDirSummary(entry)
-	assert.Equal(t, linkPath, store.readDirPath)
+	assert.Equal(t, linkPath, readDirPath)
 }

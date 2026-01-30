@@ -2,52 +2,27 @@ package filetug
 
 import (
 	"context"
-	"net/url"
-	"os"
 	"sync"
 	"testing"
 
-	"github.com/filetug/filetug/pkg/files"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
-var _ files.Store = (*recordingStore)(nil)
-
-type recordingStore struct {
-	mu    sync.Mutex
-	paths []string
-}
-
-func (r *recordingStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (r *recordingStore) RootTitle() string { return "recording" }
-func (r *recordingStore) RootURL() url.URL  { return url.URL{Path: "/"} }
-func (r *recordingStore) ReadDir(ctx context.Context, path string) ([]os.DirEntry, error) {
-	_, _ = ctx, path
-	return nil, nil
-}
-func (r *recordingStore) Delete(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (r *recordingStore) CreateDir(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	r.mu.Lock()
-	r.paths = append(r.paths, path)
-	r.mu.Unlock()
-	return nil
-}
-func (r *recordingStore) CreateFile(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-
 func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
-	store := &recordingStore{}
+	var mu sync.Mutex
+	paths := []string{}
+	store := newMockStore(t)
+	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, path string) error {
+			mu.Lock()
+			paths = append(paths, path)
+			mu.Unlock()
+			return nil
+		},
+	).AnyTimes()
 	err := GeneratedNestedDirs(context.Background(), store, "/root", "", 2, 2)
 	assert.NoError(t, err)
 
@@ -61,14 +36,14 @@ func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
 		"/root/Directory1/Directory1": {},
 	}
 
-	store.mu.Lock()
-	paths := append([]string(nil), store.paths...)
-	store.mu.Unlock()
+	mu.Lock()
+	recordedPaths := append([]string(nil), paths...)
+	mu.Unlock()
 
-	assert.Len(t, paths, len(expected))
+	assert.Len(t, recordedPaths, len(expected))
 
-	got := make(map[string]struct{}, len(paths))
-	for _, p := range paths {
+	got := make(map[string]struct{}, len(recordedPaths))
+	for _, p := range recordedPaths {
 		got[p] = struct{}{}
 	}
 	assert.Len(t, got, len(expected))
@@ -81,15 +56,25 @@ func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_DepthZero(t *testing.T) {
-	store := &recordingStore{}
+	var mu sync.Mutex
+	paths := []string{}
+	store := newMockStore(t)
+	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, path string) error {
+			mu.Lock()
+			paths = append(paths, path)
+			mu.Unlock()
+			return nil
+		},
+	).AnyTimes()
 	err := GeneratedNestedDirs(context.Background(), store, "/root", "Dir%d", 0, 3)
 	assert.NoError(t, err)
 
-	store.mu.Lock()
-	paths := append([]string(nil), store.paths...)
-	store.mu.Unlock()
+	mu.Lock()
+	recordedPaths := append([]string(nil), paths...)
+	mu.Unlock()
 
-	assert.Equal(t, []string{"/root"}, paths)
+	assert.Equal(t, []string{"/root"}, recordedPaths)
 }
 
 func TestNestedDirsGeneratorPanel_GenerateButton(t *testing.T) {

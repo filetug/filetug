@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -26,31 +25,8 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
-
-var _ files.Store = (*mockStoreWithHooks)(nil)
-
-type mockStoreWithHooks struct {
-	root          url.URL
-	rootTitle     string
-	readDirErr    error
-	createDirErr  error
-	createFileErr error
-	deleteErr     error
-	createdDirs   []string
-	createdFiles  []string
-}
-
-func (m *mockStoreWithHooks) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (m *mockStoreWithHooks) RootTitle() string {
-	if m.rootTitle != "" {
-		return m.rootTitle
-	}
-	return "Mock"
-}
 
 func newTestDirSummary(nav *Navigator) *viewers.DirSummaryPreviewer {
 	filterSetter := viewers.WithDirSummaryFilterSetter(func(filter ftui.Filter) {
@@ -66,32 +42,6 @@ func newTestDirSummary(nav *Navigator) *viewers.DirSummaryPreviewer {
 
 func newTestDirContext(store files.Store, dirPath string, entries []os.DirEntry) *files.DirContext {
 	return files.NewDirContext(store, dirPath, entries)
-}
-func (m *mockStoreWithHooks) RootURL() url.URL { return m.root }
-
-func (m *mockStoreWithHooks) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
-	if m.readDirErr != nil {
-		return nil, m.readDirErr
-	}
-	return nil, nil
-}
-
-func (m *mockStoreWithHooks) CreateDir(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	m.createdDirs = append(m.createdDirs, p)
-	return m.createDirErr
-}
-
-func (m *mockStoreWithHooks) CreateFile(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	m.createdFiles = append(m.createdFiles, p)
-	return m.createFileErr
-}
-
-func (m *mockStoreWithHooks) Delete(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return m.deleteErr
 }
 
 type mockDirEntryInfo struct {
@@ -116,49 +66,6 @@ func (n *nilFileInfo) Mode() os.FileMode  { return 0 }
 func (n *nilFileInfo) ModTime() time.Time { return time.Time{} }
 func (n *nilFileInfo) IsDir() bool        { return false }
 func (n *nilFileInfo) Sys() interface{}   { return nil }
-
-var _ files.Store = (*failingStore)(nil)
-
-type failingStore struct {
-	root      url.URL
-	failAfter int
-	calls     int
-	failOn    string
-}
-
-func (f *failingStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (f *failingStore) RootTitle() string { return "Failing" }
-func (f *failingStore) RootURL() url.URL  { return f.root }
-
-func (f *failingStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
-	return nil, nil
-}
-
-func (f *failingStore) CreateDir(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	if f.failOn != "" && strings.Contains(p, f.failOn) {
-		return errors.New("fail")
-	}
-	f.calls++
-	if f.failAfter > 0 && f.calls >= f.failAfter {
-		return errors.New("fail")
-	}
-	return nil
-}
-
-func (f *failingStore) CreateFile(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
-}
-
-func (f *failingStore) Delete(ctx context.Context, p string) error {
-	_, _ = ctx, p
-	return nil
-}
 
 func TestBottomGetAltMenuItemsExitAction(t *testing.T) {
 	nav := NewNavigator(nil)
@@ -409,12 +316,12 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 	fp.rows = NewFileRows(files.NewDirContext(nil, "", nil))
 	fp.updateGitStatuses(ctx, nil)
 
-	nav.store = mockStore{root: url.URL{Scheme: "http"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "http"})
 	fp.rows = NewFileRows(files.NewDirContext(nil, "", nil))
 	nonFileDir := files.NewDirContext(nil, t.TempDir(), nil)
 	fp.updateGitStatuses(ctx, nonFileDir)
 
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	noRepoDir := files.NewDirContext(nil, t.TempDir(), nil)
 	fp.updateGitStatuses(ctx, noRepoDir)
 
@@ -467,7 +374,7 @@ func TestFilesPanel_UpdateGitStatuses_Branches(t *testing.T) {
 	app := tview.NewApplication()
 	nav := setupNavigatorForFilesTest(app)
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	fp := newFiles(nav)
 
 	repoDir := t.TempDir()
@@ -815,7 +722,7 @@ func TestNavigator_GitStatusText_Coverage(t *testing.T) {
 
 func TestNavigator_SetBreadcrumbs_EmptyPath(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = mockStore{root: url.URL{}}
+	nav.store = newMockStoreWithRoot(t, url.URL{})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/", nil))
 	nav.setBreadcrumbs()
 }
@@ -846,12 +753,15 @@ func TestScriptsPanel_And_NestedDirsGenerator(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_Coverage(t *testing.T) {
-	store := &mockStoreWithHooks{}
+	store := newMockStore(t)
+	gomock.InOrder(
+		store.EXPECT().CreateDir(gomock.Any(), "/tmp").Return(nil),
+		store.EXPECT().CreateDir(gomock.Any(), "/tmp").Return(errors.New("fail")),
+	)
 	ctx := context.Background()
 	err := GeneratedNestedDirs(ctx, store, "/tmp", "", 0, 0)
 	assert.NoError(t, err)
 
-	store.createDirErr = errors.New("fail")
 	err = GeneratedNestedDirs(ctx, store, "/tmp", "", 1, 1)
 	assert.Error(t, err)
 }
@@ -859,7 +769,24 @@ func TestGeneratedNestedDirs_Coverage(t *testing.T) {
 func TestNewPanel_InputCapture_Create(t *testing.T) {
 	nav := NewNavigator(nil)
 
-	store := &mockStoreWithHooks{root: url.URL{Scheme: "file", Path: "/"}}
+	createdDirs := []string{}
+	createdFiles := []string{}
+	var createDirErr error
+	var createFileErr error
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, p string) error {
+			createdDirs = append(createdDirs, p)
+			return createDirErr
+		},
+	).AnyTimes()
+	store.EXPECT().CreateFile(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, p string) error {
+			createdFiles = append(createdFiles, p)
+			return createFileErr
+		},
+	).AnyTimes()
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	nav.store = store
 	nav.current.SetDir(files.NewDirContext(nav.store, "/tmp", nil))
 
@@ -876,17 +803,17 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 
 	panel.input.SetText("newdir")
 	panel.createDir()
-	assert.Len(t, store.createdDirs, 1)
+	assert.Len(t, createdDirs, 1)
 
-	store.createDirErr = errors.New("fail")
+	createDirErr = errors.New("fail")
 	panel.input.SetText("faildir")
 	panel.createDir()
 
 	panel.input.SetText("newfile")
 	panel.createFile()
-	assert.Len(t, store.createdFiles, 1)
+	assert.Len(t, createdFiles, 1)
 
-	store.createFileErr = errors.New("fail")
+	createFileErr = errors.New("fail")
 	panel.input.SetText("failfile")
 	panel.createFile()
 
@@ -1020,7 +947,7 @@ func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
 	nav := NewNavigator(nil)
 	tree := NewTree(nav)
 
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	dirContext := newTestDirContext(nav.store, "/", nil)
 	tree.setCurrentDir(dirContext)
 
@@ -1182,7 +1109,9 @@ func TestNavigator_ShowDir_NodeNil(t *testing.T) {
 	nav.queueUpdateDraw = func(f func()) {
 		f()
 	}
-	nav.store = mockStore{root: url.URL{Scheme: "http"}}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "http"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	ctx := context.Background()
 	dirContext := newTestDirContext(nav.store, "/tmp", nil)
 	nav.showDir(ctx, nil, dirContext, false)
@@ -1213,7 +1142,8 @@ func TestFilesPanel_SelectionChangedNavFunc_NilRef(t *testing.T) {
 
 func TestNavigator_DeleteEntries_Error(t *testing.T) {
 	ctx := context.Background()
-	store := &mockStoreWithHooks{deleteErr: errors.New("fail")}
+	store := newMockStore(t)
+	store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("fail")).AnyTimes()
 	err := deleteEntries(ctx, store, []string{"/tmp/file"}, func(progress OperationProgress) {})
 	assert.Error(t, err)
 }
@@ -1233,17 +1163,14 @@ func TestNavigator_GitStatusText_HasChanges(t *testing.T) {
 
 func TestNavigator_SetBreadcrumbs_PathItems(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = mockStore{root: url.URL{Path: "/root"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root"})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root/dir//child", nil))
 	nav.setBreadcrumbs()
 }
 
 func TestNavigator_SetBreadcrumbs_TitleTrim(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = &mockStoreWithHooks{
-		root:      url.URL{Path: "/root"},
-		rootTitle: "Root/",
-	}
+	nav.store = newMockStoreWithRootTitle(t, url.URL{Path: "/root"}, "Root/")
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root/child", nil))
 	nav.setBreadcrumbs()
 }
@@ -1253,7 +1180,9 @@ func TestNavigator_BreadcrumbActions(t *testing.T) {
 	err := nav.breadcrumbs.GoHome()
 	assert.NoError(t, err)
 
-	nav.store = mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	nav.current.SetDir(files.NewDirContext(nav.store, "/tmp", nil))
 	nav.setBreadcrumbs()
 	err = nav.breadcrumbs.GoHome()
@@ -1352,7 +1281,8 @@ func TestTree_InputCapture_KeyUp_NotRoot(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_Recursive(t *testing.T) {
-	store := &mockStoreWithHooks{}
+	store := newMockStore(t)
+	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	ctx := context.Background()
 	err := GeneratedNestedDirs(ctx, store, "/tmp", "Dir%d", 1, 2)
 	assert.NoError(t, err)
@@ -1360,7 +1290,7 @@ func TestGeneratedNestedDirs_Recursive(t *testing.T) {
 
 func TestNavigator_SetBreadcrumbs_RootTitle(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = mockStore{root: url.URL{Path: "/root"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root"})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root", nil))
 	nav.setBreadcrumbs()
 }
@@ -1426,9 +1356,9 @@ func TestNavigator_ShowDir_Error(t *testing.T) {
 		f()
 	}
 
-	nav.store = &mockStoreWithHooks{
-		root: url.URL{Scheme: "file", Path: "/"},
-	}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	nav.current.SetDir(files.NewDirContext(nav.store, "/tmp", nil))
 
 	node := tview.NewTreeNode("node")
@@ -1447,10 +1377,9 @@ func TestNavigator_ShowDir_ReadError(t *testing.T) {
 	nav.queueUpdateDraw = func(f func()) {
 		f()
 	}
-	nav.store = &mockStoreWithHooks{
-		root:       url.URL{Scheme: "file", Path: "/"},
-		readDirErr: errors.New("read error"),
-	}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, errors.New("read error")).AnyTimes()
+	nav.store = store
 	nav.current.SetDir(files.NewDirContext(nav.store, "/other", nil))
 
 	node := tview.NewTreeNode("node")
@@ -1578,10 +1507,9 @@ func TestNavigator_Delete_NoCurrentEntry(t *testing.T) {
 func TestNavigator_Delete_WithError(t *testing.T) {
 	nav := NewNavigator(nil)
 
-	errStore := &mockStoreWithHooks{
-		root:      url.URL{Scheme: "file", Path: "/"},
-		deleteErr: errors.New("fail"),
-	}
+	errStore := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	errStore.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("fail")).AnyTimes()
+	errStore.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	nav.store = errStore
 	nav.activeCol = 1
 
@@ -1602,7 +1530,8 @@ func TestNavigator_Delete_WithError(t *testing.T) {
 
 func TestNavigator_DeleteEntries_Success(t *testing.T) {
 	ctx := context.Background()
-	store := &mockStoreWithHooks{}
+	store := newMockStore(t)
+	store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	err := deleteEntries(ctx, store, []string{"/tmp/file"}, func(progress OperationProgress) {})
 	assert.NoError(t, err)
 }
@@ -1635,7 +1564,9 @@ func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 
 func TestNavigator_ShowDir_NoNode(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 
 	ctx := context.Background()
 	dirContext := newTestDirContext(nav.store, "/tmp", nil)
@@ -1679,7 +1610,9 @@ func TestNavigator_ShowDir_SetsBreadcrumbs(t *testing.T) {
 	nav.queueUpdateDraw = func(f func()) {
 		f()
 	}
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	ctx := context.Background()
 	node := tview.NewTreeNode("node")
 	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
@@ -1787,9 +1720,9 @@ func TestNavigator_ShowDir_ErrorNode(t *testing.T) {
 		f()
 	}
 
-	nav.store = &mockStoreWithHooks{
-		root: url.URL{Scheme: "file", Path: "/"},
-	}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	nav.current.SetDir(files.NewDirContext(nav.store, "/tmp", nil))
 	node := tview.NewTreeNode("node")
 	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
@@ -1803,7 +1736,7 @@ func TestNavigator_ShowDir_ErrorNode(t *testing.T) {
 
 func TestNavigator_SetBreadcrumbs_EmptyRelativePath(t *testing.T) {
 	nav := NewNavigator(nil)
-	nav.store = mockStore{root: url.URL{Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/"})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/", nil))
 	nav.setBreadcrumbs()
 }
@@ -2016,18 +1949,34 @@ func TestDirSummary_InputCapture_Default(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_WaitGroup(t *testing.T) {
-	store := &mockStoreWithHooks{}
+	store := newMockStore(t)
+	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	ctx := context.Background()
 	err := GeneratedNestedDirs(ctx, store, "/tmp", "Dir%d", 1, 1)
 	assert.NoError(t, err)
 }
 
 func TestGeneratedNestedDirs_SubdirError(t *testing.T) {
-	store := &failingStore{failOn: "Directory0/Directory0"}
+	var mu sync.Mutex
+	calls := 0
+	store := newMockStore(t)
+	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, p string) error {
+			mu.Lock()
+			calls++
+			mu.Unlock()
+			if p == "/tmp/Directory0/Directory0" {
+				return errors.New("fail")
+			}
+			return nil
+		},
+	).AnyTimes()
 	ctx := context.Background()
 	err := GeneratedNestedDirs(ctx, store, "/tmp", "", 2, 1)
 	assert.NoError(t, err)
-	assert.Greater(t, store.calls, 1)
+	mu.Lock()
+	assert.Greater(t, calls, 1)
+	mu.Unlock()
 }
 
 func TestNewPanel_InputCapture_ReturnsEvent(t *testing.T) {
@@ -2048,7 +1997,7 @@ func TestNavigator_ShowNewPanel_Focus(t *testing.T) {
 func TestTree_SetCurrentDir_Root(t *testing.T) {
 	nav := NewNavigator(nil)
 	tree := NewTree(nav)
-	nav.store = mockStore{root: url.URL{Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/"})
 	dirContext := newTestDirContext(nav.store, "/", nil)
 	tree.setCurrentDir(dirContext)
 }
@@ -2056,7 +2005,7 @@ func TestTree_SetCurrentDir_Root(t *testing.T) {
 func TestTree_SetCurrentDir_NonSlashRoot(t *testing.T) {
 	nav := NewNavigator(nil)
 	tree := NewTree(nav)
-	nav.store = mockStore{root: url.URL{Path: "/root/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root/"})
 	dirContext := newTestDirContext(nav.store, "/root/", nil)
 	tree.setCurrentDir(dirContext)
 }
@@ -2131,7 +2080,7 @@ func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 	rows.VisibleEntries = rows.AllEntries
 	fp.rows = rows
 	fp.table.SetContent(rows)
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 
 	var mu sync.Mutex
 	updated := false

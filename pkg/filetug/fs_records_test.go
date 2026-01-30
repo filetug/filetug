@@ -1,7 +1,6 @@
 package filetug
 
 import (
-	"context"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -13,35 +12,6 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/stretchr/testify/assert"
 )
-
-var _ files.Store = (*mockStore)(nil)
-
-type mockStore struct {
-	root url.URL
-}
-
-func (m mockStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (m mockStore) RootTitle() string { return "Mock" }
-func (m mockStore) RootURL() url.URL  { return m.root }
-func (m mockStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_, _ = ctx, name
-	return nil, nil
-}
-func (m mockStore) CreateDir(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (m mockStore) CreateFile(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
-func (m mockStore) Delete(ctx context.Context, path string) error {
-	_, _ = ctx, path
-	return nil
-}
 
 type mockDirEntry struct {
 	name  string
@@ -89,7 +59,7 @@ func TestFileRows_SetFilter(t *testing.T) {
 }
 
 func TestFileRows_GetRowCount(t *testing.T) {
-	store := mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/home", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
 		files.NewEntryWithDirPath(mockDirEntry{name: "f1", isDir: false}, ""),
@@ -104,7 +74,7 @@ func TestFileRows_GetRowCount(t *testing.T) {
 }
 
 func TestNewFileRows_NormalizesPath(t *testing.T) {
-	store := mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	rows := NewFileRows(files.NewDirContext(store, "/home/", nil))
 	assert.Equal(t, "/home", rows.Dir.Path())
 	assert.Equal(t, store, rows.store)
@@ -118,7 +88,7 @@ func TestNewFileRows_NilDir(t *testing.T) {
 }
 
 func TestFileRows_GetCell(t *testing.T) {
-	store := mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/home", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
 		files.NewEntryWithDirPath(mockDirEntry{name: "file.go", isDir: false}, "/home"),
@@ -150,7 +120,7 @@ func TestFileRows_GetCell(t *testing.T) {
 }
 
 func TestFileRows_getTopRowNameParentReference(t *testing.T) {
-	store := mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	dir := files.NewDirContext(store, "/home/user", nil)
 	fr := NewFileRows(dir)
 
@@ -171,7 +141,7 @@ func TestFileRows_getTopRowNameParentReference(t *testing.T) {
 }
 
 func TestFileRows_SetGitStatusText(t *testing.T) {
-	store := mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/home", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
 		files.NewEntryWithDirPath(mockDirEntry{name: "file.go", isDir: false}, "/home"),
@@ -203,7 +173,7 @@ func TestFileRows_SetGitStatusText(t *testing.T) {
 }
 
 func TestFileRows_Extra(t *testing.T) {
-	store := mockStore{root: url.URL{Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
 		files.NewEntryWithDirPath(mockDirEntry{name: "dir1", isDir: true}, ""),
@@ -350,7 +320,7 @@ func TestFileRows_isSymlinkToDir(t *testing.T) {
 		return nil
 	}
 
-	fileStore := mockStore{root: url.URL{Scheme: "file"}}
+	fileStore := newMockStoreWithRoot(t, url.URL{Scheme: "file"})
 	rows := NewFileRows(files.NewDirContext(fileStore, tmpDir, nil))
 
 	t.Run("dir symlink", func(t *testing.T) {
@@ -375,7 +345,7 @@ func TestFileRows_isSymlinkToDir(t *testing.T) {
 
 	t.Run("non-file store", func(t *testing.T) {
 		entry := findEntry("link-dir")
-		remoteStore := mockStore{root: url.URL{Scheme: "ftp"}}
+		remoteStore := newMockStoreWithRoot(t, url.URL{Scheme: "ftp"})
 		remoteRows := NewFileRows(files.NewDirContext(remoteStore, tmpDir, nil))
 		assert.False(t, remoteRows.isSymlinkToDir(entry))
 	})

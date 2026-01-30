@@ -13,6 +13,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestTree(t *testing.T) {
@@ -212,9 +213,9 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("inputCapture_KeyRune_GlobalHandled", func(t *testing.T) {
-		tree.nav.store = &mockNavigatorStore{
-			rootURL: url.URL{Scheme: "mock", Path: "/"},
-		}
+		store := newMockStoreWithRootTitle(t, url.URL{Scheme: "mock", Path: "/"}, "Root")
+		store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		tree.nav.store = store
 		tree.nav.queueUpdateDraw = func(f func()) {
 			f()
 		}

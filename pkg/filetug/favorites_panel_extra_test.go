@@ -12,6 +12,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestFavoritesPanel_InputCapture_DeleteCurrent_Backspace(t *testing.T) {
@@ -27,7 +28,7 @@ func TestFavoritesPanel_InputCapture_DeleteCurrent_Backspace(t *testing.T) {
 	}
 
 	nav := &Navigator{
-		store: mockStore{root: url.URL{Scheme: "file", Path: "/"}},
+		store: newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"}),
 		setAppFocus: func(p tview.Primitive) {
 			_ = p
 		},
@@ -61,7 +62,7 @@ func TestFavoritesPanel_InputCapture_DeleteCurrent_EmptyList(t *testing.T) {
 	}
 
 	nav := &Navigator{
-		store: mockStore{root: url.URL{Scheme: "file", Path: "/"}},
+		store: newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"}),
 		setAppFocus: func(p tview.Primitive) {
 			_ = p
 		},
@@ -88,7 +89,7 @@ func TestFavoritesPanel_AddCurrentFavorite_Success(t *testing.T) {
 
 	focusCalled := false
 	nav := &Navigator{
-		store: mockStore{root: url.URL{Scheme: "file", Path: "/"}},
+		store: newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"}),
 		setAppFocus: func(p tview.Primitive) {
 			_ = p
 			focusCalled = true
@@ -117,7 +118,7 @@ func TestFavoritesPanel_AddCurrentFavorite_Error(t *testing.T) {
 	}
 
 	nav := &Navigator{
-		store: mockStore{root: url.URL{Scheme: "file", Path: "/"}},
+		store: newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"}),
 		setAppFocus: func(p tview.Primitive) {
 			_ = p
 		},
@@ -133,7 +134,7 @@ func TestFavoritesPanel_AddCurrentFavorite_Error(t *testing.T) {
 func TestFavoritesPanel_UpdateAddCurrentForm_ShowHide(t *testing.T) {
 	focusCalled := false
 	nav := &Navigator{
-		store: mockStore{root: url.URL{Scheme: "file", Path: "/"}},
+		store: newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"}),
 		setAppFocus: func(p tview.Primitive) {
 			_ = p
 			focusCalled = true
@@ -301,7 +302,9 @@ func TestFavoritesPanel_InputCapture_KeyEnter_Escape_Left(t *testing.T) {
 	nav.setAppFocus = func(p tview.Primitive) {
 		_ = p
 	}
-	nav.store = mockStore{root: url.URL{Scheme: "file", Path: "/"}}
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
 	nav.current.SetDir(nav.NewDirContext("/tmp", nil))
 
 	panel := nav.favorites
@@ -347,7 +350,7 @@ func TestFavoritesPanel_DeleteCurrentFavorite_Error(t *testing.T) {
 	}
 
 	nav := &Navigator{
-		store: mockStore{root: url.URL{Scheme: "file", Path: "/"}},
+		store: newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"}),
 		setAppFocus: func(p tview.Primitive) {
 			_ = p
 		},

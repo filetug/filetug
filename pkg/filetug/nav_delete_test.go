@@ -12,6 +12,7 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/rivo/tview"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNavigator_Delete_And_Operations(t *testing.T) {
@@ -74,7 +75,9 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 	})
 
 	t.Run("delete_with_error", func(t *testing.T) {
-		nav.store = &mockStoreWithHooks{deleteErr: errors.New("delete error")}
+		store := newMockStore(t)
+		store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("delete error")).AnyTimes()
+		nav.store = store
 		nav.activeCol = 1
 		nav.files.rows = &FileRows{
 			VisibleEntries: []files.EntryWithDirPath{
