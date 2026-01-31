@@ -7,5 +7,6 @@ import (
 func SetupApp(app navigator.App) {
 	app.EnableMouse(true)
 	nav := NewNavigator(app)
+	initNavigatorWithPersistedState(nav)
 	app.SetRoot(nav, true)
 }

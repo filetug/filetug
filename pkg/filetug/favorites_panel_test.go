@@ -25,7 +25,7 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("ShowFavorites", func(t *testing.T) {
-		f.ShowFavorites()
+		f.nav.ShowFavorites()
 	})
 
 	t.Run("activateFavorite_preview", func(t *testing.T) {

@@ -291,7 +291,7 @@ func TestFavoritesPanel_InputCapture_KeyEnter_Escape_Left(t *testing.T) {
 	nav.current.SetDir(nav.NewDirContext("/tmp", nil))
 
 	panel := nav.favorites
-	panel.ShowFavorites()
+	panel.nav.ShowFavorites()
 
 	panel.items = []ftfav.Favorite{{Store: nav.store.RootURL(), Path: "/tmp"}}
 	panel.setItems()

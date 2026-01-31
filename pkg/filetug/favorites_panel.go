@@ -12,7 +12,6 @@ import (
 	"github.com/filetug/filetug/pkg/files/httpfile"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/filetug/ftfav"
-	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/fsutils"
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
@@ -25,7 +24,6 @@ type favoritesPanel struct {
 	nav            *Navigator
 	list           *tview.List
 	items          []ftfav.Favorite
-	prev           ftstate.Current
 	addContainer   *tview.Flex
 	addFormVisible bool
 	addButton      *tview.Button
@@ -37,13 +35,11 @@ var (
 	getFavorites   = ftfav.GetFavorites
 )
 
-func (f *favoritesPanel) ShowFavorites() {
-	f.prev = f.nav.current
-	f.nav.left.SetContent(f)
-	f.updateAddCurrentForm()
-	if f.nav != nil && f.nav.app != nil {
-		f.nav.app.SetFocus(f.list)
-	}
+func (nav *Navigator) ShowFavorites() {
+	nav.prev = nav.current
+	nav.left.SetContent(nav.favorites)
+	nav.favorites.updateAddCurrentForm()
+	nav.app.SetFocus(nav.favorites.list)
 }
 
 func builtInFavorites() []ftfav.Favorite {
@@ -102,14 +98,12 @@ func newFavoritesPanel(nav *Navigator) *favoritesPanel {
 		items := make([]ftfav.Favorite, 0, len(f.items)+len(userFavorites))
 		items = append(items, f.items...)
 		items = append(items, userFavorites...)
-		update := func() {
-			f.items = items
-			f.setItems()
-			f.updateAddCurrentForm()
-		}
-		if f.nav != nil && f.nav.app != nil {
-			f.nav.app.QueueUpdateDraw(update)
-		}
+		//update := func() {
+		//	f.items = items
+		//	f.setItems()
+		//	f.updateAddCurrentForm()
+		//}
+		//f.nav.app.QueueUpdateDraw(update)
 	}()
 	return f
 }
@@ -190,8 +184,8 @@ func (f *favoritesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		f.deleteCurrentFavorite()
 		return nil
 	case tcell.KeyEscape:
-		if f.prev.Dir() != nil {
-			f.nav.goDir(f.prev.Dir())
+		if f.nav.prev.Dir() != nil {
+			f.nav.goDir(f.nav.prev.Dir())
 		}
 		f.nav.left.SetContent(f.nav.dirsTree)
 		f.nav.app.SetFocus(f.nav.dirsTree)

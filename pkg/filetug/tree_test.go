@@ -43,29 +43,42 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("doLoadingAnimation", func(t *testing.T) {
-		t.Skip("failing")
-		t.Parallel()
+		//t.Skip("failing")
+		//t.Parallel()
 		loading := tview.NewTreeNode(" Loading...")
 		nav, app, _ := newNavigatorForTest(t)
-		tree := NewTree(nav)
-		tree.rootNode.ClearChildren()
+		tree := NewTree(nav) //tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
 
-		// We need to avoid infinite recursion and hangs.
-		// We want to test at least one iteration.
-		// We can use a channel to signal when SetText is called, but SetText doesn't have a callback.
-		// However, we can check if the text changed after a short delay.
+		time.Sleep(time.Millisecond) // Allow initial QueueUpdateDraw on initial setDir
 
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).MinTimes(1).DoAndReturn(func(f func()) {
+		done := make(chan struct{})
+		var texts []string
+		var updatesCount int
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
+			updatesCount++
 			f()
-			tree.rootNode.ClearChildren()
+			if updatesCount >= 4 {
+				done <- struct{}{}
+				return
+			}
+			texts = append(texts, loading.GetText())
+			if updatesCount >= 3 {
+				tree.rootNode.ClearChildren()
+				tree.rootNode.AddChild(tview.NewTreeNode("sub_dir_1"))
+			}
 		})
 
 		go func() {
 			tree.doLoadingAnimation(loading)
 		}()
-		time.Sleep(110 * time.Millisecond)
-		// Since we cleared children in a goroutine, it should have iterated a few times then stopped.
+
+		select {
+		case <-done:
+		case <-time.After(100 * time.Second):
+			t.Fatal("timeout waiting for queueUpdateDraw")
+		}
+		assert.Greater(t, len(texts), 0)
 	})
 
 	t.Run("doLoadingAnimation_queueUpdateDrawExecutes", func(t *testing.T) {
@@ -80,7 +93,7 @@ func TestTree(t *testing.T) {
 		queued := false
 		done := make(chan struct{})
 		var once sync.Once
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).MinTimes(1).DoAndReturn(func(f func()) {
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
 			queued = true
 			f()
 			tree.rootNode.ClearChildren()
