@@ -8,6 +8,7 @@ import (
 )
 
 func TestGetCurrentDir(t *testing.T) {
+	//t.Parallel()
 	// Setup temporary directory for testing
 	tmpDir, err := os.MkdirTemp("", "filetug-test-*")
 	if err != nil {
@@ -48,6 +49,7 @@ func TestGetCurrentDir(t *testing.T) {
 }
 
 func TestSaveCurrentDir(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "filetug-test-*")
 	if err != nil {
 		t.Fatal(err)
@@ -169,6 +171,7 @@ func TestSaveCurrentDir(t *testing.T) {
 }
 
 func TestGetState(t *testing.T) {
+	//t.Parallel()
 	origReadJSON := readJSON
 	defer func() { readJSON = origReadJSON }()
 
@@ -199,6 +202,7 @@ func TestGetState(t *testing.T) {
 }
 
 func TestSaveSelectedTreeDir(t *testing.T) {
+	//t.Parallel()
 	origReadJSON := readJSON
 	origWriteJSON := writeJSON
 	defer func() {
@@ -226,6 +230,7 @@ func TestSaveSelectedTreeDir(t *testing.T) {
 }
 
 func TestSaveCurrentFileName(t *testing.T) {
+	//t.Parallel()
 	origReadJSON := readJSON
 	origWriteJSON := writeJSON
 	defer func() {
@@ -250,10 +255,12 @@ func TestSaveCurrentFileName(t *testing.T) {
 }
 
 func TestSaveCurrentDir_InvalidURL(t *testing.T) {
+	//t.Parallel()
 	SaveCurrentDir(":", "/dir")
 }
 
 func TestGetStateFilePath(t *testing.T) {
+	//t.Parallel()
 	oldDirPath := settingsDirPath
 	settingsDirPath = "/tmp/test"
 	defer func() { settingsDirPath = oldDirPath }()

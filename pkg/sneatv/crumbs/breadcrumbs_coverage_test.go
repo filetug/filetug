@@ -9,6 +9,7 @@ import (
 )
 
 func TestBreadcrumbs_Draw_EdgeCases(t *testing.T) {
+	t.Parallel()
 	// width <= 0
 	bc := NewBreadcrumbs(NewBreadcrumb("A", nil))
 	bc.SetRect(0, 0, 0, 1)
@@ -42,6 +43,7 @@ func TestBreadcrumbs_Draw_EdgeCases(t *testing.T) {
 }
 
 func TestBreadcrumbs_MouseHandler_EdgeCases(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Alpha", nil))
 	bc.SetRect(0, 0, 20, 1)
 
@@ -134,6 +136,7 @@ func TestBreadcrumbs_MouseHandler_EdgeCases(t *testing.T) {
 }
 
 func TestBreadcrumbs_InputHandler_EdgeCases(t *testing.T) {
+	t.Parallel()
 	// Empty items
 	bc := NewBreadcrumbs(nil)
 	bc.items = nil // Force it to be empty as NewBreadcrumbs(nil) might add a home item or something
@@ -155,6 +158,7 @@ func TestBreadcrumbs_InputHandler_EdgeCases(t *testing.T) {
 }
 
 func TestBreadcrumbs_FocusBlur_EdgeCases(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("A", nil))
 	bc.Push(NewBreadcrumb("B", nil))
 

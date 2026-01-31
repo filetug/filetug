@@ -44,6 +44,7 @@ func (m *mockFtpClient) Quit() error {
 }
 
 func TestStore_RootURL_and_Title(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("ftp://user:pass@example.com/some/path/f")
 	s := NewStore(*root)
 
@@ -65,12 +66,14 @@ func TestStore_RootURL_and_Title(t *testing.T) {
 }
 
 func TestNewStore_InvalidScheme(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("http://example.com")
 	store := NewStore(*root)
 	assert.Nil(t, store)
 }
 
 func TestStore_SetTLS(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("ftp://example.com")
 	s := NewStore(*root)
 	if s == nil {
@@ -82,6 +85,7 @@ func TestStore_SetTLS(t *testing.T) {
 }
 
 func TestStore_ReadDir_Errors(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("ftp://user:pass@example.com/")
 
 	t.Run("dial_error", func(t *testing.T) {
@@ -280,6 +284,7 @@ func TestStore_ReadDir_Errors(t *testing.T) {
 }
 
 func TestStore_Create_Delete_NotImplemented(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("ftp://example.com")
 	s := NewStore(*root)
 	ctx := context.Background()
@@ -292,6 +297,7 @@ func TestStore_Create_Delete_NotImplemented(t *testing.T) {
 }
 
 func TestStore_ReadDir_TLS_Options(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("ftp://example.com")
 
 	t.Run("explicit_tls", func(t *testing.T) {
@@ -322,6 +328,7 @@ func TestStore_ReadDir_TLS_Options(t *testing.T) {
 }
 
 func TestStore_ReadDir_Mock(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("ftp://demo:password@example.com/")
 	mockClient := &mockFtpClient{
 		ListFunc: func(path string) ([]*ftp.Entry, error) {
@@ -349,6 +356,7 @@ func TestStore_ReadDir_Mock(t *testing.T) {
 }
 
 func TestFtpDial_Default(t *testing.T) {
+	t.Parallel()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	assert.NoError(t, err)
 	if err != nil {
@@ -397,6 +405,7 @@ func TestFtpDial_Default(t *testing.T) {
 }
 
 func TestStore_ReadDir(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("RUN_FTP_INTEGRATION_TESTS") != "true" {
 		t.Skip("skipping integration test; set RUN_FTP_INTEGRATION_TESTS=true to run")
 	}

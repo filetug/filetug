@@ -37,6 +37,7 @@ func (a tviewTabsApp) SetFocus(p tview.Primitive) {
 }
 
 func TestNewTab(t *testing.T) {
+	t.Parallel()
 	content := tview.NewBox()
 	tab := NewTab("tab-1", "Tab 1", true, content)
 	assert.Equal(t, "tab-1", tab.ID)
@@ -46,12 +47,14 @@ func TestNewTab(t *testing.T) {
 }
 
 func TestNewTabs(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle, WithLabel("Tabs:"))
 	assert.NotNil(t, tabs)
 	assert.Equal(t, "Tabs:", tabs.label)
 }
 
 func TestTabs_AddAndSwitch(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle)
 	tab1 := &Tab{ID: "1", Title: "Tab 1", Primitive: tview.NewBox()}
 	tab2 := &Tab{ID: "2", Title: "Tab 2", Primitive: tview.NewBox()}
@@ -68,6 +71,7 @@ func TestTabs_AddAndSwitch(t *testing.T) {
 }
 
 func TestTabs_AddTabsUpdatesTextView(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle)
 	tab1 := &Tab{ID: "1", Title: "Tab 1", Primitive: tview.NewBox()}
 	tab2 := &Tab{ID: "2", Title: "Tab 2", Primitive: tview.NewBox()}
@@ -83,6 +87,7 @@ func TestTabs_AddTabsUpdatesTextView(t *testing.T) {
 }
 
 func TestTabs_Navigation(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle,
 		WithLabel("Tabs:"),
 		FocusLeft(func(current tview.Primitive) {}),
@@ -145,6 +150,7 @@ func TestTabs_Navigation(t *testing.T) {
 }
 
 func TestTabs_UpdateTextView(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, RadioTabsStyle, WithLabel("Tabs:"))
 	tabs.AddTabs(
 		&Tab{ID: "1", Title: "T1", Primitive: tview.NewBox(), Closable: true},
@@ -175,6 +181,7 @@ func TestTabs_UpdateTextView(t *testing.T) {
 }
 
 func TestTabs_Callbacks(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle)
 	tabs.AddTabs(&Tab{ID: "1", Title: "T1", Primitive: tview.NewBox()})
 
@@ -187,6 +194,7 @@ func TestTabs_Callbacks(t *testing.T) {
 }
 
 func TestTabs_Options(t *testing.T) {
+	t.Parallel()
 	focusUpCalled := false
 	focusDownCalled := false
 	focusLeftCalled := false
@@ -210,6 +218,7 @@ func TestTabs_Options(t *testing.T) {
 }
 
 func TestTabs_FocusCallbacks(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle)
 
 	// Test FocusFunc
@@ -231,6 +240,7 @@ func TestTabs_FocusCallbacks(t *testing.T) {
 }
 
 func TestTabs_SetIsFocused_WithApp(t *testing.T) {
+	t.Parallel()
 	app := &fakeTabsApp{updated: make(chan struct{}, 1)}
 	tabs := NewTabs(app, UnderlineTabsStyle)
 	tabs.AddTabs(&Tab{ID: "1", Title: "T1", Primitive: tview.NewBox()})
@@ -246,6 +256,7 @@ func TestTabs_SetIsFocused_WithApp(t *testing.T) {
 }
 
 func TestTabs_SetIsFocused_NoApp(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle)
 	tabs.AddTabs(&Tab{ID: "1", Title: "T1", Primitive: tview.NewBox()})
 
@@ -255,6 +266,7 @@ func TestTabs_SetIsFocused_NoApp(t *testing.T) {
 }
 
 func TestTabs_HighlightedFunc(t *testing.T) {
+	t.Parallel()
 	tabs := NewTabs(nil, UnderlineTabsStyle)
 	tab1 := &Tab{ID: "1", Title: "Tab 1", Primitive: tview.NewBox()}
 	tab2 := &Tab{ID: "2", Title: "Tab 2", Primitive: tview.NewBox()}
@@ -276,6 +288,7 @@ func TestTabs_HighlightedFunc(t *testing.T) {
 }
 
 func TestNewTabs_WithTviewApp(t *testing.T) {
+	t.Parallel()
 	app := tview.NewApplication()
 	tabs := NewTabs(tviewTabsApp{app}, UnderlineTabsStyle)
 	assert.NotNil(t, tabs)

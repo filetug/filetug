@@ -13,6 +13,7 @@ func (errReader) Read([]byte) (int, error) {
 }
 
 func TestReadLimitedContent(t *testing.T) {
+	t.Parallel()
 	t.Run("success", func(t *testing.T) {
 		content, err := readLimitedContent(strings.NewReader("alpha\nbeta"))
 		if err != nil {
@@ -32,6 +33,7 @@ func TestReadLimitedContent(t *testing.T) {
 }
 
 func TestSplitLines(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		input   string
@@ -55,6 +57,7 @@ func TestSplitLines(t *testing.T) {
 }
 
 func TestDiffLineStats(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		oldContent string

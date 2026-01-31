@@ -13,6 +13,7 @@ import (
 )
 
 func TestNewPanel_Coverage(t *testing.T) {
+	//t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tmpDir := t.TempDir()
 	nav.store = osfile.NewStore(tmpDir)
@@ -91,6 +92,7 @@ func TestNewPanel_Coverage(t *testing.T) {
 }
 
 func TestScripts_And_NestedDirs(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	t.Run("showScriptsPanel", func(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 )
 
 func TestDirEntry(t *testing.T) {
+	t.Parallel()
 	t.Run("file", func(t *testing.T) {
 		name := "testfile"
 		const isDir = false
@@ -94,6 +95,7 @@ func (p pathDirEntry) Info() (os.FileInfo, error) {
 }
 
 func TestNewDirEntry_PanicsOnNameWithPath(t *testing.T) {
+	t.Parallel()
 	name := filepath.Join("parent", "child")
 	defer func() {
 		if r := recover(); r == nil {
@@ -104,6 +106,7 @@ func TestNewDirEntry_PanicsOnNameWithPath(t *testing.T) {
 }
 
 func TestNewEntryWithDirPath_PanicsOnNameWithPath(t *testing.T) {
+	t.Parallel()
 	entry := pathDirEntry{name: "parent/child"}
 	defer func() {
 		if r := recover(); r == nil {
@@ -114,6 +117,7 @@ func TestNewEntryWithDirPath_PanicsOnNameWithPath(t *testing.T) {
 }
 
 func TestFileInfo_NilReceiver(t *testing.T) {
+	t.Parallel()
 	var f *FileInfo
 	if f.Name() != "" {
 		t.Errorf("expected empty name for nil FileInfo")
@@ -136,6 +140,7 @@ func TestFileInfo_NilReceiver(t *testing.T) {
 }
 
 func TestEntryWithDirPath(t *testing.T) {
+	t.Parallel()
 	entry := NewDirEntry("test.txt", false)
 	dir := "/home/user"
 	e := NewEntryWithDirPath(entry, dir)

@@ -10,6 +10,7 @@ import (
 )
 
 func TestDirExists(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "filetug_test")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
@@ -42,6 +43,7 @@ func TestDirExists(t *testing.T) {
 }
 
 func TestExpandHome(t *testing.T) {
+	t.Parallel()
 	t.Run("empty", func(t *testing.T) {
 		assert.Equal(t, "", ExpandHome(""))
 	})
@@ -59,6 +61,7 @@ func TestExpandHome(t *testing.T) {
 }
 
 func TestReadJSONFile(t *testing.T) {
+	t.Parallel()
 	type A struct {
 		B string
 	}
@@ -198,6 +201,7 @@ func (c closeDecoder) Decode(interface{}) error {
 }
 
 func TestReadFile_DecoderError(t *testing.T) {
+	t.Parallel()
 	tmpFile, err := os.CreateTemp("", "test*.json")
 	assert.NoError(t, err)
 	defer func() {
@@ -211,6 +215,7 @@ func TestReadFile_DecoderError(t *testing.T) {
 }
 
 func TestReadFile_CloseError(t *testing.T) {
+	t.Parallel()
 	tmpFile, err := os.CreateTemp("", "test*.json")
 	assert.NoError(t, err)
 	filePath := tmpFile.Name()
@@ -231,6 +236,7 @@ func TestReadFile_CloseError(t *testing.T) {
 }
 
 func TestDirExists_Error(t *testing.T) {
+	t.Parallel()
 	// This is hard to trigger without a mockable filesystem, but we can try with a path that is too long on some systems
 	// or just a path that we don't have permission to access.
 	// Actually, we can use a path that contains a null byte to trigger an error in os.Stat.

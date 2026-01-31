@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewBreadcrumb(t *testing.T) {
+	t.Parallel()
 	t.Run("with_action", func(t *testing.T) {
 		actionCalled := false
 		action := func() error {
@@ -40,6 +41,7 @@ func TestNewBreadcrumb(t *testing.T) {
 }
 
 func TestBreadcrumb_SetTitle(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumb("Old Title", nil)
 	bc.SetTitle("New Title")
 	assert.Equal(t, "New Title", bc.GetTitle())

@@ -8,6 +8,7 @@ import (
 )
 
 func TestDoCPUProfiling(t *testing.T) {
+	t.Parallel()
 	origOsCreate := osCreate
 	defer func() { osCreate = origOsCreate }()
 

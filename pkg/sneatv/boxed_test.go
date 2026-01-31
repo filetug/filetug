@@ -10,6 +10,7 @@ import (
 )
 
 func TestNewBoxed(t *testing.T) {
+	t.Parallel()
 	inner := tview.NewBox().SetTitle("Inner Title")
 	boxed := NewBoxed(inner,
 		WithLeftBorder(1, 0),
@@ -23,6 +24,7 @@ func TestNewBoxed(t *testing.T) {
 }
 
 func TestBoxed_Draw(t *testing.T) {
+	t.Parallel()
 	screen := ttestutils.NewSimScreen(t, "UTF-8", 40, 10)
 
 	inner := tview.NewBox().SetTitle("Inner Title")
@@ -54,6 +56,7 @@ func TestBoxed_Draw(t *testing.T) {
 }
 
 func TestBoxed_DrawFooter(t *testing.T) {
+	t.Parallel()
 	screen := ttestutils.NewSimScreen(t, "UTF-8", 20, 5)
 
 	inner := tview.NewBox().SetTitle("Inner Title")
@@ -78,6 +81,7 @@ func TestBoxed_DrawFooter(t *testing.T) {
 }
 
 func TestBoxed_DrawFooterRerender(t *testing.T) {
+	t.Parallel()
 	screen := ttestutils.NewSimScreen(t, "UTF-8", 20, 5)
 
 	footer := tview.NewTextView().SetText("FOOT")
@@ -98,12 +102,14 @@ func TestBoxed_DrawFooterRerender(t *testing.T) {
 }
 
 func TestWithFooter(t *testing.T) {
+	t.Parallel()
 	footer := tview.NewTextView().SetText("Footer")
 	boxed := NewBoxed(tview.NewBox(), WithFooter(footer))
 	require.Equal(t, footer, boxed.options.footer)
 }
 
 func TestBorderPrimitiveWidth(t *testing.T) {
+	t.Parallel()
 	require.Equal(t, 0, borderPrimitiveWidth(nil))
 
 	box := tview.NewBox()

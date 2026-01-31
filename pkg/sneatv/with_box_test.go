@@ -8,6 +8,7 @@ import (
 )
 
 func TestWithBoxType(t *testing.T) {
+	t.Parallel()
 	inner := tview.NewBox()
 	box := tview.NewBox()
 	wb := WithBoxType[*tview.Box]{
@@ -20,6 +21,7 @@ func TestWithBoxType(t *testing.T) {
 }
 
 func TestWithDefaultBorders(t *testing.T) {
+	t.Parallel()
 	inner := tview.NewBox()
 	box := tview.NewBox()
 	wb := WithDefaultBorders(inner, box)
@@ -29,6 +31,7 @@ func TestWithDefaultBorders(t *testing.T) {
 }
 
 func TestWithBordersWithoutPadding(t *testing.T) {
+	t.Parallel()
 	inner := tview.NewBox()
 	box := tview.NewBox()
 	wb := WithBordersWithoutPadding(inner, box)
@@ -38,6 +41,7 @@ func TestWithBordersWithoutPadding(t *testing.T) {
 }
 
 func TestWithBoxWithoutBorder(t *testing.T) {
+	t.Parallel()
 	inner := tview.NewBox()
 	box := tview.NewBox()
 	wb := WithBoxWithoutBorder(inner, box)
@@ -47,6 +51,7 @@ func TestWithBoxWithoutBorder(t *testing.T) {
 }
 
 func TestSetPanelTitle(t *testing.T) {
+	t.Parallel()
 	box := tview.NewBox()
 	SetPanelTitle(box, "Test Title")
 	assert.Equal(t, "Test Title", box.GetTitle())

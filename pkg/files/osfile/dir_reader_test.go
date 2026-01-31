@@ -10,6 +10,7 @@ import (
 )
 
 func TestStore_GetDirReader(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	s := NewStore(tempDir)
 	ctx := context.Background()
@@ -41,6 +42,7 @@ func TestStore_GetDirReader(t *testing.T) {
 }
 
 func TestDirReader_Close(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	s := NewStore(tempDir)
 	dr, err := s.GetDirReader(context.Background(), tempDir)

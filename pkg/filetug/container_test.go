@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewContainer(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	index := 1
 	c := NewContainer(index, nav)
@@ -27,6 +28,7 @@ func TestNewContainer(t *testing.T) {
 }
 
 func TestContainer_SetContent(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	c := NewContainer(1, nav)
 
@@ -54,7 +56,7 @@ func TestContainer_SetContent(t *testing.T) {
 }
 
 func TestContainer_Focus(t *testing.T) {
-
+	t.Parallel()
 	t.Run("non_nil_content", func(t *testing.T) {
 		b := tview.NewBox()
 

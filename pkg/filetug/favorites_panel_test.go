@@ -10,6 +10,7 @@ import (
 )
 
 func TestFavorites(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	f := newFavoritesPanel(nav)
 
@@ -112,6 +113,7 @@ func TestFavorites(t *testing.T) {
 }
 
 func TestNewFavorites_NilNav(t *testing.T) {
+	t.Parallel()
 	// Although newFavoritesPanel expects a navigator, let's see what happens if it is nil
 	f := newFavoritesPanel(nil)
 	if f == nil {
@@ -121,6 +123,7 @@ func TestNewFavorites_NilNav(t *testing.T) {
 
 func TestFavorites_SetStore_InvalidURL(t *testing.T) {
 	t.Skip("panics")
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	f := newFavoritesPanel(nav)
 

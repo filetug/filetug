@@ -8,6 +8,7 @@ import (
 )
 
 func TestDefaultBorderWithoutPadding_FocusBlur(t *testing.T) {
+	t.Parallel()
 	box := tview.NewBox()
 
 	DefaultBorderWithoutPadding(box)

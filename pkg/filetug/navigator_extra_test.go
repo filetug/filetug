@@ -25,6 +25,7 @@ func getDirSummarySafe(nav *Navigator) *viewers.DirPreviewer {
 }
 
 func TestNavigator_SetStore(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	if nav == nil {
 		t.Fatal("navigator is nil")
@@ -35,6 +36,7 @@ func TestNavigator_SetStore(t *testing.T) {
 }
 
 func TestNavigator_SetFocusToContainer(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	// Test index 1 (files)
@@ -44,6 +46,7 @@ func TestNavigator_SetFocusToContainer(t *testing.T) {
 }
 
 func TestNewNavigator_InvalidURL(t *testing.T) {
+	t.Parallel()
 	oldGetState := getState
 	defer func() { getState = oldGetState }()
 
@@ -59,13 +62,17 @@ func TestNewNavigator_InvalidURL(t *testing.T) {
 }
 
 func TestNavigator_InputCapture_Extra(t *testing.T) {
-	nav, _, _ := newNavigatorForTest(t)
+	t.Parallel()
 
 	t.Run("AltX", func(t *testing.T) {
+		nav, app, _ := newNavigatorForTest(t)
+		app.EXPECT().Stop()
 		event := tcell.NewEventKey(tcell.KeyRune, 'x', tcell.ModAlt)
 		res := nav.inputCapture(event)
 		assert.Equal(t, (*tcell.EventKey)(nil), res)
 	})
+
+	nav, _, _ := newNavigatorForTest(t)
 
 	t.Run("PlainRune", func(t *testing.T) {
 		event := tcell.NewEventKey(tcell.KeyRune, 'a', tcell.ModNone)
@@ -81,6 +88,7 @@ func TestNavigator_InputCapture_Extra(t *testing.T) {
 }
 
 func TestNavigator_Resize_Extra(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	t.Run("Resize_ActiveCol0", func(t *testing.T) {
@@ -105,6 +113,7 @@ func TestNavigator_Resize_Extra(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_EmptyRelative(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	if nav == nil {
 		t.Fatal("navigator is nil")
@@ -117,6 +126,7 @@ func TestNavigator_SetBreadcrumbs_EmptyRelative(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_NoCurrentDir(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	if nav == nil {
 		t.Fatal("navigator is nil")
@@ -128,6 +138,7 @@ func TestNavigator_SetBreadcrumbs_NoCurrentDir(t *testing.T) {
 
 func TestNavigator_DirSummary_FocusLeft(t *testing.T) {
 	t.Skip("failing")
+	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 
 	app.EXPECT().SetFocus(gomock.Any()).Times(1)
@@ -139,6 +150,7 @@ func TestNavigator_DirSummary_FocusLeft(t *testing.T) {
 }
 
 func TestNavigator_UpdateGitStatus_RealCall(t *testing.T) {
+	t.Parallel()
 	// This is hard to test without real git, but we can at least try to call it
 	// and see it doesn't crash.
 	nav, _, _ := newNavigatorForTest(t)
@@ -157,6 +169,7 @@ func TestNavigator_UpdateGitStatus_RealCall(t *testing.T) {
 }
 
 func TestNavigator_ShowNodeError_Extra(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	if nav == nil {
 		t.Fatal("navigator is nil")
@@ -171,6 +184,7 @@ func TestNavigator_ShowNodeError_Extra(t *testing.T) {
 }
 
 func TestNavigator_ShowDir_GitStatusCall(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	if nav == nil {
 		t.Fatal("navigator is nil")
@@ -187,6 +201,7 @@ func TestNavigator_ShowDir_GitStatusCall(t *testing.T) {
 }
 
 func TestNewNavigator_EmptyState(t *testing.T) {
+	t.Parallel()
 	oldGetState := getState
 	defer func() { getState = oldGetState }()
 

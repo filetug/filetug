@@ -54,6 +54,7 @@ func (a tviewDirPreviewerApp) SetFocus(p tview.Primitive) {
 }
 
 func TestNewDirSummary(t *testing.T) {
+	t.Parallel()
 	app := tview.NewApplication()
 	ds := NewDirPreviewer(tviewDirPreviewerApp{app})
 	assert.NotNil(t, ds)
@@ -61,6 +62,7 @@ func TestNewDirSummary(t *testing.T) {
 }
 
 func TestDirSummary_SetDir(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 
 	entries := []os.DirEntry{
@@ -92,6 +94,7 @@ func TestDirSummary_SetDir(t *testing.T) {
 }
 
 func TestGetSizeCell(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		size int64
 	}{
@@ -131,6 +134,7 @@ func TestGetSizeCell(t *testing.T) {
 }
 
 func TestDirSummary_Extra(t *testing.T) {
+	t.Parallel()
 	var lastFilter ftui.Filter
 	filterSetter := WithDirSummaryFilterSetter(func(filter ftui.Filter) {
 		lastFilter = filter
@@ -231,6 +235,7 @@ func TestDirSummary_Extra(t *testing.T) {
 }
 
 func TestDirSummary_PreviewAndOptions(t *testing.T) {
+	t.Parallel()
 	queueCalled := false
 	queueUpdate := WithDirSummaryQueueUpdateDraw(func(f func()) {
 		queueCalled = true
@@ -259,6 +264,7 @@ func TestDirSummary_PreviewAndOptions(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_LeftWithoutFocus(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 	entries := []os.DirEntry{
@@ -273,6 +279,7 @@ func TestDirSummary_InputCapture_LeftWithoutFocus(t *testing.T) {
 }
 
 func TestDirSummary_SetDir_WithRepo(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 	ds.GitPreviewer.statusLoader = func(_ string) (gitDirStatusResult, error) {
 		return gitDirStatusResult{repoRoot: "/repo"}, nil
@@ -292,6 +299,7 @@ func TestDirSummary_SetDir_WithRepo(t *testing.T) {
 }
 
 func TestDirSummary_SetDir_ActivateGitTabWhenDirty(t *testing.T) {
+	t.Parallel()
 
 	updates := make(chan struct{}, 5)
 	ds := NewDirPreviewer(nil, WithDirSummaryQueueUpdateDraw(func(f func()) {
@@ -332,6 +340,7 @@ func TestDirSummary_SetDir_ActivateGitTabWhenDirty(t *testing.T) {
 }
 
 func TestDirSummary_SetDir_DirtyGitTabNotActivated(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil, WithDirSummaryQueueUpdateDraw(func(f func()) {
 		f()
@@ -356,6 +365,7 @@ func TestDirSummary_SetDir_DirtyGitTabNotActivated(t *testing.T) {
 }
 
 func TestDirSummary_SetDir_StatusLoaderNil(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 	ds.GitPreviewer.statusLoader = nil
 
@@ -372,6 +382,7 @@ func TestDirSummary_SetDir_StatusLoaderNil(t *testing.T) {
 }
 
 func TestDirSummary_ActivateGitTabIfDirty_GitPreviewerNil(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 	ds.GitPreviewer = nil
@@ -380,6 +391,7 @@ func TestDirSummary_ActivateGitTabIfDirty_GitPreviewerNil(t *testing.T) {
 }
 
 func TestDirSummary_ActivateGitTabIfDirty_StatusLoaderError(t *testing.T) {
+	t.Parallel()
 	loaderCalled := make(chan struct{}, 1)
 	ds := NewDirPreviewer(nil)
 	ds.GitPreviewer.statusLoader = func(_ string) (gitDirStatusResult, error) {
@@ -397,6 +409,7 @@ func TestDirSummary_ActivateGitTabIfDirty_StatusLoaderError(t *testing.T) {
 }
 
 func TestDirSummary_ActivateGitTabIfDirty_NoRepoRoot(t *testing.T) {
+	t.Parallel()
 	loaderCalled := make(chan struct{}, 1)
 	ds := NewDirPreviewer(nil)
 	ds.GitPreviewer.statusLoader = func(_ string) (gitDirStatusResult, error) {
@@ -414,6 +427,7 @@ func TestDirSummary_ActivateGitTabIfDirty_NoRepoRoot(t *testing.T) {
 }
 
 func TestDirSummary_ActivateGitTabIfDirty_EmptyEntries(t *testing.T) {
+	t.Parallel()
 
 	loaderCalled := make(chan struct{}, 1)
 	ds := NewDirPreviewer(nil)
@@ -432,6 +446,7 @@ func TestDirSummary_ActivateGitTabIfDirty_EmptyEntries(t *testing.T) {
 }
 
 func TestDirSummary_ActivateGitTabIfDirty_TabsNil(t *testing.T) {
+	t.Parallel()
 
 	updateCalled := make(chan struct{}, 1)
 	ds := NewDirPreviewer(nil, WithDirSummaryQueueUpdateDraw(func(f func()) {
@@ -459,6 +474,7 @@ func TestDirSummary_ActivateGitTabIfDirty_TabsNil(t *testing.T) {
 }
 
 func TestDirSummary_ActivateGitTabIfDirty_DirPathChanged(t *testing.T) {
+	t.Parallel()
 
 	updateCalled := make(chan struct{}, 1)
 	releaseLoader := make(chan struct{})
@@ -489,6 +505,7 @@ func TestDirSummary_ActivateGitTabIfDirty_DirPathChanged(t *testing.T) {
 }
 
 func TestDirSummary_UpdateTable_NoQueue(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 	ds.queueUpdateDraw = nil
 	ds.ExtGroups = []*ExtensionsGroup{
@@ -516,6 +533,7 @@ func TestDirSummary_UpdateTable_NoQueue(t *testing.T) {
 }
 
 func TestDirSummary_Preview_FileEntryAndError(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 
 	tempDir := t.TempDir()
@@ -537,6 +555,7 @@ func TestDirSummary_Preview_FileEntryAndError(t *testing.T) {
 }
 
 func TestDirSummary_Preview_DirContext(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 
@@ -549,6 +568,7 @@ func TestDirSummary_Preview_DirContext(t *testing.T) {
 }
 
 func TestDirSummary_QueueUpdate_NoQueue(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 	called := false
 	ds.queueUpdate(func() {
@@ -558,6 +578,7 @@ func TestDirSummary_QueueUpdate_NoQueue(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_Edges(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 	entries := []os.DirEntry{
 		mockDirEntry{name: "a.txt", isDir: false},
@@ -576,6 +597,7 @@ func TestDirSummary_InputCapture_Edges(t *testing.T) {
 }
 
 func TestDirSummary_SelectionChanged_NoFilterSetter(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 	ds.ExtTable.SetCell(0, 1, tview.NewTableCell("cell"))
@@ -583,6 +605,7 @@ func TestDirSummary_SelectionChanged_NoFilterSetter(t *testing.T) {
 }
 
 func TestDirSummary_SelectionChanged_MarksSelectedRow(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 
 	ds.ExtGroups = []*ExtensionsGroup{
@@ -613,6 +636,7 @@ func TestDirSummary_SelectionChanged_MarksSelectedRow(t *testing.T) {
 }
 
 func TestDirSummary_UpdateTable_MixedGroups(t *testing.T) {
+	t.Parallel()
 	ds := NewDirPreviewer(nil)
 
 	ds.ExtGroups = []*ExtensionsGroup{
@@ -664,6 +688,7 @@ func TestDirSummary_UpdateTable_MixedGroups(t *testing.T) {
 }
 
 func TestDirSummary_GetSizes_NilAndTypedNil(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 
@@ -685,6 +710,7 @@ func TestDirSummary_GetSizes_NilAndTypedNil(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_Branches(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 
@@ -750,6 +776,7 @@ func TestDirSummary_InputCapture_Branches(t *testing.T) {
 }
 
 func TestDirSummary_SetDir_GetSizesErrorInQueue(t *testing.T) {
+	t.Parallel()
 
 	queueUpdate := WithDirSummaryQueueUpdateDraw(func(f func()) { f() })
 	ds := NewDirPreviewer(nil, queueUpdate)
@@ -765,6 +792,7 @@ func TestDirSummary_SetDir_GetSizesErrorInQueue(t *testing.T) {
 }
 
 func TestDirSummary_UpdateTable_SingleCountForGroup(t *testing.T) {
+	t.Parallel()
 
 	ds := NewDirPreviewer(nil)
 
@@ -800,6 +828,7 @@ func TestDirSummary_UpdateTable_SingleCountForGroup(t *testing.T) {
 }
 
 func TestDirSummary_SetDirEntries_StaleQueueUpdate(t *testing.T) {
+	t.Parallel()
 
 	queueUpdates := make(chan func(), 2)
 	ds := NewDirPreviewer(nil, WithDirSummaryQueueUpdateDraw(func(f func()) {

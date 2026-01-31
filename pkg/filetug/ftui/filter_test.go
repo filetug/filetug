@@ -8,6 +8,7 @@ import (
 )
 
 func TestFilter_IsEmpty(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		filter Filter
@@ -34,6 +35,7 @@ func TestFilter_IsEmpty(t *testing.T) {
 }
 
 func TestFilter_IsVisible(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		filter Filter

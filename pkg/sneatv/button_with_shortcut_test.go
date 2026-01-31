@@ -10,6 +10,7 @@ import (
 )
 
 func TestNewButtonWithShortcut(t *testing.T) {
+	t.Parallel()
 	btn := NewButtonWithShortcut("Save", 's')
 	assert.NotNil(t, btn)
 	assert.Equal(t, "Save", btn.GetLabel())
@@ -17,6 +18,7 @@ func TestNewButtonWithShortcut(t *testing.T) {
 }
 
 func TestButtonWithShortcut_SetShortcutStyle(t *testing.T) {
+	t.Parallel()
 	btn := NewButtonWithShortcut("Save", 's')
 	style := tcell.StyleDefault.Foreground(tcell.ColorRed)
 	btn.SetShortcutStyle(style)
@@ -24,6 +26,7 @@ func TestButtonWithShortcut_SetShortcutStyle(t *testing.T) {
 }
 
 func TestButtonWithShortcut_Draw(t *testing.T) {
+	t.Parallel()
 	width := 20
 	height := 3
 	s := ttestutils.NewSimScreen(t, "", width, height)
@@ -59,6 +62,7 @@ func TestButtonWithShortcut_Draw(t *testing.T) {
 }
 
 func TestButtonWithShortcut_Draw_ShortWidthFallbackStyle(t *testing.T) {
+	t.Parallel()
 	width := 4
 	height := 1
 	s := ttestutils.NewSimScreen(t, "", width, height)

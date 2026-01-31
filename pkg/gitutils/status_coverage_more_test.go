@@ -12,6 +12,7 @@ import (
 )
 
 func TestGetDirStatus_UntrackedReadError(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	untrackedPath := filepath.Join(dir, "untracked.txt")
 	if err := os.WriteFile(untrackedPath, []byte("line1\n"), 0644); err != nil {
@@ -35,6 +36,7 @@ func TestGetDirStatus_UntrackedReadError(t *testing.T) {
 }
 
 func TestGetDirStatus_HeadFileContentsError(t *testing.T) {
+	//t.Parallel()
 	dir, repo, filePath := initRepoWithCommit(t)
 	if err := os.WriteFile(filePath, []byte("line1\nline2\nline3\n"), 0644); err != nil {
 		t.Fatalf("failed to modify file: %v", err)
@@ -57,6 +59,7 @@ func TestGetDirStatus_HeadFileContentsError(t *testing.T) {
 }
 
 func TestGetDirStatus_StagedNewFileCountsInsertions(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	addedPath := filepath.Join(dir, "added.txt")
 	if err := os.WriteFile(addedPath, []byte("a\nb\n"), 0644); err != nil {
@@ -80,6 +83,7 @@ func TestGetDirStatus_StagedNewFileCountsInsertions(t *testing.T) {
 }
 
 func TestGetFileStatus_StagedNewFileCountsInsertions(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	addedPath := filepath.Join(dir, "added.txt")
 	if err := os.WriteFile(addedPath, []byte("a\nb\n"), 0644); err != nil {
@@ -103,6 +107,7 @@ func TestGetFileStatus_StagedNewFileCountsInsertions(t *testing.T) {
 }
 
 func TestGetFileStatus_UntrackedReadError(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	untrackedPath := filepath.Join(dir, "untracked.txt")
 	if err := os.WriteFile(untrackedPath, []byte("line1\n"), 0644); err != nil {
@@ -126,6 +131,7 @@ func TestGetFileStatus_UntrackedReadError(t *testing.T) {
 }
 
 func TestGetFileStatus_HeadFileContentsError(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 	if err := os.WriteFile(filePath, []byte("line1\nline2\nline3\n"), 0644); err != nil {
 		t.Fatalf("failed to modify file: %v", err)
@@ -148,6 +154,7 @@ func TestGetFileStatus_HeadFileContentsError(t *testing.T) {
 }
 
 func TestGetDirStatus_ModifiedFileOpenError(t *testing.T) {
+	//t.Parallel()
 	dir, repo, filePath := initRepoWithCommit(t)
 	if err := os.WriteFile(filePath, []byte("line1\nline2\nline3\n"), 0644); err != nil {
 		t.Fatalf("failed to modify file: %v", err)
@@ -166,6 +173,7 @@ func TestGetDirStatus_ModifiedFileOpenError(t *testing.T) {
 }
 
 func TestGetFileStatus_ModifiedFileOpenError(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 	if err := os.WriteFile(filePath, []byte("line1\nline2\nline3\n"), 0644); err != nil {
 		t.Fatalf("failed to modify file: %v", err)
@@ -184,6 +192,7 @@ func TestGetFileStatus_ModifiedFileOpenError(t *testing.T) {
 }
 
 func TestGetDirStatus_ModifiedFileReadError(t *testing.T) {
+	//t.Parallel()
 	dir, repo, filePath := initRepoWithCommit(t)
 	if err := os.WriteFile(filePath, []byte("line1\nline2\nline3\n"), 0644); err != nil {
 		t.Fatalf("failed to modify file: %v", err)
@@ -203,6 +212,7 @@ func TestGetDirStatus_ModifiedFileReadError(t *testing.T) {
 }
 
 func TestGetFileStatus_ModifiedFileReadError(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 	if err := os.WriteFile(filePath, []byte("line1\nline2\nline3\n"), 0644); err != nil {
 		t.Fatalf("failed to modify file: %v", err)

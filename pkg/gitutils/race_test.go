@@ -12,6 +12,7 @@ import (
 )
 
 func TestGetDirStatus_Race(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-race-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)

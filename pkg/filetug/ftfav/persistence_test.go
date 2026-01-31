@@ -10,6 +10,7 @@ import (
 )
 
 func Test_GetFavorites_InvalidYaml(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -27,6 +28,7 @@ func Test_GetFavorites_InvalidYaml(t *testing.T) {
 }
 
 func Test_GetFavorites_InvalidStoreURL(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -45,6 +47,7 @@ func Test_GetFavorites_InvalidStoreURL(t *testing.T) {
 }
 
 func Test_GetFavorites_FileNotExists(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "missing.yaml")
 	oldPath := favoritesFilePath
@@ -66,6 +69,7 @@ func Test_GetFavorites_FileNotExists(t *testing.T) {
 }
 
 func Test_GetFavorites_EmptyFile(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -83,6 +87,7 @@ func Test_GetFavorites_EmptyFile(t *testing.T) {
 }
 
 func Test_GetFavorites_FileExists_NoDefaults(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -109,6 +114,7 @@ func Test_GetFavorites_FileExists_NoDefaults(t *testing.T) {
 }
 
 func Test_GetFavorites_ReplacesHomeDir(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -132,6 +138,7 @@ func Test_GetFavorites_ReplacesHomeDir(t *testing.T) {
 }
 
 func Test_GetFavorites_DefaultWriteError(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "missing.yaml")
 	oldPath := favoritesFilePath
@@ -155,6 +162,7 @@ func Test_GetFavorites_DefaultWriteError(t *testing.T) {
 }
 
 func Test_AddDelete_EmptyPath(t *testing.T) {
+	t.Parallel()
 	oldPath := favoritesFilePath
 	favoritesFilePath = ""
 	defer func() {
@@ -169,6 +177,7 @@ func Test_AddDelete_EmptyPath(t *testing.T) {
 }
 
 func Test_AddDelete_GetFavoritesError(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	oldPath := favoritesFilePath
 	favoritesFilePath = tempDir
@@ -184,6 +193,7 @@ func Test_AddDelete_GetFavoritesError(t *testing.T) {
 }
 
 func Test_AddFavorite_ReplacesHomeDir(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -212,6 +222,7 @@ func Test_AddFavorite_ReplacesHomeDir(t *testing.T) {
 }
 
 func Test_WriteFavorites_MkdirError(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	parentFile := filepath.Join(tempDir, "parent")
 	oldPath := favoritesFilePath
@@ -228,6 +239,7 @@ func Test_WriteFavorites_MkdirError(t *testing.T) {
 }
 
 func Test_WriteFavorites_MarshalError(t *testing.T) {
+	//t.Parallel()
 	oldPath := favoritesFilePath
 	oldMarshal := yamlMarshal
 	favoritesFilePath = filepath.Join(t.TempDir(), "favorites.yaml")
@@ -246,6 +258,7 @@ func Test_WriteFavorites_MarshalError(t *testing.T) {
 }
 
 func Test_DeleteFavorite_KeepsOtherItems(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath

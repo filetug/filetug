@@ -10,6 +10,7 @@ import (
 )
 
 func TestNewBreadcrumbs_DefaultsAndOptions(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(nil)
 	if bc.separator != " > " {
 		t.Errorf("default separator = %q, want %q", bc.separator, " > ")
@@ -22,6 +23,7 @@ func TestNewBreadcrumbs_DefaultsAndOptions(t *testing.T) {
 }
 
 func TestBreadcrumbs_PushAndClear(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("A", nil))
 	if len(bc.items) != 1 {
 		t.Fatalf("initial items length = %d, want 1", len(bc.items))
@@ -37,6 +39,7 @@ func TestBreadcrumbs_PushAndClear(t *testing.T) {
 }
 
 func TestBreadcrumbs_Draw_SingleLineNoBorder(t *testing.T) {
+	t.Parallel()
 	width := 40
 	height := 1
 	s := ttestutils.NewSimScreen(t, "", width, height)
@@ -57,6 +60,7 @@ func TestBreadcrumbs_Draw_SingleLineNoBorder(t *testing.T) {
 }
 
 func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
+	t.Parallel()
 	// Box with border: inner Y should be 1. Height must be at least 3 for border.
 	width := 20
 	height := 3
@@ -92,6 +96,7 @@ func TestBreadcrumbs_Draw_RespectsInnerRectWithBorder(t *testing.T) {
 }
 
 func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
+	t.Parallel()
 	width := 10 // small width to force truncation
 	height := 1
 	s := ttestutils.NewSimScreen(t, "", width, height)
@@ -114,6 +119,7 @@ func TestBreadcrumbs_Draw_TruncatesAtWidth(t *testing.T) {
 }
 
 func TestBreadcrumbs_Draw_UnfocusedDim(t *testing.T) {
+	t.Parallel()
 	width := 80
 	height := 1
 	s := ttestutils.NewSimScreen(t, "", width, height)
@@ -134,6 +140,7 @@ func TestBreadcrumbs_Draw_UnfocusedDim(t *testing.T) {
 
 // --- Navigation tests for three items ---
 func TestBreadcrumbs_Navigation_ThreeItems(t *testing.T) {
+	t.Parallel()
 	width := 80
 	height := 1
 	s := ttestutils.NewSimScreen(t, "", width, height)
@@ -223,6 +230,7 @@ func TestBreadcrumbs_Navigation_ThreeItems(t *testing.T) {
 
 // Test the new '<' and '>' key navigation
 func TestBreadcrumbs_AngleBracketNavigation(t *testing.T) {
+	t.Parallel()
 	width := 80
 	height := 1
 	s := ttestutils.NewSimScreen(t, "", width, height)

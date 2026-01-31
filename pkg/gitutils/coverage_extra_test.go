@@ -114,6 +114,7 @@ func TestShortHash(t *testing.T) {
 }
 
 func TestGetRepositoryRoot_AbsError(t *testing.T) {
+	//t.Parallel()
 	stubFilepathAbs(t, func(string) (string, error) {
 		return "", errors.New("abs boom")
 	})
@@ -124,6 +125,7 @@ func TestGetRepositoryRoot_AbsError(t *testing.T) {
 }
 
 func TestGetDirStatus_HeadError(t *testing.T) {
+	//t.Parallel()
 	_, repo, _ := initRepoWithCommit(t)
 	stubRepoHead(t, func(*git.Repository) (*plumbing.Reference, error) {
 		return nil, errors.New("head boom")
@@ -143,6 +145,7 @@ func TestGetDirStatus_HeadError(t *testing.T) {
 }
 
 func TestGetDirStatus_HeadNil(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	stubRepoHead(t, func(*git.Repository) (*plumbing.Reference, error) {
 		return nil, nil
@@ -158,6 +161,7 @@ func TestGetDirStatus_HeadNil(t *testing.T) {
 }
 
 func TestGetDirStatus_WorktreeErrorSecondCall(t *testing.T) {
+	//t.Parallel()
 	_, repo, _ := initRepoWithCommit(t)
 
 	callCount := 0
@@ -180,6 +184,7 @@ func TestGetDirStatus_WorktreeErrorSecondCall(t *testing.T) {
 }
 
 func TestGetDirStatus_WorktreeStatusError(t *testing.T) {
+	//t.Parallel()
 	_, repo, _ := initRepoWithCommit(t)
 	stubWorktreeStatus(t, func(*git.Worktree) (git.Status, error) {
 		return nil, errors.New("status boom")
@@ -196,6 +201,7 @@ func TestGetDirStatus_WorktreeStatusError(t *testing.T) {
 }
 
 func TestGetDirStatus_RelPathErrorAndSkipUnmodified(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	stubFilepathRel(t, func(string, string) (string, error) {
 		return "", errors.New("rel boom")
@@ -217,6 +223,7 @@ func TestGetDirStatus_RelPathErrorAndSkipUnmodified(t *testing.T) {
 }
 
 func TestGetDirStatus_ContextCanceledInLoop(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 	stubIsCtxDone(t, func(context.Context) bool {
 		return true
@@ -234,6 +241,7 @@ func TestGetDirStatus_ContextCanceledInLoop(t *testing.T) {
 }
 
 func TestGetDirStatus_ContextCanceledAfterHead(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -250,6 +258,7 @@ func TestGetDirStatus_ContextCanceledAfterHead(t *testing.T) {
 }
 
 func TestGetDirStatus_ContextCanceledBeforeSemaphore(t *testing.T) {
+	//t.Parallel()
 	dir, repo, _ := initRepoWithCommit(t)
 
 	// Fill the semaphore to force the select to take ctx.Done.
@@ -270,6 +279,7 @@ func TestGetDirStatus_ContextCanceledBeforeSemaphore(t *testing.T) {
 }
 
 func TestGetFileStatus_WorktreeErrorSecondCall(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 
 	callCount := 0
@@ -288,6 +298,7 @@ func TestGetFileStatus_WorktreeErrorSecondCall(t *testing.T) {
 }
 
 func TestGetFileStatus_ContextCanceledBeforeSemaphore(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 
 	// Fill the semaphore to force the select to take ctx.Done.
@@ -308,6 +319,7 @@ func TestGetFileStatus_ContextCanceledBeforeSemaphore(t *testing.T) {
 }
 
 func TestGetFileStatus_HeadError(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 	stubRepoHead(t, func(*git.Repository) (*plumbing.Reference, error) {
 		return nil, errors.New("head boom")
@@ -323,6 +335,7 @@ func TestGetFileStatus_HeadError(t *testing.T) {
 }
 
 func TestGetFileStatus_WorktreeStatusError(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 	stubWorktreeStatus(t, func(*git.Worktree) (git.Status, error) {
 		return nil, errors.New("status boom")
@@ -335,6 +348,7 @@ func TestGetFileStatus_WorktreeStatusError(t *testing.T) {
 }
 
 func TestGetFileStatus_RelPathError_Stubbed(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 	stubFilepathRel(t, func(string, string) (string, error) {
 		return "", errors.New("rel boom")
@@ -350,6 +364,7 @@ func TestGetFileStatus_RelPathError_Stubbed(t *testing.T) {
 }
 
 func TestGetFileStatus_UnmodifiedEntryInDirtyStatus(t *testing.T) {
+	//t.Parallel()
 	dir, repo, filePath := initRepoWithCommit(t)
 	relPath, err := filepath.Rel(dir, filePath)
 	if err != nil {
@@ -376,6 +391,7 @@ func TestGetFileStatus_UnmodifiedEntryInDirtyStatus(t *testing.T) {
 }
 
 func TestGetFileStatus_ContextCanceledInLoop(t *testing.T) {
+	//t.Parallel()
 	dir, repo, filePath := initRepoWithCommit(t)
 	relPath, err := filepath.Rel(dir, filePath)
 	if err != nil {
@@ -399,6 +415,7 @@ func TestGetFileStatus_ContextCanceledInLoop(t *testing.T) {
 }
 
 func TestGetFileStatus_ContextCanceledAfterHead(t *testing.T) {
+	//t.Parallel()
 	_, repo, filePath := initRepoWithCommit(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -415,6 +432,7 @@ func TestGetFileStatus_ContextCanceledAfterHead(t *testing.T) {
 }
 
 func TestCanBeStaged_StatusMissingEntry(t *testing.T) {
+	//t.Parallel()
 	dir, _, _ := initRepoWithCommit(t)
 	targetPath := filepath.Join(dir, "missing.txt")
 
@@ -437,6 +455,7 @@ func TestCanBeStaged_StatusMissingEntry(t *testing.T) {
 }
 
 func TestCanBeStaged_WorktreeError(t *testing.T) {
+	//t.Parallel()
 	_, _, filePath := initRepoWithCommit(t)
 
 	stubRepoWorktree(t, func(*git.Repository) (*git.Worktree, error) {
@@ -450,6 +469,7 @@ func TestCanBeStaged_WorktreeError(t *testing.T) {
 }
 
 func TestCanBeStaged_UnmodifiedEntryInDirtyStatus(t *testing.T) {
+	//t.Parallel()
 	dir, _, filePath := initRepoWithCommit(t)
 	relPath, err := filepath.Rel(dir, filePath)
 	if err != nil {
@@ -475,6 +495,7 @@ func TestCanBeStaged_UnmodifiedEntryInDirtyStatus(t *testing.T) {
 }
 
 func TestGetWorktreeAndRelPath_AbsError(t *testing.T) {
+	//t.Parallel()
 	stubFilepathAbs(t, func(string) (string, error) {
 		return "", errors.New("abs boom")
 	})
@@ -486,6 +507,7 @@ func TestGetWorktreeAndRelPath_AbsError(t *testing.T) {
 }
 
 func TestGetWorktreeAndRelPath_RelError(t *testing.T) {
+	//t.Parallel()
 	dir, _, filePath := initRepoWithCommit(t)
 
 	stubFilepathRel(t, func(string, string) (string, error) {
@@ -501,6 +523,7 @@ func TestGetWorktreeAndRelPath_RelError(t *testing.T) {
 }
 
 func TestIsCtxDone(t *testing.T) {
+	//t.Parallel()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
@@ -513,6 +536,7 @@ func TestIsCtxDone(t *testing.T) {
 }
 
 func TestStageDir_AddError(t *testing.T) {
+	t.Parallel()
 	dir, _, _ := initRepoWithCommit(t)
 	targetDir := filepath.Join(dir, "stage_dir")
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
@@ -533,6 +557,7 @@ func TestStageDir_AddError(t *testing.T) {
 }
 
 func TestStageDir_GetWorktreeAndRelPathError(t *testing.T) {
+	t.Parallel()
 	stubFilepathAbs(t, func(string) (string, error) {
 		return "", errors.New("abs boom")
 	})

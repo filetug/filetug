@@ -9,6 +9,7 @@ import (
 )
 
 func TestNewPanel(t *testing.T) {
+	t.Parallel()
 	p := NewPanel()
 	if p == nil {
 		t.Fatal("expected panel to be created")
@@ -36,6 +37,7 @@ func TestNewPanel(t *testing.T) {
 }
 
 func TestPanel_Draw(t *testing.T) {
+	t.Parallel()
 	s := ttestutils.NewSimScreen(t, "UTF-8", 80, 24)
 	p := NewPanel()
 	p.SetRect(0, 0, 80, 24)
@@ -46,6 +48,7 @@ func TestPanel_Draw(t *testing.T) {
 
 func TestPanel_Focus(t *testing.T) {
 	t.Skip("failing")
+	t.Parallel()
 	p := NewPanel()
 	focused := false
 	p.Focus(func(delegate tview.Primitive) {

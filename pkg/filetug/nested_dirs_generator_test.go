@@ -12,6 +12,7 @@ import (
 )
 
 func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
+	t.Parallel()
 	var mu sync.Mutex
 	paths := []string{}
 	store := newMockStore(t)
@@ -56,6 +57,7 @@ func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_DepthZero(t *testing.T) {
+	t.Parallel()
 	var mu sync.Mutex
 	paths := []string{}
 	store := newMockStore(t)
@@ -78,6 +80,7 @@ func TestGeneratedNestedDirs_DepthZero(t *testing.T) {
 }
 
 func TestNestedDirsGeneratorPanel_GenerateButton(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	panel := newNestedDirsGeneratorPanel(nav, nil)

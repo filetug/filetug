@@ -26,6 +26,7 @@ func (m mockDirEntry) Type() fs.FileMode {
 func (m mockDirEntry) Info() (fs.FileInfo, error) { return nil, nil }
 
 func TestTextPreviewerReadFileError(t *testing.T) {
+	t.Parallel()
 	previewer := NewTextPreviewer(func(f func()) {})
 	tmpDir, _ := os.MkdirTemp("", "testdir")
 	defer func() {
@@ -41,6 +42,7 @@ func TestTextPreviewerReadFileError(t *testing.T) {
 }
 
 func TestTextPreviewerReadFile(t *testing.T) {
+	t.Parallel()
 	previewer := NewTextPreviewer(func(f func()) {})
 	tmpFile, _ := os.CreateTemp("", "test*.txt")
 	defer func() {

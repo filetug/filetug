@@ -22,6 +22,7 @@ func (m *mockRecords) GetCell(row, col int) *tview.TableCell {
 }
 
 func TestNewTable(t *testing.T) {
+	t.Parallel()
 	columns := []Column{
 		{Name: "Col1", Expansion: 1},
 		{Name: "Col2", FixedWidth: 10},
@@ -38,6 +39,7 @@ func TestNewTable(t *testing.T) {
 }
 
 func TestTable_SetRecords(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 	records := &mockRecords{count: 5}
@@ -58,6 +60,7 @@ func TestTable_SetRecords(t *testing.T) {
 }
 
 func TestTable_ScrollToRow(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 	records := &mockRecords{count: 100}
@@ -82,6 +85,7 @@ func TestTable_ScrollToRow(t *testing.T) {
 }
 
 func TestTable_InputCapture(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 	records := &mockRecords{count: 100}
@@ -103,6 +107,7 @@ func TestTable_InputCapture(t *testing.T) {
 }
 
 func TestTable_Select(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 	records := &mockRecords{count: 100}
@@ -116,6 +121,7 @@ func TestTable_Select(t *testing.T) {
 }
 
 func TestTable_DrawFunc(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 
@@ -140,6 +146,7 @@ func TestTable_DrawFunc(t *testing.T) {
 }
 
 func TestTable_ScrollToRow_EdgeCases(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 
@@ -191,6 +198,7 @@ func TestTable_ScrollToRow_EdgeCases(t *testing.T) {
 }
 
 func TestTable_Render_NoHeight(t *testing.T) {
+	t.Parallel()
 	// Case: visibleRowsCount <= 0 (line 106)
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
@@ -200,6 +208,7 @@ func TestTable_Render_NoHeight(t *testing.T) {
 }
 
 func TestTable_Render_MinWidth(t *testing.T) {
+	t.Parallel()
 	columns := []Column{
 		{Name: "Max", FixedWidth: 10},
 		{Name: "Min", MinWidth: 50, FixedWidth: 0},
@@ -222,6 +231,7 @@ func TestTable_Render_MinWidth(t *testing.T) {
 }
 
 func TestTable_Render_MaxColWidth(t *testing.T) {
+	t.Parallel()
 	columns := []Column{
 		{Name: "Col0", FixedWidth: 0},
 		{Name: "Col1", FixedWidth: 20},
@@ -242,6 +252,7 @@ func TestTable_Render_MaxColWidth(t *testing.T) {
 }
 
 func TestTable_Render_EdgeCases(t *testing.T) {
+	t.Parallel()
 	// Case: visibleRowsCount <= 0
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
@@ -269,6 +280,7 @@ func (m *mockNilRecords) GetCell(row, col int) *tview.TableCell {
 }
 
 func TestTable_Render_ColumnWidths(t *testing.T) {
+	t.Parallel()
 	columns := []Column{
 		{Name: "Fixed", FixedWidth: 10},
 		{Name: "Min", MinWidth: 5},
@@ -286,6 +298,7 @@ func TestTable_Render_ColumnWidths(t *testing.T) {
 }
 
 func TestTable_InputCapture_Boundaries(t *testing.T) {
+	t.Parallel()
 	columns := []Column{{Name: "Col1"}}
 	table := NewTable(columns)
 	records := &mockRecords{count: 10}

@@ -5,6 +5,7 @@ import (
 )
 
 func TestGetSizeShortText(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		size     int64
 		expected string

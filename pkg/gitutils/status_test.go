@@ -12,6 +12,7 @@ import (
 )
 
 func TestFileGitStatus_String(t *testing.T) {
+	//t.Parallel()
 	tests := []struct {
 		name   string
 		status FileGitStatus
@@ -32,6 +33,7 @@ func TestFileGitStatus_String(t *testing.T) {
 }
 
 func TestGetFileStatus_UntrackedFile(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -70,6 +72,7 @@ func TestGetFileStatus_UntrackedFile(t *testing.T) {
 }
 
 func TestGetFileStatus_UntrackedFileWithHead(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-untracked-head-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -124,6 +127,7 @@ func TestGetFileStatus_UntrackedFileWithHead(t *testing.T) {
 }
 
 func TestGetFileStatus_NilRepo(t *testing.T) {
+	//t.Parallel()
 	ctx := context.Background()
 	status := GetFileStatus(ctx, nil, "file.txt")
 	if status != nil {
@@ -132,6 +136,7 @@ func TestGetFileStatus_NilRepo(t *testing.T) {
 }
 
 func TestGetFileStatus_BareRepo(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-bare-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -153,6 +158,7 @@ func TestGetFileStatus_BareRepo(t *testing.T) {
 }
 
 func TestGetFileStatus_CleanFile(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-clean-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -204,6 +210,7 @@ func TestGetFileStatus_CleanFile(t *testing.T) {
 }
 
 func TestGetFileStatus_ModifiedAndDeletedFile(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-moddel-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -273,6 +280,7 @@ func TestGetFileStatus_ModifiedAndDeletedFile(t *testing.T) {
 }
 
 func TestGetFileStatus_FileNotInStatus(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-missing-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -304,6 +312,7 @@ func TestGetFileStatus_FileNotInStatus(t *testing.T) {
 }
 
 func TestGetFileStatus_RelPathError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-relerr-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -334,6 +343,7 @@ func TestGetFileStatus_RelPathError(t *testing.T) {
 }
 
 func TestGetFileStatus_ContextCanceled(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-cancel-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -362,6 +372,7 @@ func TestGetFileStatus_ContextCanceled(t *testing.T) {
 }
 
 func TestGetFileStatus_DetachedHeadAndCorruptedHead(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-heads-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -428,6 +439,7 @@ func TestGetFileStatus_DetachedHeadAndCorruptedHead(t *testing.T) {
 }
 
 func TestGetFileStatus_StatusError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-file-status-statuserr-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)

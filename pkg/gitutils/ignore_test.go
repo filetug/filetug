@@ -16,6 +16,7 @@ import (
 )
 
 func TestGetGlobalExcludesFile_ExpandsHome(t *testing.T) {
+	t.Parallel()
 	origExecCommand := execCommand
 	origHomeDir := osUserHomeDir
 
@@ -35,6 +36,7 @@ func TestGetGlobalExcludesFile_ExpandsHome(t *testing.T) {
 }
 
 func TestLoadGlobalIgnorePatterns_UsesExcludesFile(t *testing.T) {
+	t.Parallel()
 	origExecCommand := execCommand
 	origReadFile := osReadFile
 
@@ -56,6 +58,7 @@ func TestLoadGlobalIgnorePatterns_UsesExcludesFile(t *testing.T) {
 }
 
 func TestLoadGlobalIgnorePatterns_DefaultsWhenGitFails(t *testing.T) {
+	t.Parallel()
 	origExecCommand := execCommand
 
 	defer func() {
@@ -72,6 +75,7 @@ func TestLoadGlobalIgnorePatterns_DefaultsWhenGitFails(t *testing.T) {
 }
 
 func TestParseIgnorePatterns(t *testing.T) {
+	//t.Parallel()
 	content := []byte("# comment\n*.log\r\n\n.DS_Store\n")
 	patterns := parseIgnorePatterns(content)
 	matcher := gitignore.NewMatcher(patterns)
@@ -82,6 +86,7 @@ func TestParseIgnorePatterns(t *testing.T) {
 }
 
 func TestLoadGlobalIgnoreMatcher_EmptyPatterns(t *testing.T) {
+	//t.Parallel()
 	origExecCommand := execCommand
 	origReadFile := osReadFile
 
@@ -100,6 +105,7 @@ func TestLoadGlobalIgnoreMatcher_EmptyPatterns(t *testing.T) {
 }
 
 func TestLoadIgnorePatternsFromFile_Error(t *testing.T) {
+	//t.Parallel()
 	origReadFile := osReadFile
 
 	defer func() {
@@ -116,11 +122,13 @@ func TestLoadIgnorePatternsFromFile_Error(t *testing.T) {
 }
 
 func TestIsIgnoredPath_NilMatcher(t *testing.T) {
+	//t.Parallel()
 	ignored := IsIgnoredPath("file.txt", nil)
 	assert.False(t, ignored)
 }
 
 func TestIsIgnoredPath_NoMatch(t *testing.T) {
+	//t.Parallel()
 	patterns := []gitignore.Pattern{
 		gitignore.ParsePattern("*.log", nil),
 	}
@@ -130,6 +138,7 @@ func TestIsIgnoredPath_NoMatch(t *testing.T) {
 }
 
 func TestGetGlobalExcludesFile_EmptyOutput(t *testing.T) {
+	//t.Parallel()
 	origExecCommand := execCommand
 
 	defer func() {
@@ -144,6 +153,7 @@ func TestGetGlobalExcludesFile_EmptyOutput(t *testing.T) {
 }
 
 func TestGetGlobalExcludesFile_HomeError(t *testing.T) {
+	//t.Parallel()
 	origExecCommand := execCommand
 	origHomeDir := osUserHomeDir
 
@@ -163,6 +173,7 @@ func TestGetGlobalExcludesFile_HomeError(t *testing.T) {
 }
 
 func TestGetGlobalExcludesFile_ExpandTildeOnly(t *testing.T) {
+	//t.Parallel()
 	origExecCommand := execCommand
 	origHomeDir := osUserHomeDir
 
@@ -182,6 +193,7 @@ func TestGetGlobalExcludesFile_ExpandTildeOnly(t *testing.T) {
 }
 
 func TestGetDirStatus_IgnoresDefaultDSStore(t *testing.T) {
+	//t.Parallel()
 	origExecCommand := execCommand
 
 	defer func() {
@@ -219,6 +231,7 @@ func fakeExecCommand(output string, exitCode int) func(string, ...string) *exec.
 }
 
 func TestHelperProcess(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}

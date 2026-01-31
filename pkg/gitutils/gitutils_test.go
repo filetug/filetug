@@ -13,6 +13,7 @@ import (
 )
 
 func TestDirGitStatus_String(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name   string
 		status *RepoStatus
@@ -54,6 +55,7 @@ func TestDirGitStatus_String(t *testing.T) {
 }
 
 func TestGetRepositoryStatus(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -375,6 +377,7 @@ func TestGetRepositoryStatus(t *testing.T) {
 }
 
 func TestGetDirStatus_BareRepo(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-bare-repo-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)

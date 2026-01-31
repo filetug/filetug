@@ -8,6 +8,7 @@ import (
 )
 
 func TestPaddedBox(t *testing.T) {
+	t.Parallel()
 	content := tview.NewBox()
 	title := "Test Title"
 	paddingTop, paddingBottom, paddingLeft, paddingRight := 1, 2, 3, 4

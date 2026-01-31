@@ -8,6 +8,7 @@ import (
 )
 
 func TestCurrent_SetDir_Dir(t *testing.T) {
+	t.Parallel()
 	var c Current
 	if c.Dir() != nil {
 		t.Fatal("expected nil dir by default")
@@ -21,6 +22,7 @@ func TestCurrent_SetDir_Dir(t *testing.T) {
 }
 
 func TestCurrent_NewDirContext_UsesStore(t *testing.T) {
+	t.Parallel()
 	store := osfile.NewStore("/")
 	var c Current
 	c.SetDir(files.NewDirContext(store, "/root", nil))
@@ -35,6 +37,7 @@ func TestCurrent_NewDirContext_UsesStore(t *testing.T) {
 }
 
 func TestCurrent_NewDirContext_NilCurrent(t *testing.T) {
+	t.Parallel()
 	var c Current
 	dir := c.NewDirContext("/tmp", nil)
 	if dir.Store() != nil {
@@ -43,6 +46,7 @@ func TestCurrent_NewDirContext_NilCurrent(t *testing.T) {
 }
 
 func TestCurrent_ChangeDir(t *testing.T) {
+	t.Parallel()
 	store := osfile.NewStore("/")
 	var c Current
 	c.SetDir(files.NewDirContext(store, "/root", nil))
@@ -54,6 +58,7 @@ func TestCurrent_ChangeDir(t *testing.T) {
 }
 
 func TestCurrent_Store(t *testing.T) {
+	t.Parallel()
 	var c Current
 	if c.Store() != nil {
 		t.Fatal("expected nil store with no current dir")
@@ -67,6 +72,7 @@ func TestCurrent_Store(t *testing.T) {
 }
 
 func TestCurrent_Store_NilReceiver(t *testing.T) {
+	t.Parallel()
 	var c *Current
 	if c.Store() != nil {
 		t.Fatal("expected nil store for nil receiver")

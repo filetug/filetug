@@ -9,6 +9,7 @@ import (
 )
 
 func TestDoMemProfiling(t *testing.T) {
+	t.Parallel()
 	origOsCreate := osCreate
 	origInterval := memProfilingInterval
 	defer func() {

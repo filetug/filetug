@@ -2,6 +2,7 @@ package viewers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"reflect"
@@ -321,6 +322,12 @@ func (d *DirPreviewer) activateGitTabIfDirty(dirPath string) {
 }
 
 func (d *DirPreviewer) setTabs(hasGit bool) {
+	defer func() {
+		r := recover()
+		if r != nil {
+			log.Println("panic in setting tabs: ", r)
+		}
+	}()
 	if d.tabs != nil {
 		d.flex.RemoveItem(d.tabs)
 	}

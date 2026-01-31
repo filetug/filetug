@@ -29,6 +29,7 @@ func (m mockDirEntry) Info() (os.FileInfo, error) {
 }
 
 func TestNewFileRows(t *testing.T) {
+	t.Parallel()
 	dir := files.NewDirContext(nil, "/test", nil)
 	fr := NewFileRows(dir)
 	assert.NotNil(t, fr)
@@ -36,6 +37,7 @@ func TestNewFileRows(t *testing.T) {
 }
 
 func TestFileRows_SetFilter(t *testing.T) {
+	t.Parallel()
 	fr := NewFileRows(files.NewDirContext(nil, "", nil))
 	fr.AllEntries = []files.EntryWithDirPath{
 		files.NewEntryWithDirPath(mockDirEntry{name: "file.txt", isDir: false}, ""),
@@ -59,6 +61,7 @@ func TestFileRows_SetFilter(t *testing.T) {
 }
 
 func TestFileRows_GetRowCount(t *testing.T) {
+	t.Parallel()
 	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/home", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
@@ -74,6 +77,7 @@ func TestFileRows_GetRowCount(t *testing.T) {
 }
 
 func TestNewFileRows_NormalizesPath(t *testing.T) {
+	t.Parallel()
 	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	rows := NewFileRows(files.NewDirContext(store, "/home/", nil))
 	assert.Equal(t, "/home", rows.Dir.Path())
@@ -81,6 +85,7 @@ func TestNewFileRows_NormalizesPath(t *testing.T) {
 }
 
 func TestNewFileRows_NilDir(t *testing.T) {
+	t.Parallel()
 	rows := NewFileRows(nil)
 	assert.NotNil(t, rows.Dir)
 	assert.Equal(t, "", rows.Dir.Path())
@@ -88,6 +93,7 @@ func TestNewFileRows_NilDir(t *testing.T) {
 }
 
 func TestFileRows_GetCell(t *testing.T) {
+	t.Parallel()
 	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/home", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
@@ -120,6 +126,7 @@ func TestFileRows_GetCell(t *testing.T) {
 }
 
 func TestFileRows_getTopRowNameParentReference(t *testing.T) {
+	t.Parallel()
 	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	dir := files.NewDirContext(store, "/home/user", nil)
 	fr := NewFileRows(dir)
@@ -141,6 +148,7 @@ func TestFileRows_getTopRowNameParentReference(t *testing.T) {
 }
 
 func TestFileRows_SetGitStatusText(t *testing.T) {
+	t.Parallel()
 	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/home", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
@@ -173,6 +181,7 @@ func TestFileRows_SetGitStatusText(t *testing.T) {
 }
 
 func TestFileRows_Extra(t *testing.T) {
+	t.Parallel()
 	store := newMockStoreWithRoot(t, url.URL{Path: "/"})
 	fr := NewFileRows(files.NewDirContext(store, "/", nil))
 	fr.VisibleEntries = []files.EntryWithDirPath{
@@ -277,6 +286,7 @@ func TestFileRows_Extra(t *testing.T) {
 }
 
 func TestFileRows_isSymlinkToDir(t *testing.T) {
+	t.Parallel()
 	if runtime.GOOS == "windows" {
 		t.Skip("symlink behavior depends on Windows permissions")
 	}

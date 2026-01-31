@@ -60,6 +60,7 @@ func getDirSummary(nav *Navigator) *viewers.DirPreviewer {
 }
 
 func TestNewFiles(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 
 	nav, _ := setupNavigatorForFilesTest(ctrl)
@@ -72,6 +73,7 @@ func TestNewFiles(t *testing.T) {
 
 func TestFilesPanel_SetRows(t *testing.T) {
 	t.Skip("panics")
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	fp := newFiles(nav)
@@ -86,6 +88,7 @@ func TestFilesPanel_SetRows(t *testing.T) {
 }
 
 func TestFilesPanel_SetFilter(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	fp := newFiles(nav)
@@ -96,6 +99,7 @@ func TestFilesPanel_SetFilter(t *testing.T) {
 }
 
 func TestFilesPanel_Selection(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.current.SetDir(osfile.NewLocalDir("/test"))
@@ -130,6 +134,7 @@ func TestFilesPanel_Selection(t *testing.T) {
 }
 
 func TestFilesPanel_InputCapture(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	fp := newFiles(nav)
@@ -303,6 +308,7 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 
 func TestFilesPanel_SelectionChanged(t *testing.T) {
 	t.Skip("failing")
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.current.SetDir(osfile.NewLocalDir("/different"))
@@ -359,6 +365,7 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 }
 
 func TestFilesPanel_OnStoreChange(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.previewer = newPreviewerPanel(nav)
@@ -370,6 +377,7 @@ func TestFilesPanel_OnStoreChange(t *testing.T) {
 }
 
 func TestFilesPanel_selectionChangedNavFunc(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	fp := newFiles(nav)
@@ -379,6 +387,7 @@ func TestFilesPanel_selectionChangedNavFunc(t *testing.T) {
 }
 
 func TestFilesPanel_entryFromRow_MissingData(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	fp := newFiles(nav)
@@ -408,6 +417,7 @@ func TestFilesPanel_entryFromRow_MissingData(t *testing.T) {
 }
 
 func TestFilesPanel_updatePreviewForEntry_FileNoPreviewer(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.previewer = nil
@@ -421,6 +431,7 @@ func TestFilesPanel_updatePreviewForEntry_FileNoPreviewer(t *testing.T) {
 }
 
 func TestFilesPanel_updatePreviewForEntry_FileWithPreviewer(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.right = NewContainer(2, nav)
@@ -454,6 +465,7 @@ func TestFilesPanel_updatePreviewForEntry_FileWithPreviewer(t *testing.T) {
 }
 
 func TestFilesPanel_updatePreviewForEntry_Dir(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.right = NewContainer(2, nav)
@@ -465,12 +477,14 @@ func TestFilesPanel_updatePreviewForEntry_Dir(t *testing.T) {
 }
 
 func TestFilesPanel_updatePreviewForEntry_NoNav(t *testing.T) {
+	t.Parallel()
 	fp := &filesPanel{}
 	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), "/tmp")
 	fp.updatePreviewForEntry(entry)
 }
 
 func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.right = NewContainer(2, nav)
@@ -484,6 +498,7 @@ func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 
 func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 	t.Skip("failing")
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.right = NewContainer(2, nav)
@@ -508,6 +523,7 @@ func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 
 func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 	t.Skip("failing")
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	nav, _ := setupNavigatorForFilesTest(ctrl)
 	nav.right = NewContainer(2, nav)

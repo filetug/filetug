@@ -10,12 +10,14 @@ import (
 )
 
 func Test_bottom_getCtrlMenuItems(t *testing.T) {
+	t.Parallel()
 	b := &bottom{}
 	menuItems := b.getCtrlMenuItems()
 	assert.Len(t, menuItems, 4)
 }
 
 func TestNewBottom(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 	assert.NotNil(t, b)
@@ -24,6 +26,7 @@ func TestNewBottom(t *testing.T) {
 }
 
 func TestBottom_Render(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 	b.render()
@@ -34,6 +37,7 @@ func TestBottom_Render(t *testing.T) {
 }
 
 func TestBottom_Highlighted(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 
@@ -61,6 +65,7 @@ func TestBottom_Highlighted(t *testing.T) {
 }
 
 func TestBottom_GetAltMenuItems(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 	items := b.getAltMenuItems()
@@ -86,6 +91,7 @@ func TestBottom_GetAltMenuItems(t *testing.T) {
 }
 
 func TestBottom_GetAltMenuItems_Actions(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 	items := b.getAltMenuItems()
@@ -102,6 +108,7 @@ func TestBottom_GetAltMenuItems_Actions(t *testing.T) {
 }
 
 func TestBottom_GetAltMenuItems_ExitAction(t *testing.T) {
+	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 
@@ -129,6 +136,7 @@ func TestBottom_GetAltMenuItems_ExitAction(t *testing.T) {
 }
 
 func TestBottom_RenderMenuItems_ReplacesHotkeysAndRegions(t *testing.T) {
+	t.Parallel()
 	b := &bottom{}
 	menuItems := []ftui.MenuItem{
 		{Title: "/root", HotKeys: []string{"/"}},
@@ -147,6 +155,7 @@ func TestBottom_RenderMenuItems_ReplacesHotkeysAndRegions(t *testing.T) {
 }
 
 func TestBottom_Highlighted_Ctrl(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	b := newBottom(nav)
 	b.isCtrl = true

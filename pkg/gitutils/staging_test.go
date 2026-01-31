@@ -12,6 +12,7 @@ import (
 )
 
 func TestStaging(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-staging-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -132,6 +133,7 @@ func TestStaging(t *testing.T) {
 }
 
 func TestStagingErrors(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-staging-errors-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -273,6 +275,7 @@ func TestStagingErrors(t *testing.T) {
 }
 
 func TestStageDir(t *testing.T) {
+	//t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-stagedir-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -343,6 +346,7 @@ func TestStageDir(t *testing.T) {
 }
 
 func TestStageDir_ReadDirError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-stagedir-readerr-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -369,6 +373,7 @@ func TestStageDir_ReadDirError(t *testing.T) {
 }
 
 func TestGetWorktreeAndRelPath_OpenRepoError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-open-repo-error-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -400,6 +405,7 @@ func TestGetWorktreeAndRelPath_OpenRepoError(t *testing.T) {
 }
 
 func TestCanBeStaged_FakeRepoError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-canbestaged-fake-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -427,6 +433,7 @@ func TestCanBeStaged_FakeRepoError(t *testing.T) {
 }
 
 func TestCanBeStaged_StatusError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-canbestaged-statuserr-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -459,6 +466,7 @@ func TestCanBeStaged_StatusError(t *testing.T) {
 }
 
 func TestStageDir_RecursiveMissingPathError(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-stagedir-recursive-missing-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)

@@ -5,6 +5,7 @@ import (
 )
 
 func TestMetaTable_SetMeta(t *testing.T) {
+	t.Parallel()
 	mt := NewMetaTable()
 	meta := &Meta{
 		Groups: []*MetaGroup{

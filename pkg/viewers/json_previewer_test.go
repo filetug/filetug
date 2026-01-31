@@ -7,12 +7,14 @@ import (
 )
 
 func TestPrettyJSONError(t *testing.T) {
+	t.Parallel()
 	input := []byte("{invalid}")
 	_, err := prettyJSON(input)
 	assert.Error(t, err)
 }
 
 func TestPrettyJSONUsesTwoSpaceIndent(t *testing.T) {
+	t.Parallel()
 	input := []byte("{\"a\":{\"b\":1}}")
 	output, err := prettyJSON(input)
 	assert.NoError(t, err)

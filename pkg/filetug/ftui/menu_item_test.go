@@ -3,6 +3,7 @@ package ftui
 import "testing"
 
 func TestMenuItem(t *testing.T) {
+	t.Parallel()
 	called := false
 	action := func() {
 		called = true

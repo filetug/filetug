@@ -7,6 +7,7 @@ import (
 )
 
 func TestGetRepositoryRoot(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "test_git_repo")
 	if err != nil {
 		t.Fatal(err)

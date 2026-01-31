@@ -30,6 +30,7 @@ func waitForText(t *testing.T, getText func() string, needle string) {
 }
 
 func TestPreviewer(t *testing.T) {
+	//t.Parallel()
 	oldGetState := getState
 	getState = func() (*ftstate.State, error) {
 		return nil, errors.New("disabled")

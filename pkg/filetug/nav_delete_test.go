@@ -16,6 +16,7 @@ import (
 )
 
 func TestNavigator_Delete_And_Operations(t *testing.T) {
+	//t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	// Setup a temporary file to delete
@@ -93,6 +94,7 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 }
 
 func TestFilesPanel_GetCurrentEntry_EdgeCases(t *testing.T) {
+	//t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	fp := newFiles(nav)
 
@@ -151,6 +153,7 @@ func TestFilesPanel_GetCurrentEntry_EdgeCases(t *testing.T) {
 }
 
 func TestOperation_Coverage(t *testing.T) {
+	//t.Parallel()
 	t.Run("NewOperation", func(t *testing.T) {
 		done := make(chan bool)
 		_ = NewOperation("test", func(ctx context.Context, reportProgress ProgressReporter) error {

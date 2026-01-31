@@ -11,6 +11,7 @@ import (
 
 // Verifies that clicking a breadcrumb selects it, highlights it (by focusing the primitive), and calls the item's Action().
 func TestBreadcrumbs_MouseClick_SelectsAndCallsAction(t *testing.T) {
+	t.Parallel()
 	width := 80
 	height := 1
 	// Create a simulation screen directly without helpers to avoid redeclarations.

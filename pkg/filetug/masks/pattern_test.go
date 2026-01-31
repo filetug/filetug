@@ -5,6 +5,7 @@ import (
 )
 
 func TestPattern_Match(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		pattern  Pattern
@@ -58,6 +59,7 @@ func TestPattern_Match(t *testing.T) {
 }
 
 func TestBuiltInRegex(t *testing.T) {
+	t.Parallel()
 	// Testing if built-in regex patterns are valid
 	masks := createBuiltInMasks()
 	for _, mask := range masks {

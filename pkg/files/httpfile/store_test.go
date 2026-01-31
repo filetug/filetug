@@ -24,13 +24,16 @@ func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func Test_NewStore(t *testing.T) {
+	t.Parallel()
 	t.Run("https://example.com/pub/", func(t *testing.T) {
+		t.Parallel()
 		root, _ := url.Parse("https://example.com/pub/")
 		store := NewStore(*root)
 		assert.NotNil(t, store)
 	})
 
 	t.Run("https://example.com/pub/", func(t *testing.T) {
+		t.Parallel()
 		root, _ := url.Parse("https://example.com/pub/")
 		store := NewStore(*root, WithHttpClient(&http.Client{}))
 		assert.NotNil(t, store)
@@ -49,6 +52,7 @@ func (e errorReader) Close() error {
 }
 
 func Test_httpFileStore_ReadDir(t *testing.T) {
+	t.Parallel()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -153,18 +157,21 @@ func Test_httpFileStore_ReadDir(t *testing.T) {
 }
 
 func TestHttpStore_RootURL(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("https://example.com/pub/")
 	store := NewStore(*root)
 	assert.Equal(t, *root, store.RootURL())
 }
 
 func TestHttpStore_RootTitle(t *testing.T) {
+	t.Parallel()
 	root, _ := url.Parse("https://user:pass@example.com/pub/")
 	store := NewStore(*root)
 	assert.Equal(t, "https://example.com/pub/", store.RootTitle())
 }
 
 func TestHttpStore_Delete(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	root, _ := url.Parse("https://example.com/pub/")
 	store := NewStore(*root)
@@ -173,6 +180,7 @@ func TestHttpStore_Delete(t *testing.T) {
 }
 
 func TestHttpStore_CreateDir(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	root, _ := url.Parse("https://example.com/pub/")
 	store := NewStore(*root)
@@ -183,6 +191,7 @@ func TestHttpStore_CreateDir(t *testing.T) {
 }
 
 func TestHttpStore_CreateFile(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	root, _ := url.Parse("https://example.com/pub/")
 	store := NewStore(*root)
@@ -193,6 +202,7 @@ func TestHttpStore_CreateFile(t *testing.T) {
 }
 
 func TestHttpStore_GetDirReader(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	root, _ := url.Parse("https://example.com/pub/")
 	store := NewStore(*root)

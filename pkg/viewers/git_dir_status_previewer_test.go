@@ -13,6 +13,7 @@ import (
 )
 
 func TestGitDirStatusPreviewer_SetDirAndRefresh(t *testing.T) {
+	t.Parallel()
 	p := NewGitDirStatusPreviewer()
 
 	started := make(chan struct{})
@@ -37,6 +38,7 @@ func TestGitDirStatusPreviewer_SetDirAndRefresh(t *testing.T) {
 }
 
 func TestGitDirStatusPreviewer_Refresh_NoDirContext(t *testing.T) {
+	t.Parallel()
 	p := NewGitDirStatusPreviewer()
 	p.refresh()
 	cell := p.table.GetCell(0, 0)
@@ -44,6 +46,7 @@ func TestGitDirStatusPreviewer_Refresh_NoDirContext(t *testing.T) {
 }
 
 func TestGitDirStatusPreviewer_RefreshBranches(t *testing.T) {
+	t.Parallel()
 	p := NewGitDirStatusPreviewer()
 	p.dirContext = files.NewDirContext(nil, "/repo", nil)
 
@@ -83,6 +86,7 @@ func TestGitDirStatusPreviewer_RefreshBranches(t *testing.T) {
 }
 
 func TestGitDirStatusPreviewer_HandleInput(t *testing.T) {
+	t.Parallel()
 	p := NewGitDirStatusPreviewer()
 	p.dirContext = files.NewDirContext(nil, "/repo", nil)
 
@@ -161,6 +165,7 @@ func TestGitDirStatusPreviewer_HandleInput(t *testing.T) {
 }
 
 func TestGitDirStatusPreviewer_Preview(t *testing.T) {
+	t.Parallel()
 	p := NewGitDirStatusPreviewer()
 	p.statusLoader = func(_ string) (gitDirStatusResult, error) {
 		return gitDirStatusResult{}, nil
@@ -172,12 +177,14 @@ func TestGitDirStatusPreviewer_Preview(t *testing.T) {
 }
 
 func TestGitDirStatusPreviewer_MainMeta(t *testing.T) {
+	t.Parallel()
 	p := NewGitDirStatusPreviewer()
 	assert.Equal(t, p, p.Main())
 	assert.Nil(t, p.Meta())
 }
 
 func TestLoadGitDirStatus_Seams(t *testing.T) {
+	t.Parallel()
 	origPlainOpen := gitPlainOpen
 	origRepoWorktree := repoWorktree
 	origStatus := worktreeStatus
@@ -269,6 +276,7 @@ func TestLoadGitDirStatus_Seams(t *testing.T) {
 }
 
 func TestLoadGitDirStatus_IgnoresMatcherEntries(t *testing.T) {
+	t.Parallel()
 	origPlainOpen := gitPlainOpen
 	origRepoWorktree := repoWorktree
 	origStatus := worktreeStatus
@@ -322,6 +330,7 @@ func TestLoadGitDirStatus_IgnoresMatcherEntries(t *testing.T) {
 }
 
 func TestBadgeForStatus(t *testing.T) {
+	t.Parallel()
 	added := badgeForStatus(&git.FileStatus{Staging: git.Added})
 	assert.Equal(t, "A", added.text)
 	assert.Equal(t, "A:added", added.String())
@@ -346,6 +355,7 @@ func TestBadgeForStatus(t *testing.T) {
 }
 
 func TestGitDirStatusPreviewer_DefaultSeams(t *testing.T) {
+	t.Parallel()
 	tempDir := t.TempDir()
 	repo, err := git.PlainInit(tempDir, false)
 	assert.NoError(t, err)

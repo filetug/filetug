@@ -45,6 +45,7 @@ func createImageFile(t *testing.T, dir, name string, width, height int, format s
 }
 
 func TestImagePreviewer_GetMeta(t *testing.T) {
+	t.Parallel()
 	// Create a temporary directory for test images
 	tmpDir, err := os.MkdirTemp("", "imageviewer_test")
 	if err != nil {
@@ -137,6 +138,7 @@ func TestImagePreviewer_GetMeta(t *testing.T) {
 }
 
 func TestImagePreviewerNewAndPreview(t *testing.T) {
+	t.Parallel()
 	done := make(chan struct{})
 
 	queueUpdateDraw := func(fn func()) {

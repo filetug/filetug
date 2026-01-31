@@ -7,6 +7,7 @@ import (
 )
 
 func TestBasket_AddToBasket(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644); err != nil {
 		t.Fatalf("write file: %v", err)
@@ -39,6 +40,7 @@ func TestBasket_AddToBasket(t *testing.T) {
 }
 
 func TestBasket_Clear(t *testing.T) {
+	t.Parallel()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("a"), 0o644); err != nil {
 		t.Fatalf("write file: %v", err)

@@ -10,6 +10,7 @@ import (
 )
 
 func TestFavoriteKey(t *testing.T) {
+	t.Parallel()
 	store := url.URL{Scheme: "file", Path: "/base"}
 	fav := Favorite{Store: store, Path: "docs"}
 	keyURL := store
@@ -20,6 +21,7 @@ func TestFavoriteKey(t *testing.T) {
 }
 
 func TestFavorites_FileOperations(t *testing.T) {
+	//t.Parallel()
 	tempDir := t.TempDir()
 	tempPath := filepath.Join(tempDir, "favorites.yaml")
 	oldPath := favoritesFilePath
@@ -60,6 +62,7 @@ func TestFavorites_FileOperations(t *testing.T) {
 }
 
 func TestFavorites_EmptyPathError(t *testing.T) {
+	t.Parallel()
 	oldPath := favoritesFilePath
 	favoritesFilePath = ""
 	defer func() {

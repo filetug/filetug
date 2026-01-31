@@ -14,6 +14,7 @@ import (
 )
 
 func TestGetDirStatus_WorktreeError(t *testing.T) {
+	//t.Parallel()
 	origRepoWorktree := repoWorktree
 
 	defer func() {
@@ -29,6 +30,7 @@ func TestGetDirStatus_WorktreeError(t *testing.T) {
 }
 
 func TestGetDirStatus_WorktreeStatusErrorSeam(t *testing.T) {
+	//t.Parallel()
 	origWorktreeStatus := worktreeStatus
 
 	defer func() {
@@ -49,6 +51,7 @@ func TestGetDirStatus_WorktreeStatusErrorSeam(t *testing.T) {
 }
 
 func TestGetDirStatus_SecondWorktreeError(t *testing.T) {
+	//t.Parallel()
 	origRepoWorktree := repoWorktree
 
 	defer func() {
@@ -76,6 +79,7 @@ func TestGetDirStatus_SecondWorktreeError(t *testing.T) {
 }
 
 func TestGetDirStatus_FilepathRelError(t *testing.T) {
+	//t.Parallel()
 	origFilepathRel := filepathRel
 	origExecCommand := execCommand
 
@@ -102,6 +106,7 @@ func TestGetDirStatus_FilepathRelError(t *testing.T) {
 }
 
 func TestGetDirStatus_ContextDoneDuringDiff(t *testing.T) {
+	//t.Parallel()
 	origIsCtxDone := isCtxDone
 	origExecCommand := execCommand
 
@@ -141,6 +146,7 @@ func TestGetDirStatus_ContextDoneDuringDiff(t *testing.T) {
 }
 
 func TestGetDirStatus_IgnoresPathsDuringDiff(t *testing.T) {
+	//t.Parallel()
 	origExecCommand := execCommand
 
 	defer func() {

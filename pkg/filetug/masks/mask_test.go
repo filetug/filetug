@@ -3,6 +3,7 @@ package masks
 import "testing"
 
 func TestMask_Match(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		mask     Mask
@@ -101,6 +102,7 @@ func TestMask_Match(t *testing.T) {
 }
 
 func TestMask_String(t *testing.T) {
+	t.Parallel()
 	m := &Mask{
 		Name: "Test",
 		Patterns: []Pattern{

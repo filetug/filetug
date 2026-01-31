@@ -14,6 +14,7 @@ import (
 )
 
 func TestDirContextMethods(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
@@ -93,6 +94,7 @@ func TestDirContextMethods(t *testing.T) {
 }
 
 func TestDirContextChildrenReturnsCopy(t *testing.T) {
+	t.Parallel()
 	dirEntries := []os.DirEntry{NewDirEntry("a.txt", false)}
 	dir := NewDirContext(nil, "", dirEntries)
 
@@ -112,6 +114,7 @@ func TestDirContextChildrenReturnsCopy(t *testing.T) {
 }
 
 func TestDirContextChildrenNil(t *testing.T) {
+	t.Parallel()
 	dir := NewDirContext(nil, "", nil)
 
 	assert.Nil(t, dir.Children())

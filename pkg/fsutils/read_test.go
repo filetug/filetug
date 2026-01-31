@@ -9,6 +9,7 @@ import (
 )
 
 func TestReadFileData(t *testing.T) {
+	t.Parallel()
 	tmpDir, err := os.MkdirTemp("", "fsutils_test")
 	assert.NoError(t, err)
 	defer func() {

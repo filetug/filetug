@@ -13,6 +13,7 @@ import (
 )
 
 func TestDirContextEntryMethods(t *testing.T) {
+	t.Parallel()
 	tempDir := filepath.ToSlash(t.TempDir())
 	ctx := files.NewDirContext(osfile.NewStore("/"), tempDir, nil)
 

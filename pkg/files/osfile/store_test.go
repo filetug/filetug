@@ -10,10 +10,12 @@ import (
 )
 
 func TestNewStore(t *testing.T) {
+	t.Parallel()
 	origHostname := osHostname
 	defer func() { osHostname = origHostname }()
 
 	t.Run("valid_root", func(t *testing.T) {
+		t.Parallel()
 		osHostname = func() (string, error) {
 			return "test-host", nil
 		}
@@ -24,6 +26,7 @@ func TestNewStore(t *testing.T) {
 	})
 
 	t.Run("hostname_error", func(t *testing.T) {
+		t.Parallel()
 		osHostname = func() (string, error) {
 			return "", errors.New("hostname error")
 		}
@@ -33,6 +36,7 @@ func TestNewStore(t *testing.T) {
 	})
 
 	t.Run("empty_root_defaults", func(t *testing.T) {
+		t.Parallel()
 		s := NewStore("")
 		assert.NotNil(t, s)
 		assert.Equal(t, "/", s.root)
@@ -40,12 +44,14 @@ func TestNewStore(t *testing.T) {
 }
 
 func TestStore_RootURL(t *testing.T) {
+	t.Parallel()
 	s := NewStore("/tmp")
 	u := s.RootURL()
 	assert.Equal(t, "file", u.Scheme)
 }
 
 func TestStore_RootTitle(t *testing.T) {
+	t.Parallel()
 	s := Store{title: "my-host.station"}
 	assert.Equal(t, "my-host", s.RootTitle())
 
@@ -54,6 +60,7 @@ func TestStore_RootTitle(t *testing.T) {
 }
 
 func TestStore_ReadDir(t *testing.T) {
+	t.Parallel()
 	origReadDir := osReadDir
 	defer func() { osReadDir = origReadDir }()
 
@@ -88,6 +95,7 @@ func TestStore_ReadDir(t *testing.T) {
 }
 
 func TestStore_CreateDir_CreateFile_Delete(t *testing.T) {
+	t.Parallel()
 	origMkdir := osMkdir
 	origCreate := osCreate
 	origRemove := osRemove

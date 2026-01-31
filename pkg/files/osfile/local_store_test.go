@@ -7,6 +7,7 @@ import (
 )
 
 func TestNewLocalDir(t *testing.T) {
+	t.Parallel()
 	fullPath := "/tmp"
 	dir := NewLocalDir(fullPath)
 

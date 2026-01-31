@@ -7,6 +7,7 @@ import (
 )
 
 func TestGetColorByFileName(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		fileName string

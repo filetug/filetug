@@ -8,6 +8,7 @@ import (
 )
 
 func TestBreadcrumbs_GoHome(t *testing.T) {
+	t.Parallel()
 	homeCalled := false
 	home := NewBreadcrumb("Home", func() error {
 		homeCalled = true
@@ -26,6 +27,7 @@ func TestBreadcrumbs_GoHome(t *testing.T) {
 }
 
 func TestBreadcrumbs_TakeFocus(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	bc.Push(NewBreadcrumb("Child", nil))
 	bc.selectedItemIndex = 1
@@ -42,6 +44,7 @@ func TestBreadcrumbs_TakeFocus(t *testing.T) {
 }
 
 func TestBreadcrumbs_IsLastItemSelected(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 
 	bc.Push(NewBreadcrumb("Child", nil))
@@ -57,6 +60,7 @@ func TestBreadcrumbs_IsLastItemSelected(t *testing.T) {
 }
 
 func TestBreadcrumbs_FocusBlur(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	bc.Push(NewBreadcrumb("Child", nil))
 
@@ -79,6 +83,7 @@ func TestBreadcrumbs_FocusBlur(t *testing.T) {
 }
 
 func TestBreadcrumbs_FocusTargets(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	next := tview.NewBox()
 	prev := tview.NewBox()
@@ -95,6 +100,7 @@ func TestBreadcrumbs_FocusTargets(t *testing.T) {
 }
 
 func TestBreadcrumbs_Options(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil), WithSeparatorStartIndex(1))
 	if bc.separatorStartIdx != 1 {
 		t.Errorf("WithSeparatorStartIndex failed, got %d", bc.separatorStartIdx)
@@ -102,6 +108,7 @@ func TestBreadcrumbs_Options(t *testing.T) {
 }
 
 func TestBreadcrumbs_Draw_Extras(t *testing.T) {
+	t.Parallel()
 	s := tcell.NewSimulationScreen("UTF-8")
 	if err := s.Init(); err != nil {
 		t.Fatalf("failed to init simulation screen: %v", err)
@@ -123,6 +130,7 @@ func TestBreadcrumbs_Draw_Extras(t *testing.T) {
 }
 
 func TestBreadcrumbs_InputHandler_TabDown(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	next := tview.NewBox()
 	bc.SetNextFocusTarget(next)
@@ -157,6 +165,7 @@ func TestBreadcrumbs_InputHandler_TabDown(t *testing.T) {
 }
 
 func TestBreadcrumbs_InputHandler_OtherKeys(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	bc.Push(NewBreadcrumb("Child", nil))
 	bc.Push(NewBreadcrumb("Grandchild", nil))
@@ -199,6 +208,7 @@ func TestBreadcrumbs_InputHandler_OtherKeys(t *testing.T) {
 }
 
 func TestBreadcrumbs_InputHandler_Empty(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	bc.items = nil
 	handler := bc.InputHandler()
@@ -206,6 +216,7 @@ func TestBreadcrumbs_InputHandler_Empty(t *testing.T) {
 }
 
 func TestBreadcrumbs_MouseHandler_Focus(t *testing.T) {
+	t.Parallel()
 	bc := NewBreadcrumbs(NewBreadcrumb("Home", nil))
 	bc.Push(NewBreadcrumb("Child", nil))
 	bc.SetRect(0, 0, 80, 5)

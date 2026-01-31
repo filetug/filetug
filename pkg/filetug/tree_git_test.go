@@ -14,6 +14,7 @@ import (
 )
 
 func TestTree_SetDirContext_GitOptimization(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "tree-git-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -61,6 +62,7 @@ func TestTree_SetDirContext_GitOptimization(t *testing.T) {
 }
 
 func TestNavigator_ShowDir_GitStatusText(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "nav-git-text-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -108,6 +110,7 @@ func TestNavigator_ShowDir_GitStatusText(t *testing.T) {
 }
 
 func TestNavigator_UpdateGitStatus_NoChanges(t *testing.T) {
+	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "git-status-test-*")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
