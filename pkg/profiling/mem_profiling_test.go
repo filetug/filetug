@@ -43,6 +43,9 @@ func TestDoMemProfiling(t *testing.T) {
 	})
 
 	t.Run("error_osCreate", func(t *testing.T) {
+		t.Cleanup(func() {
+			_ = os.Remove("invalid")
+		})
 		osCreate = func(name string) (*os.File, error) {
 			return nil, errors.New("mock error")
 		}

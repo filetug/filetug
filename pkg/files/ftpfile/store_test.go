@@ -405,7 +405,7 @@ func TestFtpDial_Default(t *testing.T) {
 }
 
 func TestStore_ReadDir(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 	if os.Getenv("RUN_FTP_INTEGRATION_TESTS") != "true" {
 		t.Skip("skipping integration test; set RUN_FTP_INTEGRATION_TESTS=true to run")
 	}
