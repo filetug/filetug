@@ -248,7 +248,7 @@ func TestTextPreviewerPreviewQueueUpdateNil(t *testing.T) {
 }
 
 func TestTextPreviewerPreviewStalePlain(t *testing.T) {
-	t.Skip("panics")
+	t.Parallel()
 	dir := filepath.Dir("note.unknownext")
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
 
