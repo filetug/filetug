@@ -18,9 +18,6 @@ type AppMethod func(na *appProxy)
 func NewApp(app *tview.Application, o ...AppMethod) App {
 	a := &appProxy{}
 	if app != nil {
-		a.queueUpdateDraw = func(f func()) {
-			_ = app.QueueUpdateDraw(f)
-		}
 		a.setFocus = func(primitive tview.Primitive) {
 			_ = app.SetFocus(primitive)
 		}
@@ -30,6 +27,7 @@ func NewApp(app *tview.Application, o ...AppMethod) App {
 		a.enableMouse = func(b bool) {
 			_ = app.EnableMouse(b)
 		}
+		a.queueUpdateDraw = app.QueueUpdateDraw
 		a.run = app.Run
 		a.stop = app.Stop
 	}
@@ -41,7 +39,10 @@ func NewApp(app *tview.Application, o ...AppMethod) App {
 
 func WithQueueUpdateDraw(queueUpdateDraw UpdateDrawQueuer) AppMethod {
 	return func(na *appProxy) {
-		na.queueUpdateDraw = queueUpdateDraw
+		na.queueUpdateDraw = func(f func()) *tview.Application {
+			queueUpdateDraw(f)
+			return nil
+		}
 	}
 }
 
@@ -57,10 +58,28 @@ func WithSetRoot(setRoot RootSetter) AppMethod {
 	}
 }
 
+func WithEnableMouse(enableMouse func(bool)) AppMethod {
+	return func(na *appProxy) {
+		na.enableMouse = enableMouse
+	}
+}
+
+func WithRun(run func() error) AppMethod {
+	return func(na *appProxy) {
+		na.run = run
+	}
+}
+
+func WithStop(stop func()) AppMethod {
+	return func(na *appProxy) {
+		na.stop = stop
+	}
+}
+
 var _ App = (*appProxy)(nil)
 
 type appProxy struct {
-	queueUpdateDraw UpdateDrawQueuer
+	queueUpdateDraw func(func()) *tview.Application
 	setFocus        Focuser
 	setRoot         RootSetter
 	enableMouse     func(bool)
