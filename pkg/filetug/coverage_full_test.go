@@ -1630,7 +1630,8 @@ func TestNavigator_Delete_NoCurrentEntry(t *testing.T) {
 
 func TestNavigator_Delete_WithError(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSync(app, 3)
 
 	errStore := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	errStore.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("fail")).AnyTimes()
