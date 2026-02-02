@@ -135,7 +135,7 @@ func TestFavoritesPanel_UpdateAddCurrentForm_ShowHide(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_GetFavoritesError(t *testing.T) {
-	t.Skip("panics")
+	//t.Skip("panics")
 	t.Parallel()
 	oldGetFavorites := getFavorites
 	defer func() {

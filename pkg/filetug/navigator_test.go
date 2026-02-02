@@ -404,8 +404,6 @@ func TestNewNavigator_States(t *testing.T) {
 
 func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
-	node := tview.NewTreeNode("test")
 
 	// Mock git status
 	ctx := context.Background()
@@ -415,6 +413,11 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	// Or we can just test the "app == nil" branch which is easy.
 
 	t.Run("NoApp", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		node := tview.NewTreeNode("test")
+
 		status := &gitutils.RepoStatus{Branch: "main"}
 		// Dir matches repo root to ensure status is shown even if clean
 		path := "/repo"
@@ -433,6 +436,10 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	})
 
 	t.Run("WithAppCached", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		node := tview.NewTreeNode("test")
 
 		status := &gitutils.RepoStatus{Branch: "main"}
 		// Dir matches repo root to ensure status is shown even if clean
@@ -452,6 +459,10 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	})
 
 	t.Run("PrefixAlreadyHasStatus", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		node := tview.NewTreeNode("test")
 
 		status := &gitutils.RepoStatus{Branch: "main"}
 		path := "/repo"
@@ -513,7 +524,8 @@ func TestNavigator_showDir_EarlyReturnAndExpandHome(t *testing.T) {
 
 func TestNavigator_globalNavInputCapture(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSync(app, 6) // TODO: Why 6? Explain with a comment or fix
 	store := newMockStoreWithRootTitle(t, url.URL{Scheme: "mock", Path: "/"}, "Root")
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	nav.store = store

@@ -170,9 +170,14 @@ func TestDirSummary_UpdateTableAndGetSizes_Coverage(t *testing.T) {
 func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 	t.Parallel()
 	//t.Skip("failing")
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
 	// Synchronous for this test
 	ds := newTestDirSummary(nav)
+
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
+		f()
+	})
+
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(files.NewDirContext(nil, "/test", nil))
 
@@ -188,18 +193,13 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 	}
 	dirContext := newTestDirContext(nil, "/test", entries)
 	ds.SetDirEntries(dirContext)
-	ds.UpdateTable()
 
-	// Ensure there's a group with only one extension for the branch coverage
-	foundSingle := false
-	for _, g := range ds.ExtGroups {
-		if len(g.ExtStats) == 1 {
-			foundSingle = true
+	// Wait for the table to be populated
+	for i := 0; i < 100; i++ {
+		if ds.ExtTable.GetRowCount() > 0 {
 			break
 		}
-	}
-	if !foundSingle {
-		t.Log("Warning: no single-extension group found, might not cover all branches")
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	eventDown := tcell.NewEventKey(tcell.KeyDown, 0, tcell.ModNone)
@@ -223,6 +223,9 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 		ds.ExtTable.Select(row-1, 0)
 		res := ds.InputCapture(eventDown)
 		assert.Nil(t, res)
+		newRow, _ := ds.ExtTable.GetSelection()
+		assert.Equal(t, row+1, newRow)
+
 		found = true
 		break
 	}
@@ -230,8 +233,27 @@ func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
 		t.Fatal("expected a single-extension group for KeyDown test")
 	}
 
-	ds.ExtTable.Select(1, 0)
-	_ = ds.InputCapture(eventUp)
+	// Test KeyUp skip
+	// Find a single extension group that is NOT the first one
+	for row := 1; row < rowCount; row++ {
+		cell := ds.ExtTable.GetCell(row, 1)
+		if cell == nil {
+			continue
+		}
+		ref := cell.GetReference()
+		group, ok := ref.(*viewers.ExtensionsGroup)
+		if !ok || group == nil || len(group.ExtStats) != 1 {
+			continue
+		}
+		if row+1 < rowCount {
+			ds.ExtTable.Select(row+1, 0)
+			res := ds.InputCapture(eventUp)
+			assert.Nil(t, res)
+			newRow, _ := ds.ExtTable.GetSelection()
+			assert.Equal(t, row-1, newRow)
+		}
+		break
+	}
 }
 
 func TestFavorites_SetItems_ExtraBranches(t *testing.T) {
