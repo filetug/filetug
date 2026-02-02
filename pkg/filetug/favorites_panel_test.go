@@ -7,11 +7,16 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestFavorites(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 4)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).MinTimes(1).MaxTimes(8).DoAndReturn(func(f func()) {
+		f()
+	})
 	f := newFavoritesPanel(nav)
 
 	if f == nil {

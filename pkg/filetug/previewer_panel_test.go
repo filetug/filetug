@@ -92,7 +92,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_NotFound", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		previewFile(nav.previewer, "non-existent.txt", "non-existent.txt")
 		waitForText(t, nav.previewer, previewText, "Failed to read file")
 	})
@@ -100,7 +100,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_PlainText", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.txt")
 		defer func() {
@@ -116,7 +116,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_JSON", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		tmpFile, _ := os.CreateTemp("", "test*.json")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -133,7 +133,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 2)
+		expectQueueUpdateDrawSyncTimes(app, 2)
 		nav.previewer.setPreviewer(nil)
 		firstFile, _ := os.CreateTemp("", "first*.json")
 		defer func() {
@@ -185,7 +185,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_NoLexer", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test")
 		defer func() {
@@ -201,7 +201,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_JSON_Invalid_Pretty", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		tmpFile, _ := os.CreateTemp("", "test*.json")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -216,7 +216,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_Image_Meta", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		tmpFile, _ := os.CreateTemp("", "test*.png")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -258,7 +258,7 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_Log", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSync(app, 1)
+		expectQueueUpdateDrawSyncTimes(app, 1)
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.log")
 		defer func() {

@@ -37,7 +37,7 @@ func TestNewPanel_Coverage(t *testing.T) {
 	t.Run("createDir", func(t *testing.T) {
 		t.Parallel()
 		_, app, p, tmpDir := newNewPanel(t)
-		expectQueueUpdateDrawSync(app, 2)
+		expectQueueUpdateDrawSyncTimes(app, 2)
 		//_, _, p, tmpDir := newNewPanel()
 		p.input.SetText("newdir")
 		p.createDir()
