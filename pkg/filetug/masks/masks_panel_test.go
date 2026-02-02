@@ -47,7 +47,6 @@ func TestPanel_Draw(t *testing.T) {
 }
 
 func TestPanel_Focus(t *testing.T) {
-	t.Skip("failing")
 	t.Parallel()
 	p := NewPanel()
 	focused := false

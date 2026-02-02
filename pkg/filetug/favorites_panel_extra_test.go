@@ -210,7 +210,6 @@ func TestFavoritesPanel_NewFavoritesPanel_NoQueueUpdate(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_InputCaptures(t *testing.T) {
-	t.Skip("failing")
 	t.Parallel()
 	oldGetFavorites := getFavorites
 	defer func() {

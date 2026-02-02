@@ -299,7 +299,6 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChanged(t *testing.T) {
-	t.Skip("failing")
 	t.Parallel()
 
 	nav, _ := setupNavigatorForFilesTest(t)
@@ -492,7 +491,6 @@ func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 }
 
 func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
-	t.Skip("failing")
 	t.Parallel()
 
 	nav, _ := setupNavigatorForFilesTest(t)
@@ -517,7 +515,6 @@ func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 }
 
 func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
-	t.Skip("failing")
 	t.Parallel()
 
 	nav, _ := setupNavigatorForFilesTest(t)

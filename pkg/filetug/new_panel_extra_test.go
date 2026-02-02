@@ -8,22 +8,26 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"go.uber.org/mock/gomock"
 )
 
 func TestNewPanel_Coverage(t *testing.T) {
 	t.Parallel()
-	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).Times(1)
-	tmpDir := t.TempDir()
-	nav.store = osfile.NewStore(tmpDir)
-	nav.current.SetDir(nav.NewDirContext(tmpDir, nil))
 
-	p := NewNewPanel(nav)
+	newNewPanel := func(t *testing.T) (nav *Navigator, app *navigator.MockApp, p *NewPanel, tmpDir string) {
+		nav, app, _ = newNavigatorForTest(t)
+		tmpDir = t.TempDir()
+		nav.store = osfile.NewStore(tmpDir)
+		nav.current.SetDir(nav.NewDirContext(tmpDir, nil))
+		p = NewNewPanel(nav)
+		return
+	}
 
 	t.Run("Show_and_Focus", func(t *testing.T) {
+		t.Parallel()
+		nav, _, p, _ := newNewPanel(t)
 		p.Show()
 		assert.True(t, p == nav.right.content)
 		p.Focus(func(p tview.Primitive) {})
@@ -31,6 +35,10 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createDir", func(t *testing.T) {
+		t.Parallel()
+		_, app, p, tmpDir := newNewPanel(t)
+		expectQueueUpdateDrawSync(app, 2)
+		//_, _, p, tmpDir := newNewPanel()
 		p.input.SetText("newdir")
 		p.createDir()
 		_, err := os.Stat(filepath.Join(tmpDir, "newdir"))
@@ -38,6 +46,8 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createFile", func(t *testing.T) {
+		t.Parallel()
+		nav, _, p, _ := newNewPanel(t)
 		p.input.SetText("newfile.txt")
 		// nav.showDir might cause issues if not mocked, but here we just want to ensure it creates the file
 		p.createFile()
@@ -49,6 +59,8 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("input_handlers", func(t *testing.T) {
+		t.Parallel()
+		_, _, p, _ := newNewPanel(t)
 		// Escape
 		// Use a trick to get the function, as it might be private or not have a getter in some tview versions
 		// But usually it's public. Wait, tview.InputField has SetDoneFunc but NO GetDoneFunc?
@@ -71,6 +83,8 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createDir_noCurrentDir", func(t *testing.T) {
+		t.Parallel()
+		nav, _, p, tmpDir := newNewPanel(t)
 		original := nav.current.Dir()
 		nav.current.SetDir(nil)
 		defer nav.current.SetDir(original)
@@ -82,6 +96,8 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createFile_noCurrentDir", func(t *testing.T) {
+		t.Parallel()
+		nav, _, p, tmpDir := newNewPanel(t)
 		original := nav.current.Dir()
 		nav.current.SetDir(nil)
 		defer nav.current.SetDir(original)

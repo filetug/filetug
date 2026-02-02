@@ -137,7 +137,6 @@ func TestNavigator_SetBreadcrumbs_NoCurrentDir(t *testing.T) {
 }
 
 func TestNavigator_DirSummary_FocusLeft(t *testing.T) {
-	t.Skip("failing")
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 

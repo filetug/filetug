@@ -134,7 +134,6 @@ func TestNavigator_GitStatus(t *testing.T) {
 }
 
 func TestNavigator_goDir(t *testing.T) {
-	t.Skip("panics")
 	t.Parallel()
 	saveCurrentDir = func(string, string) {}
 	ctrl := gomock.NewController(t)
@@ -189,7 +188,6 @@ func TestNavigator_goDir(t *testing.T) {
 }
 
 func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
-	t.Skip("panics")
 	t.Parallel()
 	oldGetState := getState
 	getState = func() (*ftstate.State, error) { return nil, nil }
@@ -247,7 +245,6 @@ func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
 }
 
 func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
-	t.Skip("panics")
 	t.Parallel()
 	oldGetState := getState
 	getState = func() (*ftstate.State, error) { return nil, nil }
@@ -506,7 +503,8 @@ func TestNavigator_showDir_FileScheme(t *testing.T) {
 
 func TestNavigator_showDir_EarlyReturnAndExpandHome(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSync(app, 3)
 	store := newMockStoreWithRootTitle(t, url.URL{Scheme: "file", Path: "/"}, "Root")
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	nav.store = store
