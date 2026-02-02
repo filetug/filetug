@@ -24,7 +24,6 @@ func setupNavigatorForFilesTest(t *testing.T) (*Navigator, *navigator.MockApp) {
 	nav, app, _ := newNavigatorForTest(t)
 	nav.current.SetDir(osfile.NewLocalDir("/"))
 	nav.right = NewContainer(2, nav)
-	// Use ftApp wrapper to handle QueueUpdateDraw in tests
 	nav.previewer = newPreviewerPanel(nav)
 	nav.dirsTree = NewTree(nav)
 	nav.files = newFiles(nav)
@@ -479,7 +478,10 @@ func TestFilesPanel_updatePreviewForEntry_NoNav(t *testing.T) {
 func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 	t.Parallel()
 
-	nav, _ := setupNavigatorForFilesTest(t)
+	nav, app := setupNavigatorForFilesTest(t)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).Times(1).DoAndReturn(func(f func()) {
+		f()
+	})
 	nav.right = NewContainer(2, nav)
 	fp := newFiles(nav)
 
