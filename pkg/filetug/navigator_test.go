@@ -316,7 +316,8 @@ func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
 
 func TestNavigator_setBreadcrumbs_Complex(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSync(app, 2)
 	if nav == nil {
 		t.Fatal("nav is nil")
 	}
