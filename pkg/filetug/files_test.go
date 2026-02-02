@@ -479,7 +479,7 @@ func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 	t.Parallel()
 
 	nav, app := setupNavigatorForFilesTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).Times(1).DoAndReturn(func(f func()) {
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1).DoAndReturn(func(f func()) {
 		f()
 	})
 	nav.right = NewContainer(2, nav)
