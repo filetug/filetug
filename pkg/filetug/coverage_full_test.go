@@ -749,8 +749,8 @@ func TestNavigator_SetBreadcrumbs_EmptyPath(t *testing.T) {
 func TestScriptsPanel_And_NestedDirsGenerator(t *testing.T) {
 	t.Parallel()
 	//t.Skip("panics")
-	nav, _, _ := newNavigatorForTest(t)
-
+	nav, app, _ := newNavigatorForTest(t)
+	expectSetFocusTimes(app, 3) // Why 3?
 	nav.showScriptsPanel()
 	panel := nav.right.content
 	scripts, ok := panel.(*scriptsPanel)
@@ -1966,7 +1966,8 @@ func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 
 func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSyncTimes(app, 1)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(files.NewDirContext(nil, "/test", nil))

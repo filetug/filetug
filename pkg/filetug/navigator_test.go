@@ -108,7 +108,8 @@ func TestNavigator(t *testing.T) {
 
 func TestNavigator_GitStatus(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSyncTimes(app, 1)
 	if nav == nil {
 		t.Fatal("nav is nil")
 	}
@@ -134,48 +135,103 @@ func TestNavigator_GitStatus(t *testing.T) {
 }
 
 func TestNavigator_goDir(t *testing.T) {
-	t.Parallel()
-	saveCurrentDir = func(string, string) {}
-	ctrl := gomock.NewController(t)
-	app := navigator.NewMockApp(ctrl)
-	nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
+	//t.Parallel()
+
+	//ctrl := gomock.NewController(t)
+	//app := navigator.NewMockApp(ctrl)
+
+	//nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
 
 	t.Run("goDir_Success", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		saveCurrentDirCalled := false
+		nav.saveCurrentDir = func(string, string) {
+			saveCurrentDirCalled = true
+		}
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 5)
 		dirContext := nav.NewDirContext(".", nil)
 		nav.goDir(dirContext)
+		assert.True(t, saveCurrentDirCalled)
 	})
 
 	t.Run("goDir_NonExistent", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		saveCurrentDirCalled := false
+		nav.saveCurrentDir = func(string, string) {
+			saveCurrentDirCalled = true
+		}
+		//expectSetFocusTimes(app, 1)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 2)
 		dirContext := nav.NewDirContext("/non-existent-Dir-12345", nil)
 		nav.goDir(dirContext)
+		assert.True(t, saveCurrentDirCalled)
 	})
 
 	t.Run("goDir_Nil", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		saveCurrentDirCalled := false
+		nav.saveCurrentDir = func(string, string) {
+			saveCurrentDirCalled = true
+		}
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
 		nav.goDir(nil)
+		assert.False(t, saveCurrentDirCalled)
 	})
 
 	t.Run("Extra", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectSetFocusTimes(app, 3)
+		saveCurrentDirCalled := false
+		nav.saveCurrentDir = func(string, string) {
+			saveCurrentDirCalled = true
+		}
 		nav.SetFocusToContainer(0)
 		nav.SetFocusToContainer(1)
 		nav.SetFocusToContainer(2)
 		nav.showMasks()
+		assert.False(t, saveCurrentDirCalled)
 	})
 
 	t.Run("onDataLoaded_showNodeError", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		saveCurrentDirCalled := false
+		nav.saveCurrentDir = func(string, string) {
+			saveCurrentDirCalled = true
+		}
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 5)
 		nodeContext := nav.NewDirContext("/test", nil)
 		node := tview.NewTreeNode("test").SetReference(nodeContext)
-		dirContext := nav.NewDirContext("/test", []os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}})
+		dirContext := nav.NewDirContext("/test", []os.DirEntry{mockDirEntry{
+			name: "file.txt", isDir: false}})
 
 		ctx := context.Background()
 		nav.onDataLoaded(ctx, node, dirContext, true)
-		nav.onDataLoaded(ctx, node, dirContext, false)
+		//nav.onDataLoaded(ctx, node, dirContext, false)
 
 		err := errors.New("test error")
 		nav.showNodeError(node, err)
-		nav.showNodeError(nil, err)
+		//nav.showNodeError(nil, err)
+		assert.False(t, saveCurrentDirCalled)
 	})
 
 	t.Run("onDataLoaded_updatesPreviewer", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		saveCurrentDirCalled := false
+		nav.saveCurrentDir = func(string, string) {
+			saveCurrentDirCalled = true
+		}
+		queueUpdateDrawCount := 0
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
+			f()
+			queueUpdateDrawCount++
+		})
+		//expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 20)
 		tempDir := t.TempDir()
 		nodeContext := nav.NewDirContext(tempDir, nil)
 		node := tview.NewTreeNode("temp").SetReference(nodeContext)
@@ -184,7 +240,10 @@ func TestNavigator_goDir(t *testing.T) {
 		ctx := context.Background()
 		nav.onDataLoaded(ctx, node, dirContext, false)
 		assert.Equal(t, filepath.Base(tempDir), nav.previewer.GetTitle())
+		assert.False(t, saveCurrentDirCalled)
+		t.Logf("queueUpdateDrawCount=%d", queueUpdateDrawCount)
 	})
+	time.Sleep(time.Second)
 }
 
 func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {

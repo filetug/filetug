@@ -82,7 +82,8 @@ func TestFavoritesPanel_AddCurrentFavorite_Success(t *testing.T) {
 		return nil
 	}
 
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectSetFocusTimes(app, 1)
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	nav.current.SetDir(nav.NewDirContext("/tmp", nil))
 	panel := newTestFavoritesPanel(nav)
@@ -111,14 +112,20 @@ func TestFavoritesPanel_AddCurrentFavorite_Error(t *testing.T) {
 	nav.current.SetDir(nav.NewDirContext("/tmp", nil))
 	panel := newTestFavoritesPanel(nav)
 
+	showErrCallsCount := 0
+	nav.showError = func(err error) {
+		showErrCallsCount++
+	}
 	panel.addCurrentFavorite()
-
+	assert.Equal(t, 1, showErrCallsCount)
 	assert.Len(t, panel.items, 0)
+
 }
 
 func TestFavoritesPanel_UpdateAddCurrentForm_ShowHide(t *testing.T) {
-	//t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	t.Parallel()
+	nav, app, _ := newNavigatorForTest(t)
+	expectSetFocusTimes(app, 1)
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	nav.current.SetDir(nav.NewDirContext("/tmp", nil))
 	panel := newTestFavoritesPanel(nav)

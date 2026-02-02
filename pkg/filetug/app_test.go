@@ -19,3 +19,7 @@ func expectQueueUpdateDrawSyncMinMaxTimes(app *navigator.MockApp, minTimes, maxT
 			f()
 		})
 }
+
+func expectSetFocusTimes(app *navigator.MockApp, times int) {
+	app.EXPECT().SetFocus(gomock.Any()).Times(times)
+}

@@ -3,6 +3,7 @@ package filetug
 import (
 	"context"
 	"errors"
+	"log"
 	"os"
 	"path"
 	"sort"
@@ -76,9 +77,13 @@ type Navigator struct {
 
 	bottom *bottom
 
+	saveCurrentDir func(store, currentDir string)
+
 	gitStatusCache   map[string]*gitutils.RepoStatus
 	gitStatusCacheMu sync.RWMutex
 	cancel           context.CancelFunc
+
+	showError func(err error)
 }
 
 func (nav *Navigator) SetStore(store files.Store) {
@@ -147,6 +152,10 @@ func NewNavigator(app navigator.App, options ...NavigatorOption) *Navigator {
 		main:           tview.NewFlex(),
 		proportions:    make([]int, 3),
 		gitStatusCache: make(map[string]*gitutils.RepoStatus),
+		saveCurrentDir: ftstate.SaveCurrentDir,
+		showError: func(err error) {
+			log.Println(err) // TODO(help-wanted): Show error to user
+		},
 	}
 	nav.bottom = newBottom(nav)
 	nav.right = NewContainer(2, nav)
@@ -327,7 +336,7 @@ func (nav *Navigator) goDir(dirContext *files.DirContext) {
 	nav.showDir(ctx, nav.dirsTree.rootNode, dirContext, true)
 	root := nav.store.RootURL()
 	rootValue := root.String()
-	saveCurrentDir(rootValue, dirContext.Path())
+	nav.saveCurrentDir(rootValue, dirContext.Path())
 }
 
 func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository, fullPath string, node *tview.TreeNode, prefix string) {
@@ -415,6 +424,7 @@ func (nav *Navigator) gitStatusText(status *gitutils.RepoStatus, fullPath string
 	return ""
 }
 
+// TODO: Get rid of package level var saveCurrentDir - see NewNavigator for proper implementation
 var saveCurrentDir = ftstate.SaveCurrentDir
 
 func (nav *Navigator) currentDirPath() string {

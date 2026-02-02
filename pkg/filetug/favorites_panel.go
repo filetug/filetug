@@ -265,7 +265,7 @@ func (f *favoritesPanel) addCurrentFavorite() {
 	}
 	err := addFavorite(currentFavorite)
 	if err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "add favorite failed: %v\n", err)
+		f.nav.showError(err)
 		return
 	}
 	f.items = append(f.items, currentFavorite)

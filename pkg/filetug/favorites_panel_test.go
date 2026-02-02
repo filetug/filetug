@@ -7,33 +7,33 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
 )
 
 func TestFavorites(t *testing.T) {
 	t.Parallel()
-	nav, app, _ := newNavigatorForTest(t)
-	expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 4)
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).MinTimes(1).MaxTimes(8).DoAndReturn(func(f func()) {
-		f()
-	})
-	f := newFavoritesPanel(nav)
-
-	if f == nil {
-		t.Fatal("f is nil")
-	}
 
 	t.Run("Draw", func(t *testing.T) {
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
+		f := newFavoritesPanel(nav)
 		screen := tcell.NewSimulationScreen("")
 		_ = screen.Init()
 		f.Draw(screen)
 	})
 
 	t.Run("ShowFavorites", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectSetFocusTimes(app, 1)
+		f := newFavoritesPanel(nav)
 		f.nav.ShowFavorites()
 	})
 
 	t.Run("activateFavorite_preview", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 3)
+		f := newFavoritesPanel(nav)
 		storeURL, err := url.Parse("file:")
 		if err != nil {
 			t.Fatal(err)
@@ -43,6 +43,11 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("activateFavorite_go", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 4)
+		expectSetFocusTimes(app, 1)
+		f := newFavoritesPanel(nav)
 		storeURL, err := url.Parse("file:")
 		if err != nil {
 			t.Fatal(err)
@@ -52,6 +57,9 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("setStore", func(t *testing.T) {
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
+		f := newFavoritesPanel(nav)
 		// Test different store schemes
 		fileURL, err := url.Parse("file:")
 		if err != nil {
@@ -77,6 +85,11 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("inputCapture", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 3) // TODO: make deterministic
+		expectSetFocusTimes(app, 3)                     // Why 3?
+		f := newFavoritesPanel(nav)
 		// Test Escape
 		eventEsc := tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone)
 		f.inputCapture(eventEsc)
@@ -95,14 +108,27 @@ func TestFavorites(t *testing.T) {
 	})
 
 	t.Run("changed", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 3) // TODO: make deterministic
+		f := newFavoritesPanel(nav)
 		f.changed(0, "", "", 0)
 	})
 
 	t.Run("selected", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 3)
+		expectSetFocusTimes(app, 1)
+		f := newFavoritesPanel(nav)
 		f.selected(f.items[0])
 	})
 
 	t.Run("setItems_coverage", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 3) // TODO(help-wanted): make deterministic
+		f := newFavoritesPanel(nav)
 		httpURL, err := url.Parse("https://www.example.com")
 		if err != nil {
 			t.Fatal(err)
