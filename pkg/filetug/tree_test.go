@@ -50,16 +50,19 @@ func TestTree(t *testing.T) {
 		tree := NewTree(nav) //tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
 
-		time.Sleep(time.Millisecond) // Allow initial QueueUpdateDraw on initial setDir
-
 		done := make(chan struct{})
 		var texts []string
 		var updatesCount int
 		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
+			if f != nil {
+				f()
+			}
 			updatesCount++
-			f()
 			if updatesCount >= 4 {
-				done <- struct{}{}
+				select {
+				case done <- struct{}{}:
+				default:
+				}
 				return
 			}
 			texts = append(texts, loading.GetText())
@@ -82,7 +85,6 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("doLoadingAnimation_queueUpdateDrawExecutes", func(t *testing.T) {
-		t.Skip("failing")
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		tree := NewTree(nav)
@@ -95,7 +97,9 @@ func TestTree(t *testing.T) {
 		var once sync.Once
 		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
 			queued = true
-			f()
+			if f != nil {
+				f()
+			}
 			tree.rootNode.ClearChildren()
 			once.Do(func() {
 				close(done)

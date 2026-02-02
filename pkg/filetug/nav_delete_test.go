@@ -16,8 +16,9 @@ import (
 )
 
 func TestNavigator_Delete_And_Operations(t *testing.T) {
-	//t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	t.Parallel()
+	nav, app, _ := newNavigatorForTest(t)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 
 	// Setup a temporary file to delete
 	tmpDir := t.TempDir()
@@ -94,8 +95,9 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 }
 
 func TestFilesPanel_GetCurrentEntry_EdgeCases(t *testing.T) {
-	//t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	t.Parallel()
+	nav, app, _ := newNavigatorForTest(t)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 	fp := newFiles(nav)
 
 	t.Run("empty_rows", func(t *testing.T) {
@@ -153,7 +155,7 @@ func TestFilesPanel_GetCurrentEntry_EdgeCases(t *testing.T) {
 }
 
 func TestOperation_Coverage(t *testing.T) {
-	//t.Parallel()
+	t.Parallel()
 	t.Run("NewOperation", func(t *testing.T) {
 		done := make(chan bool)
 		_ = NewOperation("test", func(ctx context.Context, reportProgress ProgressReporter) error {

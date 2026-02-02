@@ -1,7 +1,6 @@
 package filetug
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,44 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files"
-	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
-func waitForText(t *testing.T, getText func() string, needle string) {
-	t.Helper()
-	deadline := time.Now().Add(500 * time.Millisecond)
-	for time.Now().Before(deadline) {
-		if strings.Contains(getText(), needle) {
-			return
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	assert.Contains(t, getText(), needle)
-}
-
 func TestPreviewer(t *testing.T) {
-	//t.Parallel()
-	oldGetState := getState
-	getState = func() (*ftstate.State, error) {
-		return nil, errors.New("disabled")
-	}
-	defer func() {
-		getState = oldGetState
-	}()
-
-	nav, _, _ := newNavigatorForTest(t)
-	if nav == nil {
-		t.Fatal("navigator is nil")
-	}
-
-	p := nav.previewer
-
-	previewFile := func(name, fullName string) {
+	t.Parallel()
+	previewFile := func(previewerPanel *previewerPanel, name, fullName string) {
 		dirPath := filepath.Dir(fullName)
 		var entry files.EntryWithDirPath
 		if entries, err := os.ReadDir(dirPath); err == nil {
@@ -60,33 +32,41 @@ func TestPreviewer(t *testing.T) {
 		if entry == nil {
 			entry = files.NewEntryWithDirPath(files.NewDirEntry(name, false), dirPath)
 		}
-		p.PreviewEntry(entry)
+		previewerPanel.PreviewEntry(entry)
 	}
-	previewText := func() string {
-		if tv, ok := p.previewer.Main().(*tview.TextView); ok {
+	previewText := func(previewer *previewerPanel) string {
+		if tv, ok := previewer.previewer.Main().(*tview.TextView); ok {
 			return tv.GetText(true)
 		}
 		return ""
 	}
 
-	p.textView.SetText("")
+	//nav.previewer.textView.SetText("")
 
 	t.Run("Draw", func(t *testing.T) {
+		t.Parallel()
 		s := ttestutils.NewSimScreen(t, "UTF-8", 80, 24)
-		p.Draw(s)
+		nav, _, _ := newNavigatorForTest(t)
+		nav.previewer.Draw(s)
 	})
 
 	t.Run("SetText", func(t *testing.T) {
-		p.SetText("test text")
-		assert.Contains(t, p.textView.GetText(false), "test text")
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
+		nav.previewer.SetText("test text")
+		assert.Contains(t, nav.previewer.textView.GetText(false), "test text")
 	})
 
 	t.Run("SetErr", func(t *testing.T) {
-		p.SetErr(fmt.Errorf("test error"))
-		assert.Contains(t, p.textView.GetText(false), "test error")
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
+		nav.previewer.SetErr(fmt.Errorf("test error"))
+		assert.Contains(t, nav.previewer.textView.GetText(false), "test error")
 	})
 
 	t.Run("PreviewFile_DSStore_Valid", func(t *testing.T) {
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
 		tmpFile, _ := os.CreateTemp("", ".DS_Store")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -95,25 +75,33 @@ func TestPreviewer(t *testing.T) {
 		// See https://en.wikipedia.org/wiki/.DS_Store
 		header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
 		_ = os.WriteFile(tmpFile.Name(), header, 0644)
-		previewFile(".DS_Store", tmpFile.Name())
-		previewFile(".DS_Store", tmpFile.Name())
+		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
+		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
 	})
 
 	t.Run("FocusBlur", func(t *testing.T) {
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
 		nav.previewerFocusFunc()
 		nav.previewerBlurFunc()
-		p.Focus(func(p tview.Primitive) {})
-		p.Blur()
-		p.textView.Focus(func(p tview.Primitive) {})
+		nav.previewer.Focus(func(p tview.Primitive) {})
+		nav.previewer.Blur()
+		nav.previewer.textView.Focus(func(p tview.Primitive) {})
 	})
 
 	t.Run("PreviewFile_NotFound", func(t *testing.T) {
-		previewFile("non-existent.txt", "non-existent.txt")
-		waitForText(t, previewText, "Failed to read file")
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		previewFile(nav.previewer, "non-existent.txt", "non-existent.txt")
+		waitForText(t, nav.previewer, previewText, "Failed to read file")
 	})
 
 	t.Run("PreviewFile_PlainText", func(t *testing.T) {
-		p.setPreviewer(nil)
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.txt")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -121,11 +109,14 @@ func TestPreviewer(t *testing.T) {
 		err := os.WriteFile(tmpFile.Name(), []byte("hello world"), 0644)
 		assert.NoError(t, err)
 
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, previewText, "hello world")
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
+		waitForText(t, nav.previewer, previewText, "hello world")
 	})
 
 	t.Run("PreviewFile_JSON", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
 		tmpFile, _ := os.CreateTemp("", "test*.json")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -133,14 +124,17 @@ func TestPreviewer(t *testing.T) {
 		err := os.WriteFile(tmpFile.Name(), []byte(`{"a":1}`), 0644)
 		assert.NoError(t, err)
 
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
 		// Colorized output will have tags, but GetText(false) should strip them or show them depending on dynamic colors
 		// tview.TextView.GetText(false) returns the text without tags if dynamic colors are enabled.
-		waitForText(t, previewText, "a")
+		waitForText(t, nav.previewer, previewText, "a")
 	})
 
 	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
-		p.setPreviewer(nil)
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 2)
+		nav.previewer.setPreviewer(nil)
 		firstFile, _ := os.CreateTemp("", "first*.json")
 		defer func() {
 			_ = os.Remove(firstFile.Name())
@@ -154,37 +148,45 @@ func TestPreviewer(t *testing.T) {
 		err = os.WriteFile(secondFile.Name(), []byte(`{"second":2}`), 0644)
 		assert.NoError(t, err)
 
-		previewFile(filepath.Base(firstFile.Name()), firstFile.Name())
-		waitForText(t, previewText, "first")
+		previewFile(nav.previewer, filepath.Base(firstFile.Name()), firstFile.Name())
+		waitForText(t, nav.previewer, previewText, "first")
 
-		previewFile(filepath.Base(secondFile.Name()), secondFile.Name())
-		waitForText(t, previewText, "second")
-		assert.NotContains(t, previewText(), "first")
+		previewFile(nav.previewer, filepath.Base(secondFile.Name()), secondFile.Name())
+		waitForText(t, nav.previewer, previewText, "second")
+		assert.NotContains(t, previewText(nav.previewer), "first")
 	})
 
 	t.Run("InputCapture", func(t *testing.T) {
+		t.Parallel()
+		nav, _, _ := newNavigatorForTest(t)
 		event := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
-		p.rows.GetInputCapture()(event)
+		nav.previewer.rows.GetInputCapture()(event)
 
 		event = tcell.NewEventKey(tcell.KeyUp, 0, tcell.ModNone)
-		p.rows.GetInputCapture()(event)
+		nav.previewer.rows.GetInputCapture()(event)
 
 		event = tcell.NewEventKey(tcell.KeyRight, 0, tcell.ModNone)
-		p.rows.GetInputCapture()(event)
+		nav.previewer.rows.GetInputCapture()(event)
 	})
 
 	t.Run("PreviewFile_NoName", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
 		tmpFile, _ := os.CreateTemp("", "test*.txt")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
 		}()
 		err := os.WriteFile(tmpFile.Name(), []byte("hello world"), 0644)
 		assert.NoError(t, err)
-		previewFile("", tmpFile.Name())
+		previewFile(nav.previewer, "", tmpFile.Name())
 	})
 
 	t.Run("PreviewFile_NoLexer", func(t *testing.T) {
-		p.setPreviewer(nil)
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -192,11 +194,14 @@ func TestPreviewer(t *testing.T) {
 		err := os.WriteFile(tmpFile.Name(), []byte("hello world"), 0644)
 		assert.NoError(t, err)
 
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, previewText, "hello world")
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
+		waitForText(t, nav.previewer, previewText, "hello world")
 	})
 
 	t.Run("PreviewFile_JSON_Invalid_Pretty", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
 		tmpFile, _ := os.CreateTemp("", "test*.json")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -204,11 +209,14 @@ func TestPreviewer(t *testing.T) {
 		err := os.WriteFile(tmpFile.Name(), []byte(`{invalid}`), 0644)
 		assert.NoError(t, err)
 
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, previewText, "{invalid}")
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
+		waitForText(t, nav.previewer, previewText, "{invalid}")
 	})
 
 	t.Run("PreviewFile_Image_Meta", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
 		tmpFile, _ := os.CreateTemp("", "test*.png")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -222,17 +230,20 @@ func TestPreviewer(t *testing.T) {
 			0x44, 0xAE, 0x42, 0x60, 0x82,
 		}
 		_ = os.WriteFile(tmpFile.Name(), pngData, 0644)
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
 
 		secondFile, _ := os.CreateTemp("", "test*.png")
 		defer func() {
 			_ = os.Remove(secondFile.Name())
 		}()
 		_ = os.WriteFile(secondFile.Name(), pngData, 0644)
-		previewFile(filepath.Base(secondFile.Name()), secondFile.Name())
+		previewFile(nav.previewer, filepath.Base(secondFile.Name()), secondFile.Name())
 	})
 
 	t.Run("PreviewFile_ChromaError", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
 		// To trigger chroma error, we can try something that is not valid UTF-8 if the lexer expects it
 		// but chroma2tcell usually handles bytes.
 		// However, it's worth a try with some invalid bytes for a specific lexer.
@@ -241,11 +252,14 @@ func TestPreviewer(t *testing.T) {
 			_ = os.Remove(tmpFile.Name())
 		}()
 		_ = os.WriteFile(tmpFile.Name(), []byte{0xff, 0xfe, 0xfd}, 0644)
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
 	})
 
 	t.Run("PreviewFile_Log", func(t *testing.T) {
-		p.setPreviewer(nil)
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		expectQueueUpdateDrawSync(app, 1)
+		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.log")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -253,11 +267,14 @@ func TestPreviewer(t *testing.T) {
 		err := os.WriteFile(tmpFile.Name(), []byte("log line"), 0644)
 		assert.NoError(t, err)
 
-		previewFile(filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, previewText, "log line")
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
+		waitForText(t, nav.previewer, previewText, "log line")
 	})
 
 	t.Run("PreviewFile_DSStore_Error_ReadFile", func(t *testing.T) {
+		t.Parallel()
+		nav, app, _ := newNavigatorForTest(t)
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
 		// To trigger readFile error inside DSStore branch
 		tmpDir, _ := os.MkdirTemp("", "testds")
 		defer func() {
@@ -265,6 +282,22 @@ func TestPreviewer(t *testing.T) {
 		}()
 		dsPath := filepath.Join(tmpDir, ".DS_Store")
 		_ = os.Mkdir(dsPath, 0755) // Create as directory to cause read error
-		previewFile(".DS_Store", dsPath)
+		previewFile(nav.previewer, ".DS_Store", dsPath)
 	})
+}
+
+func waitForText(t *testing.T, previewer *previewerPanel, getText func(previewer *previewerPanel) string, needle string) {
+	t.Helper()
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if strings.Contains(getText(previewer), needle) {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	text := getText(previewer)
+	if needle != "" {
+		assert.NotEmpty(t, text)
+	}
+	assert.Contains(t, text, needle)
 }

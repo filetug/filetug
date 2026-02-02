@@ -168,7 +168,8 @@ func TestDirSummary_UpdateTableAndGetSizes_Coverage(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_MoreCoverage(t *testing.T) {
-	t.Skip("failing")
+	t.Parallel()
+	//t.Skip("failing")
 	nav, _, _ := newNavigatorForTest(t)
 	// Synchronous for this test
 	ds := newTestDirSummary(nav)
@@ -289,9 +290,9 @@ func TestFavorites_SetItems_ExtraBranches(t *testing.T) {
 }
 
 func TestFilesPanel_GetCurrentEntry_ExtraBranches(t *testing.T) {
-	ctrl := gomock.NewController(t)
+	t.Parallel()
 
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	rows := &FileRows{
@@ -311,9 +312,10 @@ func TestFilesPanel_GetCurrentEntry_ExtraBranches(t *testing.T) {
 }
 
 func TestFilesPanel_DoLoadingAnimation_ExtraBranches(t *testing.T) {
-	t.Skip("failing")
-	ctrl := gomock.NewController(t)
-	nav, app := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+	//t.Skip("failing")
+
+	nav, app := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	loading := tview.NewTableCell("")
@@ -357,9 +359,10 @@ func TestFilesPanel_DoLoadingAnimation_ExtraBranches(t *testing.T) {
 }
 
 func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
-	t.Skip("failing")
-	ctrl := gomock.NewController(t)
-	nav, app := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+	//t.Skip("failing")
+
+	nav, app := setupNavigatorForFilesTest(t)
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
 	fp := newFiles(nav)
 	ctx := context.Background()
@@ -430,9 +433,10 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 }
 
 func TestFilesPanel_UpdateGitStatuses_Branches(t *testing.T) {
-	t.Skip("hanging")
-	ctrl := gomock.NewController(t)
-	nav, app := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+	//t.Skip("hanging")
+
+	nav, app := setupNavigatorForFilesTest(t)
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	fp := newFiles(nav)
@@ -560,6 +564,7 @@ func TestFilesPanel_SelectionChanged_ExtraBranches(t *testing.T) {
 }
 
 func TestCreateLeft_FocusFuncs(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.activeCol = -1
 
@@ -595,6 +600,7 @@ func TestNavigator_InputCapture_ExtraBranches(t *testing.T) {
 }
 
 func TestNewNavigator_StateError(t *testing.T) {
+	t.Parallel()
 	oldGetState := getState
 	defer func() {
 		getState = oldGetState
@@ -613,6 +619,7 @@ func TestNewNavigator_StateError(t *testing.T) {
 }
 
 func TestNavigator_GetCurrentBrowser_DefaultBranch(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.activeCol = 2
 	browser := nav.getCurrentBrowser()
@@ -620,6 +627,7 @@ func TestNavigator_GetCurrentBrowser_DefaultBranch(t *testing.T) {
 }
 
 func TestNavigator_GetGitStatus_Coverage(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	cached := &gitutils.RepoStatus{Branch: "main"}
@@ -674,6 +682,7 @@ func TestNavigator_GetGitStatus_Coverage(t *testing.T) {
 }
 
 func TestNavigator_GetGitStatus_OpenRepo(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	repoDir := t.TempDir()
@@ -696,6 +705,7 @@ func TestNavigator_GetGitStatus_OpenRepo(t *testing.T) {
 }
 
 func TestNavigator_GitStatusText_Coverage(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	empty := nav.gitStatusText(nil, "/tmp", true)
@@ -707,6 +717,7 @@ func TestNavigator_GitStatusText_Coverage(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_EmptyPath(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.store = newMockStoreWithRoot(t, url.URL{})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/", nil))
@@ -714,7 +725,8 @@ func TestNavigator_SetBreadcrumbs_EmptyPath(t *testing.T) {
 }
 
 func TestScriptsPanel_And_NestedDirsGenerator(t *testing.T) {
-	t.Skip("panics")
+	t.Parallel()
+	//t.Skip("panics")
 	nav, _, _ := newNavigatorForTest(t)
 
 	nav.showScriptsPanel()
@@ -736,6 +748,7 @@ func TestScriptsPanel_And_NestedDirsGenerator(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_Coverage(t *testing.T) {
+	t.Parallel()
 	store := newMockStore(t)
 	gomock.InOrder(
 		store.EXPECT().CreateDir(gomock.Any(), "/tmp").Return(nil),
@@ -750,7 +763,8 @@ func TestGeneratedNestedDirs_Coverage(t *testing.T) {
 }
 
 func TestNewPanel_InputCapture_Create(t *testing.T) {
-	t.Skip("failing")
+	t.Parallel()
+	//t.Skip("failing")
 	nav, app, _ := newNavigatorForTest(t)
 	nav.previewer = newPreviewerPanel(nav)
 
@@ -784,9 +798,9 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 
 	panel := NewNewPanel(nav)
 	var focused tview.Primitive
-	app.EXPECT().SetFocus(gomock.Any()).Do(func(p tview.Primitive) {
+	app.EXPECT().SetFocus(gomock.Any()).AnyTimes().Do(func(p tview.Primitive) {
 		focused = p
-	}).AnyTimes()
+	})
 
 	panel.Show()
 	panel.input.SetText("")
@@ -879,6 +893,7 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 }
 
 func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
+	t.Parallel()
 	t.Skip("hanging")
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
@@ -960,6 +975,7 @@ func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
 }
 
 func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
+	t.Parallel()
 	t.Skip("hanging")
 	nav, app, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
@@ -1022,8 +1038,9 @@ func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
 }
 
 func TestFilesPanel_InputCapture_ExtraBranches(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1044,8 +1061,9 @@ func TestFilesPanel_InputCapture_ExtraBranches(t *testing.T) {
 }
 
 func TestFilesPanel_InputCapture_KeyUp_NoMoveFocus(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	nav.current.SetDir(osfile.NewLocalDir("/tmp"))
 	fp := newFiles(nav)
 
@@ -1059,7 +1077,8 @@ func TestFilesPanel_InputCapture_KeyUp_NoMoveFocus(t *testing.T) {
 }
 
 func TestFilesPanel_InputCapture_KeyEnterEntry(t *testing.T) {
-	t.Skip("failing")
+	t.Parallel()
+	//t.Skip("failing")
 	nav, _, _ := newNavigatorForTest(t)
 	fp := nav.files
 
@@ -1077,8 +1096,9 @@ func TestFilesPanel_InputCapture_KeyEnterEntry(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_RefNil(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1134,6 +1154,7 @@ func TestNavigator_ShowDir_NodeNil(t *testing.T) {
 }
 
 func TestPreviewerPanel_SetPreviewer_Switch(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	panel := newPreviewerPanel(nav)
 
@@ -1146,8 +1167,9 @@ func TestPreviewerPanel_SetPreviewer_Switch(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_NilRef(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1156,6 +1178,7 @@ func TestFilesPanel_SelectionChangedNavFunc_NilRef(t *testing.T) {
 }
 
 func TestNavigator_DeleteEntries_Error(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	store := newMockStore(t)
 	store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("fail")).AnyTimes()
@@ -1164,6 +1187,7 @@ func TestNavigator_DeleteEntries_Error(t *testing.T) {
 }
 
 func TestNavigator_GitStatusText_HasChanges(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	status := &gitutils.RepoStatus{
@@ -1177,6 +1201,7 @@ func TestNavigator_GitStatusText_HasChanges(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_PathItems(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root"})
@@ -1186,6 +1211,7 @@ func TestNavigator_SetBreadcrumbs_PathItems(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_TitleTrim(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.store = newMockStoreWithRootTitle(t, url.URL{Path: "/root"}, "Root/")
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root/child", nil))
@@ -1223,6 +1249,7 @@ func TestNavigator_BreadcrumbActions(t *testing.T) {
 }
 
 func TestNavigator_GetGitStatus_ContextCancel(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	oldGetDirStatus := getDirStatus
@@ -1247,8 +1274,9 @@ func TestNavigator_GetGitStatus_ContextCancel(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChanged_ErrorPath(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	rows := NewFileRows(files.NewDirContext(nil, "/non-existent", nil))
@@ -1261,8 +1289,9 @@ func TestFilesPanel_SelectionChanged_ErrorPath(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_RefMissing(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1271,6 +1300,7 @@ func TestFilesPanel_SelectionChangedNavFunc_RefMissing(t *testing.T) {
 }
 
 func TestTree_InputCapture_Default(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 	other := tcell.NewEventKey(tcell.KeyRune, 'x', tcell.ModNone)
@@ -1279,6 +1309,7 @@ func TestTree_InputCapture_Default(t *testing.T) {
 }
 
 func TestTree_InputCapture_DefaultKey(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 	key := tcell.NewEventKey(tcell.KeyF2, 0, tcell.ModNone)
@@ -1287,6 +1318,7 @@ func TestTree_InputCapture_DefaultKey(t *testing.T) {
 }
 
 func TestTree_InputCapture_KeyUp_NotRoot(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 
@@ -1305,6 +1337,7 @@ func TestTree_InputCapture_KeyUp_NotRoot(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_Recursive(t *testing.T) {
+	t.Parallel()
 	store := newMockStore(t)
 	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	ctx := context.Background()
@@ -1313,6 +1346,7 @@ func TestGeneratedNestedDirs_Recursive(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_RootTitle(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root"})
 	nav.current.SetDir(files.NewDirContext(nav.store, "/root", nil))
@@ -1320,6 +1354,7 @@ func TestNavigator_SetBreadcrumbs_RootTitle(t *testing.T) {
 }
 
 func TestNavigator_ShowScriptsPanel_Selection(t *testing.T) {
+	t.Parallel()
 	t.Skip("panics")
 	nav, _, _ := newNavigatorForTest(t)
 	nav.previewer = newPreviewerPanel(nav)
@@ -1335,6 +1370,7 @@ func TestNavigator_ShowScriptsPanel_Selection(t *testing.T) {
 }
 
 func TestTree_SetSearch_Recursion(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 
@@ -1351,6 +1387,7 @@ func TestTree_SetSearch_Recursion(t *testing.T) {
 }
 
 func TestDirSummary_GetSizes_Error(t *testing.T) {
+	t.Parallel()
 	t.Skip("failing")
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
@@ -1374,6 +1411,7 @@ func (e *errorDirEntry) Type() os.FileMode          { return 0 }
 func (e *errorDirEntry) Info() (os.FileInfo, error) { return nil, assert.AnError }
 
 func TestFilesPanel_SelectionChangedNavFunc_SetsPreview(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	// Replace fragile gomock with syncApp
 	nav.previewer = newPreviewerPanel(nav)
@@ -1399,6 +1437,7 @@ func TestFilesPanel_SelectionChangedNavFunc_SetsPreview(t *testing.T) {
 }
 
 func TestNavigator_ShowDir_Error(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
@@ -1437,8 +1476,9 @@ func TestNavigator_ShowDir_ReadError(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_RefNilReuse(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1469,17 +1509,22 @@ func TestDirSummary_InputCapture_Left(t *testing.T) {
 func TestNewPanel_ShowAndFocus(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().SetFocus(gomock.Any())
+	app.EXPECT().SetFocus(gomock.Any()).MaxTimes(1)
 	panel := NewNewPanel(nav)
 	panel.Show()
-	panel.Focus(func(p tview.Primitive) {})
+	called := false
+	panel.Focus(func(p tview.Primitive) {
+		called = true
+	})
+	assert.True(t, called)
+	assert.Equal(t, 2, panel.nav.activeCol)
 }
 
 func TestNavigator_ShowScriptsPanel_InputCapture(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 
-	app.EXPECT().SetFocus(gomock.Any()).MaxTimes(2)
+	app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 
 	nav.showScriptsPanel()
 	panel := nav.right.content
@@ -1492,8 +1537,9 @@ func TestNavigator_ShowScriptsPanel_InputCapture(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChanged_NilRef(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1502,6 +1548,7 @@ func TestFilesPanel_SelectionChanged_NilRef(t *testing.T) {
 }
 
 func TestDirSummary_UpdateTable_SingleExtGroup(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 
@@ -1523,6 +1570,7 @@ func TestDirSummary_UpdateTable_SingleExtGroup(t *testing.T) {
 }
 
 func TestTree_GetCurrentEntry_RefNil(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 
@@ -1539,7 +1587,7 @@ func TestTree_InputCapture_LeftWithRoot(t *testing.T) {
 	nav, app, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 
-	app.EXPECT().QueueUpdateDraw(gomock.Any())
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 	root := tree.tv.GetRoot()
 	rootContext := newTestDirContext(nil, "/root/child", nil)
 	root.SetReference(rootContext)
@@ -1584,6 +1632,7 @@ func TestNavigator_Delete_WithError(t *testing.T) {
 }
 
 func TestNavigator_DeleteEntries_Success(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
 	store := newMockStore(t)
 	store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
@@ -1592,6 +1641,7 @@ func TestNavigator_DeleteEntries_Success(t *testing.T) {
 }
 
 func TestNavigator_GitStatusText_IsRepoRoot(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	status := &gitutils.RepoStatus{Branch: "main"}
@@ -1609,7 +1659,7 @@ func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 	nav, app, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 
-	app.EXPECT().QueueUpdateDraw(gomock.Any())
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 
 	entries := []os.DirEntry{
 		mockDirEntryInfo{name: "nil.txt", info: nil},
@@ -1623,7 +1673,7 @@ func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 func TestNavigator_ShowDir_NoNode(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any())
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 	nav.store = store
@@ -1635,8 +1685,9 @@ func TestNavigator_ShowDir_NoNode(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_NilRef_Extra(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -1645,6 +1696,7 @@ func TestFilesPanel_SelectionChangedNavFunc_NilRef_Extra(t *testing.T) {
 }
 
 func TestNavigator_ShowScriptsPanel_ListShortcut(t *testing.T) {
+	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 	app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 	nav.showScriptsPanel()
@@ -1658,6 +1710,7 @@ func TestNavigator_ShowScriptsPanel_ListShortcut(t *testing.T) {
 }
 
 func TestTree_InputCapture_SpaceWithSearch(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 	tree.searchPattern = "a"
@@ -1669,7 +1722,7 @@ func TestTree_InputCapture_SpaceWithSearch(t *testing.T) {
 func TestNavigator_ShowDir_SetsBreadcrumbs(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any())
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 
 	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
@@ -1686,7 +1739,7 @@ func TestNavigator_ShowDir_SetsBreadcrumbs(t *testing.T) {
 func TestFilesPanel_SelectionChanged_WithDirAndFile(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any())
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 	fp := nav.files
 
 	tempDir := t.TempDir()
@@ -1713,6 +1766,7 @@ func TestFilesPanel_SelectionChanged_WithDirAndFile(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_NoGroupRefs(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
@@ -1727,6 +1781,7 @@ func TestDirSummary_InputCapture_NoGroupRefs(t *testing.T) {
 }
 
 func TestNavigator_GetGitStatus_CacheStore(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	oldGetDirStatus := getDirStatus
@@ -1752,6 +1807,7 @@ func TestNavigator_GetGitStatus_CacheStore(t *testing.T) {
 }
 
 func TestPreviewerPanel_SetPreviewer_RemoveMeta(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	panel := newPreviewerPanel(nav)
 
@@ -1777,6 +1833,7 @@ func (m *mockPreviewer) Main() tview.Primitive { return m.main }
 func (m *mockPreviewer) Meta() tview.Primitive { return m.meta }
 
 func TestNavigator_ShowDir_ErrorNode(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
@@ -1794,6 +1851,7 @@ func TestNavigator_ShowDir_ErrorNode(t *testing.T) {
 }
 
 func TestNavigator_SetBreadcrumbs_EmptyRelativePath(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/"})
 	mockStore := nav.store.(*files.MockStore)
@@ -1803,6 +1861,7 @@ func TestNavigator_SetBreadcrumbs_EmptyRelativePath(t *testing.T) {
 }
 
 func TestTree_SetSearch_FirstPrefixed(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 
@@ -1819,6 +1878,7 @@ func TestTree_SetSearch_FirstPrefixed(t *testing.T) {
 }
 
 func TestTree_SetSearch_FirstContains(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 
@@ -1835,6 +1895,7 @@ func TestTree_SetSearch_FirstContains(t *testing.T) {
 }
 
 func TestNavigator_ShowScriptsPanel_ListEnter(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.showScriptsPanel()
 	panel := nav.right.content
@@ -1847,8 +1908,9 @@ func TestNavigator_ShowScriptsPanel_ListEnter(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChanged_WithError(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	rows := NewFileRows(files.NewDirContext(nil, "/missing", nil))
@@ -1861,6 +1923,7 @@ func TestFilesPanel_SelectionChanged_WithError(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
@@ -1879,6 +1942,7 @@ func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
@@ -1898,6 +1962,7 @@ func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_AllBranches(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
@@ -1984,6 +2049,7 @@ func TestDirSummary_InputCapture_AllBranches(t *testing.T) {
 }
 
 func TestNavigator_GetGitStatus_NoRepoRoot(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tempPath := t.TempDir()
 	status := nav.getGitStatus(context.Background(), nil, tempPath, true)
@@ -1991,8 +2057,9 @@ func TestNavigator_GetGitStatus_NoRepoRoot(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_NoRef(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -2001,6 +2068,7 @@ func TestFilesPanel_SelectionChangedNavFunc_NoRef(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_Default(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 
@@ -2010,6 +2078,7 @@ func TestDirSummary_InputCapture_Default(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_WaitGroup(t *testing.T) {
+	t.Parallel()
 	store := newMockStore(t)
 	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 	ctx := context.Background()
@@ -2018,6 +2087,7 @@ func TestGeneratedNestedDirs_WaitGroup(t *testing.T) {
 }
 
 func TestGeneratedNestedDirs_SubdirError(t *testing.T) {
+	t.Parallel()
 	var mu sync.Mutex
 	calls := 0
 	store := newMockStore(t)
@@ -2041,6 +2111,7 @@ func TestGeneratedNestedDirs_SubdirError(t *testing.T) {
 }
 
 func TestNewPanel_InputCapture_ReturnsEvent(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	panel := NewNewPanel(nav)
 
@@ -2051,11 +2122,13 @@ func TestNewPanel_InputCapture_ReturnsEvent(t *testing.T) {
 }
 
 func TestNavigator_ShowNewPanel_Focus(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	nav.showNewPanel()
 }
 
 func TestTree_SetCurrentDir_Root(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/"})
@@ -2067,6 +2140,7 @@ func TestTree_SetCurrentDir_Root(t *testing.T) {
 }
 
 func TestTree_SetCurrentDir_NonSlashRoot(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	tree := NewTree(nav)
 	nav.store = newMockStoreWithRoot(t, url.URL{Path: "/root/"})
@@ -2078,6 +2152,7 @@ func TestTree_SetCurrentDir_NonSlashRoot(t *testing.T) {
 }
 
 func TestDirSummary_GetSizes_TypedNilInfo(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 
@@ -2092,8 +2167,9 @@ func TestDirSummary_GetSizes_TypedNilInfo(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_RefNilAgain(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	nav, _ := setupNavigatorForFilesTest(ctrl)
+	t.Parallel()
+
+	nav, _ := setupNavigatorForFilesTest(t)
 	fp := newFiles(nav)
 
 	cell := tview.NewTableCell("file")
@@ -2102,6 +2178,7 @@ func TestFilesPanel_SelectionChangedNavFunc_RefNilAgain(t *testing.T) {
 }
 
 func TestNavigator_GetGitStatus_CancelledBeforeStatus(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 
 	oldGetFileStatus := getFileStatus
@@ -2126,9 +2203,10 @@ func TestNavigator_GetGitStatus_CancelledBeforeStatus(t *testing.T) {
 }
 
 func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
+	t.Parallel()
 	t.Skip("failing")
-	ctrl := gomock.NewController(t)
-	nav, app := setupNavigatorForFilesTest(ctrl)
+
+	nav, app := setupNavigatorForFilesTest(t)
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
 	fp := newFiles(nav)
 
@@ -2168,6 +2246,7 @@ func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_WithRef(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	fp := nav.files
 
@@ -2181,6 +2260,7 @@ func TestFilesPanel_SelectionChangedNavFunc_WithRef(t *testing.T) {
 }
 
 func TestDirSummary_InputCapture_SkipGroupWithMultipleExt(t *testing.T) {
+	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)

@@ -10,11 +10,13 @@ import (
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNewPanel_Coverage(t *testing.T) {
-	//t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	t.Parallel()
+	nav, app, _ := newNavigatorForTest(t)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).Times(1)
 	tmpDir := t.TempDir()
 	nav.store = osfile.NewStore(tmpDir)
 	nav.current.SetDir(nav.NewDirContext(tmpDir, nil))

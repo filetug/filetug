@@ -306,6 +306,7 @@ func TestTextPreviewerPreviewStalePlain(t *testing.T) {
 }
 
 func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
+	t.Parallel()
 	lexerDir := filepath.Dir("main.go")
 	plainDir := filepath.Dir("note.unknownext")
 	lexerEntry := files.NewEntryWithDirPath(mockDirEntry{name: "main.go"}, lexerDir)
@@ -342,6 +343,7 @@ func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
 	waitForText(t, previewer, "second")
 }
 func TestTextPreviewerMetaAndMain(t *testing.T) {
+	t.Parallel()
 	previewer := NewTextPreviewer(nil)
 	meta := previewer.Meta()
 	main := previewer.Main()
@@ -354,6 +356,7 @@ func TestTextPreviewerMetaAndMain(t *testing.T) {
 }
 
 func TestPrettyJSONSuccess(t *testing.T) {
+	t.Parallel()
 	input := []byte("{\"a\":1}")
 	output, err := prettyJSON(input)
 	assert.NoError(t, err)
@@ -362,6 +365,7 @@ func TestPrettyJSONSuccess(t *testing.T) {
 }
 
 func TestJsonPreviewerPreviewReadsFile(t *testing.T) {
+	t.Parallel()
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -385,12 +389,14 @@ func TestJsonPreviewerPreviewReadsFile(t *testing.T) {
 }
 
 func TestJsonPreviewerPreviewReadFileError(t *testing.T) {
+	t.Parallel()
 	previewer := NewJsonPreviewer(func(f func()) {})
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.json"}, t.TempDir())
 	previewer.PreviewSingle(entry, nil, nil)
 }
 
 func TestJsonPreviewerPreviewWithData(t *testing.T) {
+	t.Parallel()
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -409,6 +415,7 @@ func TestJsonPreviewerPreviewWithData(t *testing.T) {
 }
 
 func TestJsonPreviewerPreviewInvalidJSON(t *testing.T) {
+	t.Parallel()
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -428,6 +435,7 @@ func TestJsonPreviewerPreviewInvalidJSON(t *testing.T) {
 }
 
 func TestDsstorePreviewerPreviewSuccess(t *testing.T) {
+	t.Parallel()
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -498,12 +506,14 @@ func TestDsstorePreviewerPreviewReadsFile(t *testing.T) {
 }
 
 func TestDsstorePreviewerPreviewReadFileError(t *testing.T) {
+	t.Parallel()
 	previewer := NewDsstorePreviewer(func(f func()) {})
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "missing.DS_Store"}, t.TempDir())
 	previewer.PreviewSingle(entry, nil, nil)
 }
 
 func TestDsstorePreviewerPreviewError(t *testing.T) {
+	t.Parallel()
 	previewer := NewDsstorePreviewer(func(f func()) {})
 	dir := filepath.Dir("bad.DS_Store")
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "bad.DS_Store"}, dir)

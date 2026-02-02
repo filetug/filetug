@@ -474,10 +474,9 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 }
 
 func TestNavigator_showDir_FileScheme(t *testing.T) {
-	nav, _, _ := newNavigatorForTest(t)
-	if nav == nil {
-		t.Fatal("navigator is nil")
-	}
+	t.Parallel()
+	nav, app, _ := newNavigatorForTest(t)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).Times(1)
 	node := tview.NewTreeNode("test")
 
 	// Mock store with file scheme
