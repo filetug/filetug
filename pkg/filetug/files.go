@@ -78,15 +78,17 @@ func (f *filesPanel) onStoreChange() {
 
 func (f *filesPanel) doLoadingAnimation(loading *tview.TableCell) {
 	// Simple heuristic: if we are in a test (no real app), don't loop
-	time.Sleep(10 * time.Millisecond)
-	if f.table.GetCell(1, 0) == loading {
+	// Using a shorter sleep to avoid hanging tests that expect synchronous updates
+	for f.table.GetCell(1, 0) == loading {
 		q, r := f.loadingProgress/len(spinner), f.loadingProgress%len(spinner)
 		progressBar := strings.Repeat("█", q) + string(spinner[r])
-		f.nav.app.QueueUpdateDraw(func() {
-			loading.SetText(progressBar)
-		})
+		if f.nav != nil && f.nav.app != nil {
+			f.nav.app.QueueUpdateDraw(func() {
+				loading.SetText(progressBar)
+			})
+		}
 		f.loadingProgress += 1
-		f.doLoadingAnimation(loading)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 

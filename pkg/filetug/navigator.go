@@ -476,6 +476,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirCont
 	}
 
 	dirPath := expandedDir
+	// Start loading data in a goroutine
 	go func() {
 		dirContext, err := nav.getDirData(ctx, dirPath)
 		if nav.app != nil {

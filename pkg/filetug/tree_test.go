@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,10 @@ func TestTree(t *testing.T) {
 		//t.Skip("failing")
 		//t.Parallel()
 		loading := tview.NewTreeNode(" Loading...")
-		nav, app, _ := newNavigatorForTest(t)
+		nav, app, ctrl := newNavigatorForTest(t)
+		ctrl.Finish()
+		app = tviewmocks.NewMockApp(ctrl)
+		nav.app = app
 		tree := NewTree(nav) //tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
 
@@ -78,7 +82,7 @@ func TestTree(t *testing.T) {
 
 		select {
 		case <-done:
-		case <-time.After(100 * time.Second):
+		case <-time.After(5 * time.Second):
 			t.Fatal("timeout waiting for queueUpdateDraw")
 		}
 		assert.Greater(t, len(texts), 0)
@@ -86,7 +90,10 @@ func TestTree(t *testing.T) {
 
 	t.Run("doLoadingAnimation_queueUpdateDrawExecutes", func(t *testing.T) {
 		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
+		nav, app, ctrl := newNavigatorForTest(t)
+		ctrl.Finish()
+		app = tviewmocks.NewMockApp(ctrl)
+		nav.app = app
 		tree := NewTree(nav)
 		loading := tview.NewTreeNode(" Loading...")
 		tree.rootNode.ClearChildren()

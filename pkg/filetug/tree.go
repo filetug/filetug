@@ -58,18 +58,17 @@ func (u loadingUpdater) Update() {
 
 func (t *Tree) doLoadingAnimation(loading *tview.TreeNode) {
 	nav := t.nav
-	app := nav.app
 	for {
-		time.Sleep(50 * time.Millisecond)
-		if children := t.rootNode.GetChildren(); len(children) == 1 && children[0] != loading {
-			app.QueueUpdateDraw(func() {}) // For tests to signal completion
+		if children := t.rootNode.GetChildren(); len(children) == 0 || (len(children) == 1 && children[0] != loading) {
+			nav.app.QueueUpdateDraw(func() {}) // For tests to signal completion
 			return
 		}
 		q, r := t.loadingProgress/len(spinner), t.loadingProgress%len(spinner)
 		progressBar := strings.Repeat("█", q) + string(spinner[r])
 		updater := loadingUpdater{node: loading, text: " Loading... " + progressBar}
-		app.QueueUpdateDraw(updater.Update)
+		nav.app.QueueUpdateDraw(updater.Update)
 		t.loadingProgress += 1
+		time.Sleep(50 * time.Millisecond)
 	}
 }
 

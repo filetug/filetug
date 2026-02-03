@@ -98,12 +98,16 @@ func newFavoritesPanel(nav *Navigator) *favoritesPanel {
 		items := make([]ftfav.Favorite, 0, len(f.items)+len(userFavorites))
 		items = append(items, f.items...)
 		items = append(items, userFavorites...)
-		//update := func() {
-		//	f.items = items
-		//	f.setItems()
-		//	f.updateAddCurrentForm()
-		//}
-		//f.nav.app.QueueUpdateDraw(update)
+		update := func() {
+			f.items = items
+			f.setItems()
+			f.updateAddCurrentForm()
+		}
+		if f.nav != nil && f.nav.app != nil {
+			f.nav.app.QueueUpdateDraw(update)
+		} else {
+			update()
+		}
 	}()
 	return f
 }

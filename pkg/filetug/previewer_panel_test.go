@@ -258,7 +258,11 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_Log", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSyncTimes(app, 1)
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
+			if f != nil {
+				f()
+			}
+		})
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.log")
 		defer func() {

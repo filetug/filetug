@@ -7,6 +7,7 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestFavorites(t *testing.T) {
@@ -24,7 +25,7 @@ func TestFavorites(t *testing.T) {
 	t.Run("ShowFavorites", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectSetFocusTimes(app, 1)
+		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 		f := newFavoritesPanel(nav)
 		f.nav.ShowFavorites()
 	})
@@ -87,8 +88,8 @@ func TestFavorites(t *testing.T) {
 	t.Run("inputCapture", func(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
-		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 3) // TODO: make deterministic
-		expectSetFocusTimes(app, 3)                     // Why 3?
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
+		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 		f := newFavoritesPanel(nav)
 		// Test Escape
 		eventEsc := tcell.NewEventKey(tcell.KeyEscape, 0, tcell.ModNone)

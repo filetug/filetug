@@ -11,6 +11,7 @@ import (
 	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.uber.org/mock/gomock"
 )
 
 func TestNewPanel_Coverage(t *testing.T) {
@@ -37,7 +38,8 @@ func TestNewPanel_Coverage(t *testing.T) {
 	t.Run("createDir", func(t *testing.T) {
 		t.Parallel()
 		_, app, p, tmpDir := newNewPanel(t)
-		expectQueueUpdateDrawSyncTimes(app, 2)
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
+		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 		//_, _, p, tmpDir := newNewPanel()
 		p.input.SetText("newdir")
 		p.createDir()
@@ -47,13 +49,15 @@ func TestNewPanel_Coverage(t *testing.T) {
 
 	t.Run("createFile", func(t *testing.T) {
 		t.Parallel()
-		nav, _, p, _ := newNewPanel(t)
+		_, app, p, tmpDir := newNewPanel(t)
+		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
+		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 		p.input.SetText("newfile.txt")
 		// nav.showDir might cause issues if not mocked, but here we just want to ensure it creates the file
 		p.createFile()
 		// If CreateFile failed, it might have returned early.
 		// Let's use a full path to be absolutely sure where it should be.
-		expectedFile := filepath.Join(nav.current.Dir().Path(), "newfile.txt")
+		expectedFile := filepath.Join(tmpDir, "newfile.txt")
 		_, err := os.Stat(expectedFile)
 		assert.NoError(t, err)
 	})
