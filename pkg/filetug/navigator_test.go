@@ -260,21 +260,29 @@ func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
 		saveCurrentDir = oldSaveCurrentDir
 	}()
 
-	nav, app, _ := newNavigatorForTest(t)
+	nav, app, ctrl := newNavigatorForTest(t)
+	nav.dirsTree.tv.SetChangedFunc(nil) // Disable Tree.changed to avoid extra showDir calls
+	nav.breadcrumbs = nil               // Disable breadcrumbs to avoid extra showDir calls
 	entries := []os.DirEntry{
 		mockDirEntry{name: "child", isDir: true},
 	}
-	store := newMockStoreWithRoot(t, url.URL{Scheme: "mock", Path: "/"})
+	store := files.NewMockStore(ctrl)
+	store.EXPECT().RootURL().Return(url.URL{Scheme: "mock", Path: "/root"}).AnyTimes()
+	store.EXPECT().RootTitle().Return("Mock").AnyTimes()
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, path string) ([]os.DirEntry, error) {
-			if path == "/root" {
+		func(_ context.Context, p string) ([]os.DirEntry, error) {
+			t.Logf("MOCK ReadDir called for %s", p)
+			if p == "/root" {
 				return entries, nil
 			}
-			return nil, nil
+			return []os.DirEntry{}, nil
 		},
 	).AnyTimes()
-	nav.store = store
+	nav.SetStore(store)
 	nav.current.SetDir(nav.NewDirContext("/root", nil))
+	nav.dirsTree.rootNode.SetReference(nav.NewDirContext("/root", nil))
+	rootURL := nav.store.RootURL()
+	t.Logf("Nav store: %T, RootURL: %s", nav.store, rootURL.String())
 
 	done := make(chan struct{})
 	var once sync.Once
