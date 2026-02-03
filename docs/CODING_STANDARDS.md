@@ -63,6 +63,7 @@ Responsiveness of the app is critical for a good user experience.
 - We aim for 100% test coverage.
 - All top tests that do replace mock package level variable should be able to run in parallel (call `t.Parallel()` as
   1st stament of the test)
+- use `-timeout=10s` when running tests
 
 - **Adding New Tests**:
     - Place tests in the same package as the code being tested, using the `_test.go` suffix.
