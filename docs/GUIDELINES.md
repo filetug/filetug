@@ -23,7 +23,7 @@ This document provides project-specific information for developers and AI agents
 
 ## 3. Testing Information
 
-FileTug aims for high (_90%+_) test coverage.
+FileTug aims for 100% test coverage.
 
 Our [coding standards](docs/CODING_STANDARDS.md) have dedicated "Tests" section.
 

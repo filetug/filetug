@@ -53,13 +53,22 @@ Responsiveness of the app is critical for a good user experience.
 - Use `context.Context` for cancellation and timeouts in goroutines to ensure that resources are released properly.
 - Make sure if UI component initiated a goroutine and is closed, it cancels the context.
 
+## Testability
+
+- Code should avoid the usage of package level variables
+    - Dependencies should be passed to type or a func
+
 ## Tests
 
+- We aim for 100% test coverage.
+- All top tests that do replace mock package level variable should be able to run in parallel (call `t.Parallel()` as
+  1st stament of the test)
+
 - **Adding New Tests**:
-  - Place tests in the same package as the code being tested, using the `_test.go` suffix.
-  - The project uses both the standard `testing` package and `github.com/stretchr/testify/assert` for more expressive
-    assertions.
-  - For UI-related tests, check `pkg/sneatv/ttestutils` for helper functions.
+    - Place tests in the same package as the code being tested, using the `_test.go` suffix.
+    - The project uses both the standard `testing` package and `github.com/stretchr/testify/assert` for more expressive
+      assertions.
+    - For UI-related tests, check `pkg/sneatv/ttestutils` for helper functions.
 
 - **Demonstration Test Example**:
   The following example demonstrates a simple test using `testify/assert`:
@@ -80,15 +89,16 @@ Responsiveness of the app is critical for a good user experience.
   ```
 
 ### Unused arguments – explicitly mark function parameters as intentionally unused
+
 - Assigns the parameters to the blank identifier(s) `_`
-  - Prevents the Go compiler from complaining about unused variables
-  - Documents that the parameters are currently unused by design
+    - Prevents the Go compiler from complaining about unused variables
+    - Documents that the parameters are currently unused by design
 
 ```go
 package some
 
 func foo(a1, a2 string) {
-    _, _ = a1, a2
+	_, _ = a1, a2
 }
 ```
 
