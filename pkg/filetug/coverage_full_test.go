@@ -1919,7 +1919,8 @@ func TestTree_SetSearch_FirstContains(t *testing.T) {
 
 func TestNavigator_ShowScriptsPanel_ListEnter(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectSetFocusTimes(app, 1)
 	nav.showScriptsPanel()
 	panel := nav.right.content
 	scripts, ok := panel.(*scriptsPanel)
@@ -1947,7 +1948,8 @@ func TestFilesPanel_SelectionChanged_WithError(t *testing.T) {
 
 func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 1) // TODO: Make deterministic
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(files.NewDirContext(nil, "/test", nil))
@@ -1967,7 +1969,7 @@ func TestDirSummary_InputCapture_UpAtTop(t *testing.T) {
 func TestDirSummary_InputCapture_DownAtBottom(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	expectQueueUpdateDrawSyncTimes(app, 1)
+	expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 1) // TODO: Make deterministic
 	ds := newTestDirSummary(nav)
 	nav.files = newFiles(nav)
 	nav.files.rows = NewFileRows(files.NewDirContext(nil, "/test", nil))

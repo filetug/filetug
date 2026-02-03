@@ -37,8 +37,8 @@ func TestNavigator_SetStore(t *testing.T) {
 
 func TestNavigator_SetFocusToContainer(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
-
+	nav, app, _ := newNavigatorForTest(t)
+	expectSetFocusTimes(app, 1)
 	// Test index 1 (files)
 	nav.SetFocusToContainer(1)
 	// We can't easily check what's focused in tview.Application without running it,
@@ -169,10 +169,8 @@ func TestNavigator_UpdateGitStatus_RealCall(t *testing.T) {
 
 func TestNavigator_ShowNodeError_Extra(t *testing.T) {
 	t.Parallel()
-	nav, _, _ := newNavigatorForTest(t)
-	if nav == nil {
-		t.Fatal("navigator is nil")
-	}
+	nav, app, _ := newNavigatorForTest(t)
+	expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 1) // TODO: Make deterministic
 	nav.right = NewContainer(2, nav)
 	nav.previewer = newPreviewerPanel(nav)
 
