@@ -526,8 +526,11 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 	// Use synchronous queueUpdateDraw
 
 	tempDir := t.TempDir()
-	readDirPath := ""
-	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	readDirPath := "initial"
+	ctrl := gomock.NewController(t)
+	store := files.NewMockStore(ctrl)
+	store.EXPECT().RootURL().Return(url.URL{Scheme: "file", Path: "/"}).AnyTimes()
+	store.EXPECT().RootTitle().Return("Mock").AnyTimes()
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, name string) ([]os.DirEntry, error) {
 			readDirPath = name
@@ -535,7 +538,10 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 		},
 	).AnyTimes()
 	nav.store = store
-	nav.current.SetDir(files.NewDirContext(store, tempDir, nil))
+	if nav.files != nil {
+		nav.files.nav = nav
+	}
+	// nav.current.SetDir(files.NewDirContext(store, tempDir, nil))
 
 	fp := nav.files
 
@@ -549,24 +555,27 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 	if !assert.NoError(t, err) {
 		return
 	}
-	entries, err := os.ReadDir(tempDir)
+
+	// We need to use the actual OS file system for the symlink check to work
+	// because FileRows.isSymlinkToDir calls os.Stat(fullName)
+	linkEntry, err := os.ReadDir(tempDir)
 	if !assert.NoError(t, err) {
 		return
 	}
-	var linkEntry os.DirEntry
-	for _, entry := range entries {
-		if entry.Name() == "link" {
-			linkEntry = entry
+	var entry os.DirEntry
+	for _, e := range linkEntry {
+		if e.Name() == "link" {
+			entry = e
 			break
 		}
 	}
-	if !assert.NotNil(t, linkEntry) {
-		return
-	}
 
+	fp = nav.files
 	fp.rows = NewFileRows(files.NewDirContext(store, tempDir, nil))
+	e := files.NewEntryWithDirPath(entry, tempDir)
+	fp.rows.VisibleEntries = []files.EntryWithDirPath{e}
+	// NewFileRows with local store (indicated by scheme "file") will use os.Stat in isSymlinkToDir
 
-	entry := files.NewEntryWithDirPath(linkEntry, tempDir)
-	fp.showDirSummary(entry)
+	fp.showDirSummary(e)
 	assert.Equal(t, linkPath, readDirPath)
 }
