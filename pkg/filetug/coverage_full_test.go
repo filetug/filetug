@@ -20,6 +20,7 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv/crumbs"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
@@ -369,13 +370,36 @@ func TestFilesPanel_DoLoadingAnimation_ExtraBranches(t *testing.T) {
 	}
 }
 
+func setupGitStatusTest(t *testing.T) (*filesPanel, *Navigator, *tviewmocks.MockApp, string, *files.DirContext, files.EntryWithDirPath) {
+	nav, app := setupNavigatorForFilesTest(t)
+	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
+	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	fp := newFiles(nav)
+
+	repoDir := t.TempDir()
+	_, initErr := git.PlainInit(repoDir, false)
+	assert.NoError(t, initErr)
+
+	filePath := filepath.Join(repoDir, "file.txt")
+	writeErr := os.WriteFile(filePath, []byte("content"), 0644)
+	assert.NoError(t, writeErr)
+
+	dirContext := files.NewDirContext(nil, repoDir, nil)
+	rows := NewFileRows(dirContext)
+	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), repoDir)
+	rows.AllEntries = []files.EntryWithDirPath{entry}
+	rows.VisibleEntries = rows.AllEntries
+	fp.rows = rows
+	fp.table.SetContent(rows)
+
+	return fp, nav, app, repoDir, dirContext, entry
+}
+
 func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 	t.Parallel()
 	//t.Skip("failing")
 
-	nav, app := setupNavigatorForFilesTest(t)
-	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
-	fp := newFiles(nav)
+	fp, nav, app, _, dirContext, _ := setupGitStatusTest(t)
 	ctx := context.Background()
 
 	fp.nav = nil
@@ -404,22 +428,6 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 	badRepoContext := files.NewDirContext(nil, badRepoDir, nil)
 	fp.updateGitStatuses(ctx, badRepoContext)
 
-	repoDir := t.TempDir()
-	repo, initErr := git.PlainInit(repoDir, false)
-	assert.NoError(t, initErr)
-	assert.NotNil(t, repo)
-	filePath := filepath.Join(repoDir, "file.txt")
-	writeErr := os.WriteFile(filePath, []byte("content"), 0644)
-	assert.NoError(t, writeErr)
-
-	dirContext := files.NewDirContext(nil, repoDir, nil)
-	rows := NewFileRows(dirContext)
-	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), repoDir)
-	rows.AllEntries = []files.EntryWithDirPath{entry}
-	rows.VisibleEntries = rows.AllEntries
-	fp.rows = rows
-	fp.table.SetContent(rows)
-
 	drawCalled := make(chan struct{})
 
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
@@ -447,27 +455,7 @@ func TestFilesPanel_UpdateGitStatuses_Branches(t *testing.T) {
 	t.Parallel()
 	//t.Skip("hanging")
 
-	nav, app := setupNavigatorForFilesTest(t)
-	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
-	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
-	fp := newFiles(nav)
-
-	repoDir := t.TempDir()
-	repo, initErr := git.PlainInit(repoDir, false)
-	assert.NoError(t, initErr)
-	assert.NotNil(t, repo)
-
-	filePath := filepath.Join(repoDir, "file.txt")
-	writeErr := os.WriteFile(filePath, []byte("content"), 0644)
-	assert.NoError(t, writeErr)
-
-	dirContext := files.NewDirContext(nil, repoDir, nil)
-	rows := NewFileRows(dirContext)
-	entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), repoDir)
-	rows.AllEntries = []files.EntryWithDirPath{entry}
-	rows.VisibleEntries = rows.AllEntries
-	fp.rows = rows
-	fp.table.SetContent(rows)
+	fp, nav, app, _, dirContext, entry := setupGitStatusTest(t)
 
 	clearCache := func() {
 		nav.gitStatusCacheMu.Lock()
@@ -500,18 +488,18 @@ func TestFilesPanel_UpdateGitStatuses_Branches(t *testing.T) {
 	}
 	fullPath := entry.FullName()
 	statusText := nav.gitStatusText(status, fullPath, false)
-	updated := rows.SetGitStatusText(fullPath, statusText)
+	updated := fp.rows.SetGitStatusText(fullPath, statusText)
 	assert.True(t, updated)
 	clearCache()
 	fp.updateGitStatuses(context.Background(), dirContext)
 	time.Sleep(50 * time.Millisecond)
 
-	rows.SetGitStatusText(fullPath, "")
+	fp.rows.SetGitStatusText(fullPath, "")
 	clearCache()
 	fp.updateGitStatuses(context.Background(), dirContext)
 	time.Sleep(50 * time.Millisecond)
 
-	rows.gitStatusText = make(map[string]string)
+	fp.rows.gitStatusText = make(map[string]string)
 	otherRows := NewFileRows(dirContext)
 	done := make(chan struct{})
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {

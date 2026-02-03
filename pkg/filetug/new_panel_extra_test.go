@@ -8,7 +8,7 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files/osfile"
-	"github.com/filetug/filetug/pkg/filetug/navigator"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -16,7 +16,7 @@ import (
 func TestNewPanel_Coverage(t *testing.T) {
 	t.Parallel()
 
-	newNewPanel := func(t *testing.T) (nav *Navigator, app *navigator.MockApp, p *NewPanel, tmpDir string) {
+	newNewPanel := func(t *testing.T) (nav *Navigator, app *tviewmocks.MockApp, p *NewPanel, tmpDir string) {
 		nav, app, _ = newNavigatorForTest(t)
 		tmpDir = t.TempDir()
 		nav.store = osfile.NewStore(tmpDir)

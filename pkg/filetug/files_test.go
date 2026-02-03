@@ -12,7 +12,7 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/filetug/ftui"
-	"github.com/filetug/filetug/pkg/filetug/navigator"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -20,7 +20,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func setupNavigatorForFilesTest(t *testing.T) (*Navigator, *navigator.MockApp) {
+func setupNavigatorForFilesTest(t *testing.T) (*Navigator, *tviewmocks.MockApp) {
 	nav, app, _ := newNavigatorForTest(t)
 	nav.current.SetDir(osfile.NewLocalDir("/"))
 	nav.right = NewContainer(2, nav)

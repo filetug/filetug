@@ -7,7 +7,7 @@
 //
 
 // Package navigator is a generated GoMock package.
-package navigator
+package tviewmocks
 
 import (
 	reflect "reflect"

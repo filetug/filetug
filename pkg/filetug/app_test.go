@@ -1,17 +1,17 @@
 package filetug
 
 import (
-	"github.com/filetug/filetug/pkg/filetug/navigator"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"go.uber.org/mock/gomock"
 )
 
-func expectQueueUpdateDrawSyncTimes(app *navigator.MockApp, times int) {
+func expectQueueUpdateDrawSyncTimes(app *tviewmocks.MockApp, times int) {
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).Times(times).DoAndReturn(func(f func()) {
 		f()
 	})
 }
 
-func expectQueueUpdateDrawSyncMinMaxTimes(app *navigator.MockApp, minTimes, maxTimes int) {
+func expectQueueUpdateDrawSyncMinMaxTimes(app *tviewmocks.MockApp, minTimes, maxTimes int) {
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).
 		MinTimes(minTimes).
 		MaxTimes(maxTimes).
@@ -20,11 +20,11 @@ func expectQueueUpdateDrawSyncMinMaxTimes(app *navigator.MockApp, minTimes, maxT
 		})
 }
 
-func expectSetFocusTimes(app *navigator.MockApp, times int) {
+func expectSetFocusTimes(app *tviewmocks.MockApp, times int) {
 	app.EXPECT().SetFocus(gomock.Any()).Times(times)
 }
 
-func expectSetFocusMinMaxTimes(app *navigator.MockApp, minTimes, maxTimes int) {
+func expectSetFocusMinMaxTimes(app *tviewmocks.MockApp, minTimes, maxTimes int) {
 	app.EXPECT().SetFocus(gomock.Any()).
 		MinTimes(minTimes).
 		MaxTimes(maxTimes)

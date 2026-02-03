@@ -1,4 +1,4 @@
-package navigator
+package tviewmocks
 
 import (
 	"testing"
@@ -10,6 +10,7 @@ import (
 
 func TestAppProxy_WithMockApp(t *testing.T) {
 	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	a := NewMockApp(ctrl)
 	assert.NotNil(t, a)

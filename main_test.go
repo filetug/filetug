@@ -15,6 +15,7 @@ import (
 
 	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/profiling"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"go.uber.org/mock/gomock"
 )
 
@@ -122,7 +123,7 @@ func Test_newFileTugApp(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	newApp = func() navigator.App {
-		return navigator.NewMockApp(ctrl)
+		return tviewmocks.NewMockApp(ctrl)
 	}
 
 	t.Run("default", func(t *testing.T) {
@@ -213,7 +214,7 @@ func Test_newFileTugApp_pprofError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	newApp = func() navigator.App {
-		return navigator.NewMockApp(ctrl)
+		return tviewmocks.NewMockApp(ctrl)
 	}
 
 	oldStderr := os.Stderr

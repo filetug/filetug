@@ -15,8 +15,8 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
-	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/gitutils"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"go.uber.org/mock/gomock"
@@ -41,7 +41,7 @@ func TestOnMoveFocusUp(t *testing.T) {
 func TestNavigator(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
-	app := navigator.NewMockApp(ctrl)
+	app := tviewmocks.NewMockApp(ctrl)
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 	nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
 	if nav == nil {
