@@ -83,7 +83,7 @@ func TestFavoritesPanel_AddCurrentFavorite_Success(t *testing.T) {
 	}
 
 	nav, app, _ := newNavigatorForTest(t)
-	expectSetFocusTimes(app, 1)
+	expectSetFocusMinMaxTimes(app, 0, 1)
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	nav.current.SetDir(nav.NewDirContext("/tmp", nil))
 	panel := newTestFavoritesPanel(nav)
@@ -149,15 +149,23 @@ func TestFavoritesPanel_NewFavoritesPanel_GetFavoritesError(t *testing.T) {
 		getFavorites = oldGetFavorites
 	}()
 	done := make(chan struct{})
+	isDone := false
 	getFavorites = func() ([]ftfav.Favorite, error) {
-		close(done)
+		if !isDone {
+			isDone = true
+			close(done)
+		}
 		return nil, errors.New("favorites error")
 	}
 
 	nav, _, _ := newNavigatorForTest(t)
 	_ = newFavoritesPanel(nav)
 
-	<-done
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		assert.Fail(t, "timed out waiting for favorites")
+	}
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {

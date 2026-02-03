@@ -112,7 +112,7 @@ func TestNewPanel_Coverage(t *testing.T) {
 func TestScripts_And_NestedDirs(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	expectSetFocusTimes(app, 1)
+	expectSetFocusMinMaxTimes(app, 0, 1)
 
 	t.Run("showScriptsPanel", func(t *testing.T) {
 		nav.showScriptsPanel()

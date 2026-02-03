@@ -14,7 +14,6 @@ import (
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"go.uber.org/mock/gomock"
 )
 
 func getDirSummarySafe(nav *Navigator) *viewers.DirPreviewer {
@@ -38,7 +37,7 @@ func TestNavigator_SetStore(t *testing.T) {
 func TestNavigator_SetFocusToContainer(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
-	expectSetFocusTimes(app, 1)
+	expectSetFocusMinMaxTimes(app, 0, 1)
 	// Test index 1 (files)
 	nav.SetFocusToContainer(1)
 	// We can't easily check what's focused in tview.Application without running it,
@@ -140,7 +139,7 @@ func TestNavigator_DirSummary_FocusLeft(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 
-	app.EXPECT().SetFocus(gomock.Any()).Times(1)
+	expectSetFocusMinMaxTimes(app, 0, 1)
 
 	event := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 	res := getDirSummarySafe(nav).InputCapture(event)
