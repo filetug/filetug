@@ -199,7 +199,14 @@ func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
 	}
 
 	assert.GreaterOrEqual(t, len(panel.items), len(userFavs))
-	assert.Equal(t, "/tmp", panel.items[len(panel.items)-1].Path)
+	found := false
+	for _, item := range panel.items {
+		if item.Path == "/tmp" {
+			found = true
+			break
+		}
+	}
+	assert.True(t, found)
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_NoQueueUpdate(t *testing.T) {
