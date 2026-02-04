@@ -26,6 +26,9 @@ func NewContainer(index int, nav *Navigator) *Container {
 }
 
 func (r *Container) SetContent(p tview.Primitive) {
+	if r == nil || r.Flex == nil {
+		return
+	}
 	r.content = p
 	r.Clear()
 	r.AddItem(p, 0, 1, false)
