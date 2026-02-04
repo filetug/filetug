@@ -571,8 +571,6 @@ func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
 }
 
 func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
-	t.Parallel()
-
 	nav, app := setupNavigatorForFilesTest(t)
 	expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 2)
 	nav.right = NewContainer(2, nav)
