@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -68,6 +69,18 @@ func (s *recordingStore) seenPath(expected string) bool {
 	defer s.mu.Unlock()
 	for _, p := range s.paths {
 		if p == expected {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *recordingStore) seenPathClean(expected string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	expected = path.Clean(expected)
+	for _, p := range s.paths {
+		if path.Clean(p) == expected {
 			return true
 		}
 	}
@@ -385,12 +398,12 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 		t.Helper()
 		deadline := time.Now().Add(500 * time.Millisecond)
 		for time.Now().Before(deadline) {
-			if store.seenPath(expected) {
+			if store.seenPathClean(expected) {
 				return
 			}
 			time.Sleep(5 * time.Millisecond)
 		}
-		assert.True(t, store.seenPath(expected))
+		assert.True(t, store.seenPathClean(expected))
 	}
 
 	// Test row 0 (parent dir)
