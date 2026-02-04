@@ -44,7 +44,6 @@ func TestTree(t *testing.T) {
 	})
 
 	t.Run("doLoadingAnimation", func(t *testing.T) {
-		//t.Skip("failing")
 		//t.Parallel()
 		loading := tview.NewTreeNode(" Loading...")
 		nav, app, ctrl := newNavigatorForTest(t)
