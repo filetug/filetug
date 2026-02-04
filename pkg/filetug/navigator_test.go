@@ -338,26 +338,31 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	nodeFirst := tview.NewTreeNode("first")
 	nodeSecond := tview.NewTreeNode("second")
 
+	waitForSeen := func(expected string) {
+		t.Helper()
+		deadline := time.Now().Add(2 * time.Second)
+		var lastSeen string
+		for time.Now().Before(deadline) {
+			select {
+			case lastSeen = <-seen:
+				if lastSeen == expected {
+					return
+				}
+			default:
+				time.Sleep(5 * time.Millisecond)
+			}
+		}
+		t.Fatalf("timeout waiting for %s; last seen %q", expected, lastSeen)
+	}
+
 	nav.showDir(ctx, nodeFirst, nav.NewDirContext("/first", nil), true)
 	// The showDir above will call ReadDir in a goroutine.
 	// Since we are using a mock that blocks on `block`, we can wait for it here.
-	var firstSeen string
-	select {
-	case firstSeen = <-seen:
-	case <-time.After(time.Second):
-		// may be skipped if already loaded
-	}
+	waitForSeen("/first")
 	close(block)                      // Unblock first ReadDir before starting second one
 	time.Sleep(10 * time.Millisecond) // Give it a moment to finish processing first load
 	nav.showDir(ctx, nodeSecond, nav.NewDirContext("/second", nil), true)
-	var secondSeen string
-	select {
-	case secondSeen = <-seen:
-	case <-time.After(time.Second):
-		// may be skipped if already loaded
-	}
-
-	assert.True(t, firstSeen == "/first" || secondSeen == "/second")
+	waitForSeen("/second")
 }
 
 func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
