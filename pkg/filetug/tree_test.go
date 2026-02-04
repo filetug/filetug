@@ -46,31 +46,35 @@ func TestTree(t *testing.T) {
 	t.Run("doLoadingAnimation", func(t *testing.T) {
 		//t.Parallel()
 		loading := tview.NewTreeNode(" Loading...")
-		nav, app, _ := newNavigatorForTest(t)
-		tree := NewTree(nav) //tree.rootNode.ClearChildren()
-		tree.rootNode.AddChild(loading)
-
+		var updatesCount int
 		done := make(chan struct{})
 		var texts []string
-		var updatesCount int
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
-			if f != nil {
-				f()
-			}
-			updatesCount++
-			if updatesCount >= 4 {
-				select {
-				case done <- struct{}{}:
-				default:
+		var tree *Tree
+		app := &testApp{
+			queueUpdateDraw: func(f func()) {
+				if f != nil {
+					f()
 				}
-				return
-			}
-			texts = append(texts, loading.GetText())
-			if updatesCount >= 3 {
-				tree.rootNode.ClearChildren()
-				tree.rootNode.AddChild(tview.NewTreeNode("sub_dir_1"))
-			}
-		})
+				updatesCount++
+				if updatesCount >= 4 {
+					select {
+					case done <- struct{}{}:
+					default:
+					}
+					return
+				}
+				texts = append(texts, loading.GetText())
+				if updatesCount >= 3 {
+					if tree != nil {
+						tree.rootNode.ClearChildren()
+						tree.rootNode.AddChild(tview.NewTreeNode("sub_dir_1"))
+					}
+				}
+			},
+		}
+		nav := &Navigator{app: app}
+		tree = NewTree(nav) //tree.rootNode.ClearChildren()
+		tree.rootNode.AddChild(loading)
 
 		go func() {
 			tree.doLoadingAnimation(loading)
