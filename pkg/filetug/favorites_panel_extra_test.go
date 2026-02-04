@@ -124,7 +124,6 @@ func TestFavoritesPanel_AddCurrentFavorite_Error(t *testing.T) {
 }
 
 func TestFavoritesPanel_UpdateAddCurrentForm_ShowHide(t *testing.T) {
-	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
 	app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
