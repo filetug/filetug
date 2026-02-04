@@ -306,7 +306,7 @@ func TestFavoritesPanel_AddCurrentFavorite_NoCurrent(t *testing.T) {
 }
 
 func TestFavoritesPanel_InputCapture_KeyEnter_Escape_Left(t *testing.T) {
-	//withTestGlobalLock(t)
+	withTestGlobalLock(t)
 	oldGetFavorites := getFavorites
 	oldGetState := getState
 	oldSaveCurrentDir := saveCurrentDir
