@@ -1471,15 +1471,17 @@ func TestTree_SetSearch_Recursion(t *testing.T) {
 
 func TestDirSummary_GetSizes_Error(t *testing.T) {
 	t.Parallel()
-	app := &testApp{
-		queueUpdateDraw: func(f func()) {
-			if f != nil {
-				f()
-			}
-		},
-	}
-	nav := NewNavigator(app)
-	ds := newTestDirSummary(nav)
+	nav := NewNavigator(&testApp{})
+	filterSetter := viewers.WithDirSummaryFilterSetter(func(filter ftui.Filter) {
+		if nav.files == nil {
+			return
+		}
+		nav.files.SetFilter(filter)
+	})
+	focusLeft := viewers.WithDirSummaryFocusLeft(func() {})
+	queueUpdateDraw := viewers.WithDirSummaryQueueUpdateDraw(nil)
+	colorByExt := viewers.WithDirSummaryColorByExt(GetColorByFileExt)
+	ds := viewers.NewDirPreviewer(nav.app, filterSetter, focusLeft, queueUpdateDraw, colorByExt)
 
 	errEntry := &errorDirEntry{}
 	dirContext := newTestDirContext(nil, "/error-test", []os.DirEntry{errEntry})
