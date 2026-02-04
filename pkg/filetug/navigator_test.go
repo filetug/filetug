@@ -420,20 +420,22 @@ func TestNewNavigator_States(t *testing.T) {
 	})
 
 	t.Run("File_State_With_Entry", func(t *testing.T) {
+		tempDir := t.TempDir()
 		getState = func() (*ftstate.State, error) {
 			return &ftstate.State{
 				Store:           "file:",
-				CurrentDir:      "/tmp",
+				CurrentDir:      tempDir,
 				CurrentDirEntry: "test.txt",
 			}, nil
 		}
 		nav, _, _ := newNavigatorForTest(t)
+		nav.store = osfile.NewStore(tempDir)
 		initNavigatorWithPersistedState(nav)
 		assert.True(t, nav != nil)
 		if nav.current.Dir() == nil {
 			t.Fatal("Current dir is nil")
 		}
-		assert.Equal(t, "/tmp", nav.current.Dir().Path())
+		assert.Equal(t, tempDir, nav.current.Dir().Path())
 	})
 
 	t.Run("HTTPS_State_Prefix", func(t *testing.T) {
