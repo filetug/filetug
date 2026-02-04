@@ -2,4 +2,4 @@
 
 ## GoReleaser
 
-The config for Go releaser: [.github/goreleaser.yaml](../.goreleaser.yaml)
+The config for Go releaser: [.goreleaser.yaml](../.goreleaser.yaml)
