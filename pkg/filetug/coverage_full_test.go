@@ -1043,8 +1043,14 @@ func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
 
 func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
 	t.Parallel()
-	t.Skip("hanging")
-	nav, app, _ := newNavigatorForTest(t)
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+		},
+	}
+	nav := NewNavigator(app)
 	tree := NewTree(nav)
 
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
@@ -1069,10 +1075,12 @@ func TestTree_SetCurrentDir_And_DoLoadingAnimation_Coverage(t *testing.T) {
 	tree.rootNode.ClearChildren()
 	tree.rootNode.AddChild(loading)
 	done := make(chan struct{})
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
-		f()
+	app.queueUpdateDraw = func(f func()) {
+		if f != nil {
+			f()
+		}
 		tree.rootNode.ClearChildren()
-	})
+	}
 	go func() {
 		tree.doLoadingAnimation(loading)
 		close(done)
