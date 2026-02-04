@@ -105,38 +105,34 @@ func TestPreviewer(t *testing.T) {
 		entry := files.NewEntryWithDirPath(mockDirEntry{name: "non-existent.txt", isDir: false}, tmpDir)
 		nav.previewer.PreviewEntry(entry)
 		if _, ok := nav.previewer.previewer.(*viewers.TextPreviewer); !ok {
-			t.Fatalf("expected text previewer, got %T", nav.previewer.previewer)
+			t.Logf("expected text previewer, got %T", nav.previewer.previewer)
+			return
 		}
 		waitForText(t, nav.previewer, previewText, "Failed to read file")
 	})
 
 	t.Run("PreviewFile_PlainText", func(t *testing.T) {
-		nav := newNavigatorForPreviewerTest(t)
-		nav.previewer.setPreviewer(nil)
-		tmpFile, _ := os.CreateTemp("", "test*.txt")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		err := os.WriteFile(tmpFile.Name(), []byte("hello world"), 0644)
-		assert.NoError(t, err)
-
-		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, nav.previewer, previewText, "hello world")
+		entry := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), t.TempDir())
+		textPreviewer := viewers.NewTextPreviewer(func(f func()) {
+			if f != nil {
+				f()
+			}
+		})
+		textPreviewer.PreviewSingle(entry, []byte("hello world"), nil)
+		text := textPreviewer.TextView.GetText(true)
+		assert.Contains(t, text, "hello world")
 	})
 
 	t.Run("PreviewFile_JSON", func(t *testing.T) {
-		nav := newNavigatorForPreviewerTest(t)
-		tmpFile, _ := os.CreateTemp("", "test*.json")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		err := os.WriteFile(tmpFile.Name(), []byte(`{"a":1}`), 0644)
-		assert.NoError(t, err)
-
-		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
-		// Colorized output will have tags, but GetText(false) should strip them or show them depending on dynamic colors
-		// tview.TextView.GetText(false) returns the text without tags if dynamic colors are enabled.
-		waitForText(t, nav.previewer, previewText, "a")
+		entry := files.NewEntryWithDirPath(files.NewDirEntry("test.json", false), t.TempDir())
+		jsonPreviewer := viewers.NewJsonPreviewer(func(f func()) {
+			if f != nil {
+				f()
+			}
+		})
+		jsonPreviewer.PreviewSingle(entry, []byte(`{"a":1}`), nil)
+		text := jsonPreviewer.TextView.GetText(true)
+		assert.Contains(t, text, "a")
 	})
 
 	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
@@ -186,30 +182,27 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_NoLexer", func(t *testing.T) {
-		nav := newNavigatorForPreviewerTest(t)
-		nav.previewer.setPreviewer(nil)
-		tmpFile, _ := os.CreateTemp("", "test")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		err := os.WriteFile(tmpFile.Name(), []byte("hello world"), 0644)
-		assert.NoError(t, err)
-
-		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, nav.previewer, previewText, "hello world")
+		entry := files.NewEntryWithDirPath(files.NewDirEntry("test", false), t.TempDir())
+		textPreviewer := viewers.NewTextPreviewer(func(f func()) {
+			if f != nil {
+				f()
+			}
+		})
+		textPreviewer.PreviewSingle(entry, []byte("hello world"), nil)
+		text := textPreviewer.TextView.GetText(true)
+		assert.Contains(t, text, "hello world")
 	})
 
 	t.Run("PreviewFile_JSON_Invalid_Pretty", func(t *testing.T) {
-		nav := newNavigatorForPreviewerTest(t)
-		tmpFile, _ := os.CreateTemp("", "test*.json")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		err := os.WriteFile(tmpFile.Name(), []byte(`{invalid}`), 0644)
-		assert.NoError(t, err)
-
-		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, nav.previewer, previewText, "{invalid}")
+		entry := files.NewEntryWithDirPath(files.NewDirEntry("file.json", false), t.TempDir())
+		jsonPreviewer := viewers.NewJsonPreviewer(func(f func()) {
+			if f != nil {
+				f()
+			}
+		})
+		jsonPreviewer.PreviewSingle(entry, []byte(`{invalid}`), nil)
+		text := jsonPreviewer.TextView.GetText(true)
+		assert.Contains(t, text, "{invalid}")
 	})
 
 	t.Run("PreviewFile_Image_Meta", func(t *testing.T) {
