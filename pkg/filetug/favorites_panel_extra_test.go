@@ -177,18 +177,19 @@ func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
 		return userFavs, nil
 	}
 
-	nav, app, _ := newNavigatorForTest(t)
-	nav.app = app
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).DoAndReturn(func(f func()) {
-		if f != nil {
-			f()
-		}
-		select {
-		case <-done:
-		default:
-			close(done)
-		}
-	}).AnyTimes()
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+			select {
+			case <-done:
+			default:
+				close(done)
+			}
+		},
+	}
+	nav := NewNavigator(app)
 	panel := newFavoritesPanel(nav)
 
 	select {
