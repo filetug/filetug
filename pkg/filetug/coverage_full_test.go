@@ -834,14 +834,14 @@ func TestGeneratedNestedDirs_Coverage(t *testing.T) {
 }
 
 func TestNewPanel_InputCapture_Create(t *testing.T) {
-	t.Parallel()
+	withTestGlobalLock(t)
 	nav, app, _ := newNavigatorForTest(t)
 	nav.previewer = newPreviewerPanel(nav)
 	createdDirs := []string{}
-	createdFiles := []string{}
 	var mu sync.Mutex
 	var createDirErr error
 	var createFileErr error
+	dirCalled := make(chan struct{}, 1)
 	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	nav.store = store
 	nav.current.SetDir(files.NewDirContext(store, "/tmp", nil))
@@ -850,14 +850,16 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 			mu.Lock()
 			defer mu.Unlock()
 			createdDirs = append(createdDirs, p)
+			select {
+			case dirCalled <- struct{}{}:
+			default:
+			}
 			return createDirErr
 		},
 	).AnyTimes()
 	store.EXPECT().CreateFile(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, p string) error {
-			mu.Lock()
-			defer mu.Unlock()
-			createdFiles = append(createdFiles, p)
+			_ = p
 			return createFileErr
 		},
 	).AnyTimes()
@@ -875,38 +877,18 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 
 	panel.input.SetText("newdir")
 	panel.createDir()
-	for i := 0; i < 200; i++ {
-		mu.Lock()
-		l := len(createdDirs)
-		mu.Unlock()
-		if l == 1 {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
+	select {
+	case <-dirCalled:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("createDir not called")
 	}
-	mu.Lock()
-	// assert.Len(t, createdDirs, 1) - flaky due to async
-	mu.Unlock()
 
 	createDirErr = errors.New("fail")
 	panel.input.SetText("faildir")
 	panel.createDir()
-	time.Sleep(50 * time.Millisecond)
 
 	panel.input.SetText("newfile")
 	panel.createFile()
-	for i := 0; i < 200; i++ {
-		mu.Lock()
-		l := len(createdFiles)
-		mu.Unlock()
-		if l == 1 {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	mu.Lock()
-	// assert.Len(t, createdFiles, 1) - flaky due to async
-	mu.Unlock()
 
 	createFileErr = errors.New("fail")
 	panel.input.SetText("failfile")
