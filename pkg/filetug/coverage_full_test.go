@@ -955,8 +955,14 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 
 func TestTree_InputCapture_SetSearch_GetCurrentEntry_Coverage(t *testing.T) {
 	t.Parallel()
-	t.Skip("hanging")
-	nav, _, _ := newNavigatorForTest(t)
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+		},
+	}
+	nav := NewNavigator(app)
 	tree := NewTree(nav)
 
 	root := tree.tv.GetRoot()
