@@ -152,9 +152,6 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 			if !updated {
 				return
 			}
-			if queueUpdateDraw == nil {
-				return
-			}
 			queueUpdateDraw(func() {
 				if f.rows != rows {
 					return
