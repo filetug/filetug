@@ -1471,8 +1471,14 @@ func TestTree_SetSearch_Recursion(t *testing.T) {
 
 func TestDirSummary_GetSizes_Error(t *testing.T) {
 	t.Parallel()
-	t.Skip("failing")
-	nav, _, _ := newNavigatorForTest(t)
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+		},
+	}
+	nav := NewNavigator(app)
 	ds := newTestDirSummary(nav)
 
 	errEntry := &errorDirEntry{}
