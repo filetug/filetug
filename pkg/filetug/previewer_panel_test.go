@@ -100,7 +100,9 @@ func TestPreviewer(t *testing.T) {
 
 	t.Run("PreviewFile_NotFound", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
-		previewFile(nav.previewer, "non-existent.txt", "non-existent.txt")
+		tmpDir := t.TempDir()
+		missingPath := filepath.Join(tmpDir, "non-existent.txt")
+		previewFile(nav.previewer, "non-existent.txt", missingPath)
 		if _, ok := nav.previewer.previewer.(*viewers.TextPreviewer); !ok {
 			t.Fatalf("expected text previewer, got %T", nav.previewer.previewer)
 		}
