@@ -46,6 +46,7 @@ func TestNavigator_SetFocusToContainer(t *testing.T) {
 
 func TestNewNavigator_InvalidURL(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	oldGetState := getState
 	defer func() { getState = oldGetState }()
 
