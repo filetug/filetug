@@ -163,6 +163,8 @@ func Test_GetFavorites_DefaultWriteError(t *testing.T) {
 
 func Test_AddDelete_EmptyPath(t *testing.T) {
 	t.Parallel()
+	favoritesTestLock.Lock()
+	t.Cleanup(favoritesTestLock.Unlock)
 	oldPath := favoritesFilePath
 	favoritesFilePath = ""
 	defer func() {
