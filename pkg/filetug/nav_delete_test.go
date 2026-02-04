@@ -95,7 +95,14 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 		nav.delete()
 
 		// Wait for operation to complete (it's async)
-		time.Sleep(200 * time.Millisecond)
+		deadline := time.Now().Add(500 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			_, err = os.Stat(tmpFile)
+			if os.IsNotExist(err) {
+				break
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
 
 		// Check if file is gone
 		_, err = os.Stat(tmpFile)
