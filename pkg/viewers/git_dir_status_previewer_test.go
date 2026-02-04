@@ -2,6 +2,7 @@ package viewers
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/gitignore"
 	"github.com/stretchr/testify/assert"
 )
+
+var gitDirStatusTestLock sync.Mutex
 
 func TestGitDirStatusPreviewer_SetDirAndRefresh(t *testing.T) {
 	t.Parallel()
@@ -185,6 +188,8 @@ func TestGitDirStatusPreviewer_MainMeta(t *testing.T) {
 
 func TestLoadGitDirStatus_Seams(t *testing.T) {
 	t.Parallel()
+	gitDirStatusTestLock.Lock()
+	t.Cleanup(gitDirStatusTestLock.Unlock)
 	origPlainOpen := gitPlainOpen
 	origRepoWorktree := repoWorktree
 	origStatus := worktreeStatus
