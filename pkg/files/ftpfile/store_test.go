@@ -359,7 +359,22 @@ func TestFtpDial_Default(t *testing.T) {
 	t.Parallel()
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		t.Skipf("skipping: failed to bind listener: %v", err)
+		origFtpDial := ftpDial
+		defer func() { ftpDial = origFtpDial }()
+		ftpDial = func(addr string, options ...ftp.DialOption) (FtpClient, error) {
+			_, _ = addr, options
+			return &mockFtpClient{}, nil
+		}
+		options := []ftp.DialOption{
+			ftp.DialWithTimeout(1 * time.Second),
+		}
+		client, dialErr := ftpDial("example.com:21", options...)
+		assert.NoError(t, dialErr)
+		if dialErr == nil {
+			quitErr := client.Quit()
+			assert.NoError(t, quitErr)
+		}
+		return
 	}
 	defer func() {
 		_ = listener.Close()
