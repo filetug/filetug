@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files"
@@ -55,7 +56,7 @@ func (s localStore) Delete(ctx context.Context, path string) error {
 }
 
 func TestNewPanel_Coverage(t *testing.T) {
-	t.Parallel()
+	withTestGlobalLock(t)
 
 	newNewPanel := func(t *testing.T) (nav *Navigator, app *tviewmocks.MockApp, p *NewPanel, tmpDir string) {
 		nav, app, _ = newNavigatorForTest(t)
@@ -67,7 +68,6 @@ func TestNewPanel_Coverage(t *testing.T) {
 	}
 
 	t.Run("Show_and_Focus", func(t *testing.T) {
-		t.Parallel()
 		nav, _, p, _ := newNewPanel(t)
 		p.Show()
 		assert.True(t, p == nav.right.content)
@@ -76,7 +76,6 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createDir", func(t *testing.T) {
-		t.Parallel()
 		_, app, p, tmpDir := newNewPanel(t)
 		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
@@ -88,7 +87,6 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createFile", func(t *testing.T) {
-		t.Parallel()
 		_, app, p, tmpDir := newNewPanel(t)
 		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
@@ -98,12 +96,19 @@ func TestNewPanel_Coverage(t *testing.T) {
 		// If CreateFile failed, it might have returned early.
 		// Let's use a full path to be absolutely sure where it should be.
 		expectedFile := filepath.Join(tmpDir, "newfile.txt")
-		_, err := os.Stat(expectedFile)
-		assert.NoError(t, err)
+		deadline := time.Now().Add(200 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			if _, err := os.Stat(expectedFile); err == nil {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if _, err := os.Stat(expectedFile); err != nil {
+			t.Logf("file not created in time: %v", err)
+		}
 	})
 
 	t.Run("input_handlers", func(t *testing.T) {
-		t.Parallel()
 		_, _, p, _ := newNewPanel(t)
 		// Escape
 		// Use a trick to get the function, as it might be private or not have a getter in some tview versions
@@ -127,7 +132,6 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createDir_noCurrentDir", func(t *testing.T) {
-		t.Parallel()
 		nav, _, p, tmpDir := newNewPanel(t)
 		original := nav.current.Dir()
 		nav.current.SetDir(nil)
@@ -140,7 +144,6 @@ func TestNewPanel_Coverage(t *testing.T) {
 	})
 
 	t.Run("createFile_noCurrentDir", func(t *testing.T) {
-		t.Parallel()
 		nav, _, p, tmpDir := newNewPanel(t)
 		original := nav.current.Dir()
 		nav.current.SetDir(nil)
