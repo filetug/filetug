@@ -792,6 +792,7 @@ func TestNavigator_SetBreadcrumbs_EmptyPath(t *testing.T) {
 
 func TestScriptsPanel_And_NestedDirsGenerator(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	nav, app, _ := newNavigatorForTest(t)
 	expectSetFocusMinMaxTimes(app, 1, 3) // Why 3?
 	nav.showScriptsPanel()
