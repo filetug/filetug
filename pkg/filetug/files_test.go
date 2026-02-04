@@ -640,12 +640,12 @@ err := os.Mkdir(targetDir, 0o755)
 		}
 	}
 
-	fp = nav.files
+	fp := nav.files
 	fp.rows = NewFileRows(files.NewDirContext(store, tempDir, nil))
-	e := files.NewEntryWithDirPath(entry, tempDir)
-	fp.rows.VisibleEntries = []files.EntryWithDirPath{e}
+	entryWithPath := files.NewEntryWithDirPath(entry, tempDir)
+	fp.rows.VisibleEntries = []files.EntryWithDirPath{entryWithPath}
 	// NewFileRows with local store (indicated by scheme "file") will use os.Stat in isSymlinkToDir
-	assert.True(t, fp.rows.isSymlinkToDir(e))
+	assert.True(t, fp.rows.isSymlinkToDir(entryWithPath))
 
-	fp.showDirSummary(e)
+	fp.showDirSummary(entryWithPath)
 }
