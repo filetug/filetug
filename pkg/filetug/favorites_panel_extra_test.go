@@ -166,9 +166,7 @@ func TestFavoritesPanel_NewFavoritesPanel_GetFavoritesError(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
-	//withTestGlobalLock(t)
-	t.Skip("flaky")
-	//t.Parallel()
+	withTestGlobalLock(t)
 	oldGetFavorites := getFavorites
 	defer func() {
 		getFavorites = oldGetFavorites
