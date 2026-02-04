@@ -2297,7 +2297,6 @@ func TestNavigator_GetGitStatus_CancelledBeforeStatus(t *testing.T) {
 
 func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 	t.Parallel()
-	t.Skip("failing")
 
 	nav, app := setupNavigatorForFilesTest(t)
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
@@ -2321,21 +2320,29 @@ func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 	fp.table.SetContent(rows)
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 
-	var mu sync.Mutex
-	updated := false
+	oldGetFileStatus := getFileStatus
+	getFileStatus = func(ctx context.Context, repo *git.Repository, path string) *gitutils.RepoStatus {
+		_, _, _ = ctx, repo, path
+		return &gitutils.RepoStatus{Branch: "main", DirGitChangesStats: gitutils.DirGitChangesStats{FilesChanged: 1}}
+	}
+	defer func() { getFileStatus = oldGetFileStatus }()
+
+	done := make(chan struct{})
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).DoAndReturn(func(f func()) {
 		f()
-		mu.Lock()
-		updated = true
-		mu.Unlock()
+		select {
+		case <-done:
+		default:
+			close(done)
+		}
 	})
 
 	fp.updateGitStatuses(context.Background(), dirContext)
-	time.Sleep(100 * time.Millisecond)
-
-	mu.Lock()
-	assert.True(t, updated)
-	mu.Unlock()
+	select {
+	case <-done:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("timeout waiting for git status update")
+	}
 }
 
 func TestFilesPanel_SelectionChangedNavFunc_WithRef(t *testing.T) {
