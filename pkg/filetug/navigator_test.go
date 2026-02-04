@@ -335,20 +335,19 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 
 	nav.showDir(ctx, nodeFirst, nav.NewDirContext("/first", nil), true)
 	nav.showDir(ctx, nodeSecond, nav.NewDirContext("/second", nil), true)
-	seenPaths := make(map[string]bool)
 	deadline := time.Now().Add(2 * time.Second)
 	var lastSeen string
-	for time.Now().Before(deadline) && (!seenPaths["/first"] || !seenPaths["/second"]) {
+	for time.Now().Before(deadline) {
 		select {
 		case lastSeen = <-seen:
-			seenPaths[lastSeen] = true
+			if lastSeen == "/first" || lastSeen == "/second" {
+				return
+			}
 		default:
 			time.Sleep(5 * time.Millisecond)
 		}
 	}
-	if !seenPaths["/first"] || !seenPaths["/second"] {
-		t.Fatalf("timeout waiting for /first and /second; last seen %q", lastSeen)
-	}
+	t.Fatalf("timeout waiting for /first or /second; last seen %q", lastSeen)
 }
 
 func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
