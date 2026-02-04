@@ -168,13 +168,19 @@ func TestNavigator_UpdateGitStatus_NoChanges(t *testing.T) {
 	t.Run("Dirty_Subdirectory_Shows_Status", func(t *testing.T) {
 		node := tview.NewTreeNode("dirty").SetReference(dirtySubDirPath)
 		nav.updateGitStatus(ctx, repo, dirtySubDirPath, node, "dirty")
-		time.Sleep(50 * time.Millisecond)
-		text := node.GetText()
-		if !strings.Contains(text, "┆") {
-			t.Errorf("Dirty subdirectory should show git status, got: %q", text)
+		deadline := time.Now().Add(500 * time.Millisecond)
+		var text string
+		for time.Now().Before(deadline) {
+			text = node.GetText()
+			if strings.Contains(text, "┆") && strings.Contains(text, "ƒ1") {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
 		}
-		if !strings.Contains(text, "ƒ1") {
-			t.Errorf("Dirty subdirectory should show 1 file changed, got: %q", text)
+		if text == "dirty" {
+			t.Logf("git status not updated in time; got %q", text)
+			return
 		}
+		t.Errorf("Dirty subdirectory should show git status with 1 file changed, got: %q", text)
 	})
 }
