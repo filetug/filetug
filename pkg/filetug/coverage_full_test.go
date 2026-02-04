@@ -798,15 +798,20 @@ func TestScriptsPanel_And_NestedDirsGenerator(t *testing.T) {
 	nav.showScriptsPanel()
 	panel := nav.right.content
 	scripts, ok := panel.(*scriptsPanel)
-	assert.True(t, ok)
+	if !assert.True(t, ok) {
+		return
+	}
 
 	enter := tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModNone)
 	listHandler := scripts.list.InputHandler()
+	scripts.list.SetCurrentItem(0)
 	listHandler(enter, func(p tview.Primitive) {})
 
 	ndgPanel := nav.right.content
 	ndg, ok := ndgPanel.(*nestedDirsGeneratorPanel)
-	assert.True(t, ok)
+	if !assert.True(t, ok) {
+		return
+	}
 
 	cancelButton := ndg.form.GetButton(1)
 	cancelHandler := cancelButton.InputHandler()
