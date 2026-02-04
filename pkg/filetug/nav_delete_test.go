@@ -3,6 +3,7 @@ package filetug
 import (
 	"context"
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,10 +11,47 @@ import (
 
 	"github.com/alecthomas/assert/v2"
 	"github.com/filetug/filetug/pkg/files"
-	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/rivo/tview"
 	"go.uber.org/mock/gomock"
 )
+
+type localDeleteStore struct {
+	root string
+}
+
+func (s localDeleteStore) RootURL() url.URL {
+	return url.URL{Scheme: "file", Path: s.root}
+}
+
+func (s localDeleteStore) RootTitle() string { return "Local" }
+
+func (s localDeleteStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
+	_ = ctx
+	return os.ReadDir(name)
+}
+
+func (s localDeleteStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
+	return nil, files.ErrNotImplemented
+}
+
+func (s localDeleteStore) CreateDir(ctx context.Context, path string) error {
+	_ = ctx
+	return os.Mkdir(path, 0o755)
+}
+
+func (s localDeleteStore) CreateFile(ctx context.Context, path string) error {
+	_ = ctx
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
+func (s localDeleteStore) Delete(ctx context.Context, path string) error {
+	_ = ctx
+	return os.Remove(path)
+}
 
 func TestNavigator_Delete_And_Operations(t *testing.T) {
 	t.Parallel()
@@ -26,7 +64,7 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 	err := os.WriteFile(tmpFile, []byte("test"), 0644)
 	assert.NoError(t, err)
 
-	nav.store = osfile.NewStore(tmpDir)
+	nav.store = localDeleteStore{root: tmpDir}
 
 	t.Run("delete_no_selection", func(t *testing.T) {
 		// Mock getCurrentBrowser to return something by focusing files
