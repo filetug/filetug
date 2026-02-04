@@ -61,6 +61,7 @@ func TestMockPreviewer_Coverage(t *testing.T) {
 
 func TestTextPreviewer_PreviewSingleBranches(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	SetTextPreviewerSyncForTest(true)
 	t.Cleanup(func() { SetTextPreviewerSyncForTest(false) })
 
@@ -139,4 +140,8 @@ func TestDirPreviewer_setTabsCoverage(t *testing.T) {
 	assert.NotNil(t, p.tabs)
 	p.setTabs(false)
 	assert.NotNil(t, p.tabs)
+
+	// Ensure panic recovery path is covered.
+	p.flex = nil
+	p.setTabs(false)
 }
