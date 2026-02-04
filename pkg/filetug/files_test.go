@@ -641,5 +641,12 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 	// NewFileRows with local store (indicated by scheme "file") will use os.Stat in isSymlinkToDir
 
 	fp.showDirSummary(e)
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if readDirPath == linkPath {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
 	assert.Equal(t, linkPath, readDirPath)
 }
