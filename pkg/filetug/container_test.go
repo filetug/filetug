@@ -55,6 +55,19 @@ func TestContainer_SetContent(t *testing.T) {
 	}
 }
 
+func TestContainer_SetContent_NilSafety(t *testing.T) {
+	t.Parallel()
+	var nilContainer *Container
+	assert.NotPanics(t, func() {
+		nilContainer.SetContent(nil)
+	})
+
+	empty := &Container{}
+	assert.NotPanics(t, func() {
+		empty.SetContent(tview.NewBox())
+	})
+}
+
 func TestContainer_Focus(t *testing.T) {
 	t.Parallel()
 	t.Run("non_nil_content", func(t *testing.T) {
