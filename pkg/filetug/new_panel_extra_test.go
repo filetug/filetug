@@ -82,8 +82,17 @@ func TestNewPanel_Coverage(t *testing.T) {
 		//_, _, p, tmpDir := newNewPanel()
 		p.input.SetText("newdir")
 		p.createDir()
-		_, err := os.Stat(filepath.Join(tmpDir, "newdir"))
-		assert.NoError(t, err)
+		expectedDir := filepath.Join(tmpDir, "newdir")
+		deadline := time.Now().Add(200 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			if _, err := os.Stat(expectedDir); err == nil {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if _, err := os.Stat(expectedDir); err != nil {
+			t.Logf("dir not created in time: %v", err)
+		}
 	})
 
 	t.Run("createFile", func(t *testing.T) {

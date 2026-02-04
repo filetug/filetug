@@ -116,7 +116,7 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 	if f.nav == nil || f.rows == nil || dirContext == nil {
 		return
 	}
-	if f.nav.store.RootURL().Scheme != "file" {
+	if f.nav.store == nil || f.nav.store.RootURL().Scheme != "file" {
 		return
 	}
 	repoRoot := gitutils.GetRepositoryRoot(dirContext.Path())
