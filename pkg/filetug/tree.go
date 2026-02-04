@@ -3,7 +3,6 @@ package filetug
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"strings"
@@ -354,7 +353,6 @@ func (t *Tree) GetCurrentEntry() files.EntryWithDirPath {
 }
 
 func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirContext *files.DirContext) {
-	log.Printf("DEBUG: setDirContext for %s, node text=%s", dirContext.Path(), node.GetText())
 	node.ClearChildren()
 
 	var repo *git.Repository
@@ -366,7 +364,6 @@ func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirConte
 	}
 
 	children := dirContext.Children()
-	log.Printf("DEBUG: setDirContext children count: %d", len(children))
 	for _, child := range children {
 		name := child.Name()
 		if strings.HasPrefix(name, ".") {

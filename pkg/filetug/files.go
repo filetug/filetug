@@ -145,8 +145,14 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 				return
 			}
 			statusText := f.nav.gitStatusText(status, fullPath, isDir)
+			if statusText == "" {
+				return
+			}
 			updated := rows.SetGitStatusText(fullPath, statusText)
-			if !updated || queueUpdateDraw == nil {
+			if !updated {
+				return
+			}
+			if queueUpdateDraw == nil {
 				return
 			}
 			queueUpdateDraw(func() {

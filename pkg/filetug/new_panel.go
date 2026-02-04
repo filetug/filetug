@@ -129,7 +129,9 @@ func (p *NewPanel) createDir() {
 
 	p.nav.right.SetContent(p.nav.previewer)
 	dirContext := files.NewDirContext(p.nav.store, fullPath, nil)
-	p.nav.goDir(dirContext)
+	p.nav.app.QueueUpdateDraw(func() {
+		p.nav.goDir(dirContext)
+	})
 }
 
 func (p *NewPanel) createFile() {

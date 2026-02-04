@@ -349,6 +349,9 @@ func (nav *Navigator) updateGitStatus(ctx context.Context, repo *git.Repository,
 		return
 	}
 	statusText := nav.gitStatusText(status, fullPath, true)
+	if statusText == "" {
+		return
+	}
 	nav.app.QueueUpdateDraw(func() {
 		node.SetText(cleanPrefix + statusText)
 	})
@@ -585,14 +588,12 @@ func (nav *Navigator) setBreadcrumbs() {
 }
 
 func (nav *Navigator) getDirData(ctx context.Context, dirPath string) (dirContext *files.DirContext, err error) {
-	log.Printf("DEBUG: getDirData for %s, store type: %T", dirPath, nav.store)
 	if nav.store == nil {
 		return nil, errors.New("store not set")
 	}
 	dirContext = files.NewDirContext(nav.store, dirPath, nil)
 	var children []os.DirEntry
 	children, err = nav.store.ReadDir(ctx, dirPath)
-	log.Printf("DEBUG: getDirData ReadDir for %s returned %d children, err=%v", dirPath, len(children), err)
 	if err != nil {
 		return nil, err
 	}

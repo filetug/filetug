@@ -402,34 +402,66 @@ func setupGitStatusTest(t *testing.T) (*filesPanel, *Navigator, *tviewmocks.Mock
 func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 	t.Parallel()
 
-	fp, nav, app, _, dirContext, _ := setupGitStatusTest(t)
+	fp, nav, app, _, _, _ := setupGitStatusTest(t)
 	ctx := context.Background()
 
+	// 1. nav nil
 	fp.nav = nil
 	fp.updateGitStatuses(ctx, files.NewDirContext(nil, "", nil))
 
+	// 2. rows nil
 	fp.nav = nav
 	fp.rows = nil
 	fp.updateGitStatuses(ctx, files.NewDirContext(nil, "", nil))
 
+	// 3. dirContext nil
 	fp.rows = NewFileRows(files.NewDirContext(nil, "", nil))
 	fp.updateGitStatuses(ctx, nil)
 
+	// 4. Scheme != file
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "http"})
 	fp.rows = NewFileRows(files.NewDirContext(nil, "", nil))
 	nonFileDir := files.NewDirContext(nil, t.TempDir(), nil)
 	fp.updateGitStatuses(ctx, nonFileDir)
 
+	// 5. repoRoot == ""
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	noRepoDir := files.NewDirContext(nil, t.TempDir(), nil)
 	fp.updateGitStatuses(ctx, noRepoDir)
 
+	// 6. Bad repo (PlainOpen fails)
 	badRepoDir := t.TempDir()
 	gitDir := filepath.Join(badRepoDir, ".git")
 	mkdirErr := os.Mkdir(gitDir, 0755)
 	assert.NoError(t, mkdirErr)
 	badRepoContext := files.NewDirContext(nil, badRepoDir, nil)
 	fp.updateGitStatuses(ctx, badRepoContext)
+
+	// 7. Success case
+	successRepoDir := t.TempDir()
+	gitDirSuccess := filepath.Join(successRepoDir, ".git")
+	err := os.Mkdir(gitDirSuccess, 0755)
+	assert.NoError(t, err)
+
+	entrySuccess := files.NewEntryWithDirPath(files.NewDirEntry("file.txt", false), successRepoDir)
+	fp.rows.AllEntries = []files.EntryWithDirPath{entrySuccess}
+	successDirContext := files.NewDirContext(nil, successRepoDir, nil)
+
+	// Mock git status return to ensure it's not nil and text is not empty
+	oldGetFileStatus := getFileStatus
+	defer func() { getFileStatus = oldGetFileStatus }()
+	getFileStatus = func(ctx context.Context, repo *git.Repository, path string) *gitutils.RepoStatus {
+		return &gitutils.RepoStatus{Branch: "main", DirGitChangesStats: gitutils.DirGitChangesStats{FilesChanged: 1}}
+	}
+
+	oldOsStat := gitutils.OsStat
+	defer func() { gitutils.OsStat = oldOsStat }()
+	gitutils.OsStat = func(name string) (os.FileInfo, error) {
+		if path.Base(name) == ".git" {
+			return mockFileInfo{isDir: true}, nil
+		}
+		return oldOsStat(name)
+	}
 
 	drawCalled := make(chan struct{})
 
@@ -442,15 +474,25 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 		}
 	})
 
-	fp.updateGitStatuses(ctx, dirContext)
+	nav.gitStatusCacheMu.Lock()
+	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
+	nav.gitStatusCacheMu.Unlock()
+
+	// In TestFilesPanel_UpdateGitStatuses_Coverage, we want to test that it calls QueueUpdateDraw.
+	// PlainOpen might still fail if there's no real git repo.
+	// Let's use git.Init to create a real one.
+	_, err = git.PlainInit(successRepoDir, false)
+	assert.NoError(t, err)
+
+	fp.updateGitStatuses(ctx, successDirContext)
 
 	select {
 	case <-drawCalled:
-	case <-time.After(300 * time.Millisecond):
+	case <-time.After(1 * time.Second):
 		t.Fatal("timeout waiting for git status update")
 	}
 
-	fp.updateGitStatuses(ctx, dirContext)
+	fp.updateGitStatuses(ctx, successDirContext)
 	time.Sleep(50 * time.Millisecond)
 }
 

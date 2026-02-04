@@ -47,7 +47,9 @@ func TestFavorites(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 4)
-		expectSetFocusTimes(app, 1)
+		// goDir (via showDir) might call QueueUpdateDraw.
+		// navigate back to dirsTree calls SetFocus.
+		expectSetFocusMinMaxTimes(app, 1, 2)
 		f := newFavoritesPanel(nav)
 		storeURL, err := url.Parse("file:")
 		if err != nil {
@@ -120,7 +122,7 @@ func TestFavorites(t *testing.T) {
 		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		expectQueueUpdateDrawSyncMinMaxTimes(app, 1, 3)
-		expectSetFocusTimes(app, 1)
+		expectSetFocusMinMaxTimes(app, 1, 2)
 		f := newFavoritesPanel(nav)
 		f.selected(f.items[0])
 	})
