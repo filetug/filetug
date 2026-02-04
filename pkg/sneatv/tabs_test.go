@@ -293,3 +293,26 @@ func TestNewTabs_WithTviewApp(t *testing.T) {
 	tabs := NewTabs(tviewTabsApp{app}, UnderlineTabsStyle)
 	assert.NotNil(t, tabs)
 }
+
+type focusTrackingApp struct {
+	focused tview.Primitive
+}
+
+func (f *focusTrackingApp) QueueUpdateDraw(fn func()) {
+	fn()
+}
+
+func (f *focusTrackingApp) SetFocus(p tview.Primitive) {
+	f.focused = p
+}
+
+func TestNewTabs_FocusFunc_WithApp(t *testing.T) {
+	t.Parallel()
+	app := &focusTrackingApp{}
+	tabs := NewTabs(app, UnderlineTabsStyle)
+
+	assert.NotNil(t, tabs.focusFunc)
+	tabs.focusFunc()
+
+	assert.Same(t, tabs.TextView, app.focused)
+}
