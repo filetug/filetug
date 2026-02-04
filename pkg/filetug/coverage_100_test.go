@@ -322,6 +322,8 @@ func TestResizeCoverage(t *testing.T) {
 
 func TestShowNodeErrorCoverage(t *testing.T) {
 	nav := NewNavigator(&recordApp{})
+	nav.previewer = nil
+	nav.right = nil
 	nav.showNodeError(nil, errors.New("err"))
 
 	node := tview.NewTreeNode("node")
