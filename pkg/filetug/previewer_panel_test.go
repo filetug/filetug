@@ -29,7 +29,7 @@ func newNavigatorForPreviewerTest(t *testing.T) *Navigator {
 }
 
 func TestPreviewer(t *testing.T) {
-	//withTestGlobalLock(t)
+	withTestGlobalLock(t)
 	viewers.SetTextPreviewerSyncForTest(true)
 	defer viewers.SetTextPreviewerSyncForTest(false)
 	previewFile := func(previewerPanel *previewerPanel, name, fullName string) {
