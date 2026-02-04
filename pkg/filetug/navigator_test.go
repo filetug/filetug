@@ -333,29 +333,22 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	nodeFirst := tview.NewTreeNode("first")
 	nodeSecond := tview.NewTreeNode("second")
 
-	waitForSeen := func(expected string, seenPaths map[string]bool) {
-		t.Helper()
-		deadline := time.Now().Add(2 * time.Second)
-		var lastSeen string
-		for time.Now().Before(deadline) {
-			select {
-			case lastSeen = <-seen:
-				seenPaths[lastSeen] = true
-				if lastSeen == expected {
-					return
-				}
-			default:
-				time.Sleep(5 * time.Millisecond)
-			}
-		}
-		t.Fatalf("timeout waiting for %s; last seen %q", expected, lastSeen)
-	}
-
 	nav.showDir(ctx, nodeFirst, nav.NewDirContext("/first", nil), true)
 	nav.showDir(ctx, nodeSecond, nav.NewDirContext("/second", nil), true)
 	seenPaths := make(map[string]bool)
-	waitForSeen("/first", seenPaths)
-	waitForSeen("/second", seenPaths)
+	deadline := time.Now().Add(2 * time.Second)
+	var lastSeen string
+	for time.Now().Before(deadline) && (!seenPaths["/first"] || !seenPaths["/second"]) {
+		select {
+		case lastSeen = <-seen:
+			seenPaths[lastSeen] = true
+		default:
+			time.Sleep(5 * time.Millisecond)
+		}
+	}
+	if !seenPaths["/first"] || !seenPaths["/second"] {
+		t.Fatalf("timeout waiting for /first and /second; last seen %q", lastSeen)
+	}
 }
 
 func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
