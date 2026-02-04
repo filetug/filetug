@@ -250,6 +250,7 @@ func TestNavigator_goDir(t *testing.T) {
 
 func TestNavigator_goDir_TreeRootChangeRefreshesChildren(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	oldGetState := getState
 	getState = func() (*ftstate.State, error) { return nil, nil }
 	defer func() {
