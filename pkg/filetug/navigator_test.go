@@ -428,6 +428,13 @@ func TestNewNavigator_States(t *testing.T) {
 		if nav.current.Dir() == nil {
 			t.Fatal("Current dir is nil")
 		}
+		deadline := time.Now().Add(500 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			if nav.current.Dir() != nil && nav.current.Dir().Path() == tempDir {
+				break
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
 		assert.Equal(t, tempDir, nav.current.Dir().Path())
 	})
 
