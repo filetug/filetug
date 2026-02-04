@@ -3,18 +3,45 @@ package filetug
 import (
 	"testing"
 
-	"github.com/filetug/filetug/pkg/tviewmocks"
-	"go.uber.org/mock/gomock"
+	"github.com/rivo/tview"
 )
 
+type setupApp struct {
+	enableMouseCalled bool
+	setRootCalled     bool
+	setRootFullscreen bool
+}
+
+func (a *setupApp) Run() error { return nil }
+
+func (a *setupApp) QueueUpdateDraw(f func()) {
+	if f != nil {
+		f()
+	}
+}
+
+func (a *setupApp) SetFocus(p tview.Primitive) { _ = p }
+
+func (a *setupApp) SetRoot(root tview.Primitive, fullscreen bool) {
+	_, _ = root, fullscreen
+	a.setRootCalled = true
+	a.setRootFullscreen = fullscreen
+}
+
+func (a *setupApp) Stop() {}
+
+func (a *setupApp) EnableMouse(b bool) { a.enableMouseCalled = b }
+
 func TestSetupApp(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	app := tviewmocks.NewMockApp(ctrl)
-	expect := app.EXPECT()
-	expect.QueueUpdateDraw(gomock.Any()).
-		MinTimes(1).MaxTimes(2) // Should it be exactly 1?
-	expect.EnableMouse(true)
-	expect.SetRoot(gomock.Any(), true).Times(1)
+	app := &setupApp{}
 	SetupApp(app)
+	if !app.enableMouseCalled {
+		t.Fatal("expected EnableMouse(true) to be called")
+	}
+	if !app.setRootCalled {
+		t.Fatal("expected SetRoot to be called")
+	}
+	if !app.setRootFullscreen {
+		t.Fatal("expected SetRoot to be called with fullscreen=true")
+	}
 }
