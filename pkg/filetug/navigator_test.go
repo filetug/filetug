@@ -311,8 +311,6 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 
 	firstEntries := []os.DirEntry{mockDirEntry{name: "firstChild", isDir: true}}
 	secondEntries := []os.DirEntry{mockDirEntry{name: "secondChild", isDir: true}}
-	firstPath := "/first"
-	block := make(chan struct{})
 	seen := make(chan string, 2)
 	store := newMockStore(t)
 	store.EXPECT().RootURL().Return(url.URL{Scheme: "mock", Path: "/"}).AnyTimes()
@@ -320,9 +318,6 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, path string) ([]os.DirEntry, error) {
 			seen <- path
-			if path == firstPath {
-				<-block
-			}
 			if path == "/first" {
 				return firstEntries, nil
 			}
@@ -338,13 +333,14 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	nodeFirst := tview.NewTreeNode("first")
 	nodeSecond := tview.NewTreeNode("second")
 
-	waitForSeen := func(expected string) {
+	waitForSeen := func(expected string, seenPaths map[string]bool) {
 		t.Helper()
 		deadline := time.Now().Add(2 * time.Second)
 		var lastSeen string
 		for time.Now().Before(deadline) {
 			select {
 			case lastSeen = <-seen:
+				seenPaths[lastSeen] = true
 				if lastSeen == expected {
 					return
 				}
@@ -356,13 +352,10 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	}
 
 	nav.showDir(ctx, nodeFirst, nav.NewDirContext("/first", nil), true)
-	// The showDir above will call ReadDir in a goroutine.
-	// Since we are using a mock that blocks on `block`, we can wait for it here.
-	waitForSeen("/first")
-	close(block)                      // Unblock first ReadDir before starting second one
-	time.Sleep(10 * time.Millisecond) // Give it a moment to finish processing first load
 	nav.showDir(ctx, nodeSecond, nav.NewDirContext("/second", nil), true)
-	waitForSeen("/second")
+	seenPaths := make(map[string]bool)
+	waitForSeen("/first", seenPaths)
+	waitForSeen("/second", seenPaths)
 }
 
 func TestNavigator_onDataLoaded_isTreeRootChanged(t *testing.T) {
