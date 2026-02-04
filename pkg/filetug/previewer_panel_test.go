@@ -201,7 +201,7 @@ func TestPreviewer(t *testing.T) {
 			}
 		})
 		jsonPreviewer.PreviewSingle(entry, []byte(`{invalid}`), nil)
-		text := jsonPreviewer.TextView.GetText(true)
+		text := jsonPreviewer.GetText(true)
 		assert.Contains(t, text, "{invalid}")
 	})
 
