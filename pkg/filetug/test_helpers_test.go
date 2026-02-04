@@ -1,23 +1,20 @@
 package filetug
 
-import "os"
+import (
+	"os"
+	"sync"
+	"testing"
+)
 
-// import (
-//
-//	"sync"
-//	"testing"
-//
-// )
-//
-// var testGlobalLock sync.Mutex
-//
-//	func withTestGlobalLock(t *testing.T) {
-//		t.Helper()
-//		testGlobalLock.Lock()
-//		t.Cleanup(func() {
-//			testGlobalLock.Unlock()
-//		})
-//	}
+var testGlobalLock sync.Mutex
+
+func withTestGlobalLock(t *testing.T) {
+	t.Helper()
+	testGlobalLock.Lock()
+	t.Cleanup(func() {
+		testGlobalLock.Unlock()
+	})
+}
 
 type mockFileInfo struct {
 	os.FileInfo
