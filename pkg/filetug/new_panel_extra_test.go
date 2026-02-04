@@ -2,11 +2,13 @@ package filetug
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/alecthomas/assert/v2"
+	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/gdamore/tcell/v2"
@@ -14,13 +16,51 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+type localStore struct {
+	root string
+}
+
+func (s localStore) RootURL() url.URL {
+	return url.URL{Scheme: "file", Path: s.root}
+}
+
+func (s localStore) RootTitle() string { return "Local" }
+
+func (s localStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
+	_ = ctx
+	return os.ReadDir(name)
+}
+
+func (s localStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
+	return nil, files.ErrNotImplemented
+}
+
+func (s localStore) CreateDir(ctx context.Context, path string) error {
+	_ = ctx
+	return os.Mkdir(path, 0o755)
+}
+
+func (s localStore) CreateFile(ctx context.Context, path string) error {
+	_ = ctx
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
+func (s localStore) Delete(ctx context.Context, path string) error {
+	_ = ctx
+	return os.Remove(path)
+}
+
 func TestNewPanel_Coverage(t *testing.T) {
 	t.Parallel()
 
 	newNewPanel := func(t *testing.T) (nav *Navigator, app *tviewmocks.MockApp, p *NewPanel, tmpDir string) {
 		nav, app, _ = newNavigatorForTest(t)
 		tmpDir = t.TempDir()
-		nav.store = osfile.NewStore(tmpDir)
+		nav.store = localStore{root: tmpDir}
 		nav.current.SetDir(nav.NewDirContext(tmpDir, nil))
 		p = NewNewPanel(nav)
 		return
