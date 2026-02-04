@@ -27,6 +27,7 @@ type recordingStore struct {
 	entries map[string][]os.DirEntry
 	mu      sync.Mutex
 	paths   []string
+	onRead  chan string
 }
 
 func (s *recordingStore) RootTitle() string { return "Mock" }
@@ -43,6 +44,12 @@ func (s *recordingStore) ReadDir(ctx context.Context, path string) ([]os.DirEntr
 	s.mu.Lock()
 	s.paths = append(s.paths, path)
 	s.mu.Unlock()
+	if s.onRead != nil {
+		select {
+		case s.onRead <- path:
+		default:
+		}
+	}
 	if s.entries == nil {
 		return nil, nil
 	}
@@ -380,6 +387,7 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	store := &recordingStore{
 		root:    url.URL{Scheme: "file", Path: "/"},
 		entries: dirEntries,
+		onRead:  make(chan string, 4),
 	}
 	nav.store = store
 
@@ -398,10 +406,14 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 		t.Helper()
 		deadline := time.Now().Add(500 * time.Millisecond)
 		for time.Now().Before(deadline) {
-			if store.seenPathClean(expected) {
-				return
+			select {
+			case pathSeen := <-store.onRead:
+				if path.Clean(pathSeen) == path.Clean(expected) {
+					return
+				}
+			default:
+				time.Sleep(5 * time.Millisecond)
 			}
-			time.Sleep(5 * time.Millisecond)
 		}
 		assert.True(t, store.seenPathClean(expected))
 	}
@@ -417,7 +429,8 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 		assert.Equal(t, "/test/child", childEntry.FullName())
 		assert.True(t, childEntry.IsDir())
 	}
-	fp.showDirSummary(childEntry)
+	explicitChild := files.NewEntryWithDirPath(files.NewDirEntry("child", true), "/test")
+	fp.showDirSummary(explicitChild)
 	waitForPath("/test/child")
 }
 
