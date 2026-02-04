@@ -2300,7 +2300,25 @@ func TestNavigator_GetGitStatus_CancelledBeforeStatus(t *testing.T) {
 func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 	t.Parallel()
 
-	nav, app := setupNavigatorForFilesTest(t)
+	done := make(chan struct{})
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+			select {
+			case <-done:
+			default:
+				close(done)
+			}
+		},
+	}
+	nav := NewNavigator(app)
+	nav.current.SetDir(osfile.NewLocalDir("/"))
+	nav.right = NewContainer(2, nav)
+	nav.previewer = newPreviewerPanel(nav)
+	nav.dirsTree = NewTree(nav)
+	nav.files = newFiles(nav)
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
 	fp := newFiles(nav)
 
@@ -2328,16 +2346,6 @@ func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 		return &gitutils.RepoStatus{Branch: "main", DirGitChangesStats: gitutils.DirGitChangesStats{FilesChanged: 1}}
 	}
 	defer func() { getFileStatus = oldGetFileStatus }()
-
-	done := make(chan struct{})
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).DoAndReturn(func(f func()) {
-		f()
-		select {
-		case <-done:
-		default:
-			close(done)
-		}
-	})
 
 	fp.updateGitStatuses(context.Background(), dirContext)
 	select {
