@@ -4,7 +4,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 	"time"
 
@@ -12,6 +11,17 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/stretchr/testify/assert"
 )
+
+type fakeSymlinkEntry struct {
+	name string
+}
+
+var _ os.DirEntry = (*fakeSymlinkEntry)(nil)
+
+func (e *fakeSymlinkEntry) Name() string               { return e.name }
+func (e *fakeSymlinkEntry) IsDir() bool                { return false }
+func (e *fakeSymlinkEntry) Type() os.FileMode          { return os.ModeSymlink }
+func (e *fakeSymlinkEntry) Info() (os.FileInfo, error) { return nil, nil }
 
 type mockDirEntry struct {
 	name  string
@@ -287,9 +297,6 @@ func TestFileRows_Extra(t *testing.T) {
 
 func TestFileRows_isSymlinkToDir(t *testing.T) {
 	t.Parallel()
-	if runtime.GOOS == "windows" {
-		t.Skip("symlink behavior depends on Windows permissions")
-	}
 	tmpDir := t.TempDir()
 	targetDir := filepath.Join(tmpDir, "target-dir")
 	err := os.Mkdir(targetDir, 0o755)
@@ -304,30 +311,32 @@ func TestFileRows_isSymlinkToDir(t *testing.T) {
 	}
 
 	linkDir := filepath.Join(tmpDir, "link-dir")
-	if err := os.Symlink(targetDir, linkDir); err != nil {
-		t.Skipf("symlink not supported: %v", err)
-	}
+	err = os.Mkdir(linkDir, 0o755)
+	assert.NoError(t, err)
 
 	linkFile := filepath.Join(tmpDir, "link-file")
-	err = os.Symlink(targetFile, linkFile)
+	file, err = os.Create(linkFile)
 	assert.NoError(t, err)
+	if err == nil {
+		closeErr := file.Close()
+		assert.NoError(t, closeErr)
+	}
 
-	brokenLink := filepath.Join(tmpDir, "broken-link")
-	missingPath := filepath.Join(tmpDir, "missing")
-	err = os.Symlink(missingPath, brokenLink)
-	assert.NoError(t, err)
+	_ = filepath.Join(tmpDir, "broken-link")
 
-	entries, err := os.ReadDir(tmpDir)
-	assert.NoError(t, err)
+	entries := map[string]files.EntryWithDirPath{
+		"link-dir":    files.NewEntryWithDirPath(&fakeSymlinkEntry{name: "link-dir"}, tmpDir),
+		"link-file":   files.NewEntryWithDirPath(&fakeSymlinkEntry{name: "link-file"}, tmpDir),
+		"broken-link": files.NewEntryWithDirPath(&fakeSymlinkEntry{name: "broken-link"}, tmpDir),
+		"target-dir":  files.NewEntryWithDirPath(files.NewDirEntry("target-dir", true), tmpDir),
+	}
 
 	findEntry := func(name string) files.EntryWithDirPath {
-		for _, entry := range entries {
-			if entry.Name() == name {
-				return files.NewEntryWithDirPath(entry, tmpDir)
-			}
+		entry, ok := entries[name]
+		if !ok {
+			t.Fatalf("missing entry %s", name)
 		}
-		t.Fatalf("missing entry %s", name)
-		return nil
+		return entry
 	}
 
 	fileStore := newMockStoreWithRoot(t, url.URL{Scheme: "file"})
