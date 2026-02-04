@@ -28,7 +28,6 @@ func (m *mockT) Fatalf(format string, args ...any) {
 func (m *mockT) Helper() {}
 
 func TestNewSimScreen_Error(t *testing.T) {
-	t.Parallel()
 	oldNewSimulationScreen := NewSimulationScreen
 	defer func() { NewSimulationScreen = oldNewSimulationScreen }()
 
