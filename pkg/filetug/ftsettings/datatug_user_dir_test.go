@@ -10,6 +10,7 @@ import (
 
 func TestGetDatatugUserDir_Success(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	oldOsUserHomeDir := osUserHomeDir
 	t.Cleanup(func() {
 		osUserHomeDir = oldOsUserHomeDir
@@ -27,6 +28,7 @@ func TestGetDatatugUserDir_Success(t *testing.T) {
 
 func TestGetDatatugUserDir_Error(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	oldOsUserHomeDir := osUserHomeDir
 	t.Cleanup(func() {
 		osUserHomeDir = oldOsUserHomeDir

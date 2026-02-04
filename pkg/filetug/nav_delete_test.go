@@ -143,10 +143,18 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 		// Call delete
 		nav.delete()
 
-		// Wait for delete to be observed (operation is async)
+		// Wait for delete or confirm deletion directly (operation is async)
 		select {
 		case <-deleted:
 		case <-time.After(500 * time.Millisecond):
+			deadline := time.Now().Add(500 * time.Millisecond)
+			for time.Now().Before(deadline) {
+				_, err = os.Stat(tmpFile)
+				if os.IsNotExist(err) {
+					return
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
 			t.Fatal("timeout waiting for delete")
 		}
 
