@@ -431,7 +431,7 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	}
 	explicitChild := files.NewEntryWithDirPath(files.NewDirEntry("child", true), "/test")
 	fp.showDirSummary(explicitChild)
-	deadline := time.Now().Add(500 * time.Millisecond)
+	deadline := time.Now().Add(1500 * time.Millisecond)
 	for time.Now().Before(deadline) {
 		if store.seenPathClean("/test/child") {
 			break

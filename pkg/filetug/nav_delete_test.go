@@ -53,6 +53,54 @@ func (s localDeleteStore) Delete(ctx context.Context, path string) error {
 	return os.Remove(path)
 }
 
+type recordDeleteStore struct {
+	root    string
+	deleted chan string
+}
+
+func (s recordDeleteStore) RootURL() url.URL {
+	return url.URL{Scheme: "file", Path: s.root}
+}
+
+func (s recordDeleteStore) RootTitle() string { return "Local" }
+
+func (s recordDeleteStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
+	_ = ctx
+	return os.ReadDir(name)
+}
+
+func (s recordDeleteStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
+	return nil, files.ErrNotImplemented
+}
+
+func (s recordDeleteStore) CreateDir(ctx context.Context, path string) error {
+	_ = ctx
+	return os.Mkdir(path, 0o755)
+}
+
+func (s recordDeleteStore) CreateFile(ctx context.Context, path string) error {
+	_ = ctx
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	return f.Close()
+}
+
+func (s recordDeleteStore) Delete(ctx context.Context, path string) error {
+	_ = ctx
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+	if s.deleted != nil {
+		select {
+		case s.deleted <- path:
+		default:
+		}
+	}
+	return nil
+}
+
 func TestNavigator_Delete_And_Operations(t *testing.T) {
 	t.Parallel()
 	nav, app, _ := newNavigatorForTest(t)
@@ -64,7 +112,8 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 	err := os.WriteFile(tmpFile, []byte("test"), 0644)
 	assert.NoError(t, err)
 
-	nav.store = localDeleteStore{root: tmpDir}
+	deleted := make(chan string, 1)
+	nav.store = recordDeleteStore{root: tmpDir, deleted: deleted}
 
 	t.Run("delete_no_selection", func(t *testing.T) {
 		// Mock getCurrentBrowser to return something by focusing files
@@ -94,14 +143,11 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 		// Call delete
 		nav.delete()
 
-		// Wait for operation to complete (it's async)
-		deadline := time.Now().Add(500 * time.Millisecond)
-		for time.Now().Before(deadline) {
-			_, err = os.Stat(tmpFile)
-			if os.IsNotExist(err) {
-				break
-			}
-			time.Sleep(5 * time.Millisecond)
+		// Wait for delete to be observed (operation is async)
+		select {
+		case <-deleted:
+		case <-time.After(500 * time.Millisecond):
+			t.Fatal("timeout waiting for delete")
 		}
 
 		// Check if file is gone
@@ -123,6 +169,7 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 
 	t.Run("delete_with_error", func(t *testing.T) {
 		store := newMockStore(t)
+		store.EXPECT().RootURL().Return(url.URL{Scheme: "file", Path: "/"}).AnyTimes()
 		store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("delete error")).AnyTimes()
 		nav.store = store
 		nav.activeCol = 1
