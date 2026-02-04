@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/url"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -419,41 +418,52 @@ func TestFtpDial_Default(t *testing.T) {
 }
 
 func TestStore_ReadDir(t *testing.T) {
-	//t.Parallel()
-	if os.Getenv("RUN_FTP_INTEGRATION_TESTS") != "true" {
-		t.Skip("skipping integration test; set RUN_FTP_INTEGRATION_TESTS=true to run")
-	}
-	const host = "test.rebex.net"
+	t.Parallel()
+	const host = "example.com"
 	const port = 21
 	root := url.URL{
 		Scheme: "ftp",
 		Host:   fmt.Sprintf("%s:%d", host, port),
 		User:   url.UserPassword("demo", "password"),
 	}
+	factory := func(addr string, options ...ftp.DialOption) (FtpClient, error) {
+		_, _ = addr, options
+		return &mockFtpClient{
+			ListFunc: func(path string) ([]*ftp.Entry, error) {
+				_ = path
+				return []*ftp.Entry{
+					{Name: "file1.txt", Type: ftp.EntryTypeFile, Size: 100},
+					{Name: "dir1", Type: ftp.EntryTypeFolder},
+				}, nil
+			},
+		}, nil
+	}
 	t.Run("host_with_port", func(t *testing.T) {
+		t.Parallel()
 		root := root
 		root.Host = fmt.Sprintf("%s:%d", host, port)
-		s := NewStore(root)
+		s := NewStore(root, WithFtpClientFactory(factory))
 		testReadDir(t, s)
 	})
 
 	t.Run("plain_default_port", func(t *testing.T) {
+		t.Parallel()
 		root := root
 		root.Host = host
-		s := NewStore(root)
+		s := NewStore(root, WithFtpClientFactory(factory))
 		testReadDir(t, s)
 	})
 
 	t.Run("explicit_TLS", func(t *testing.T) {
-		t.Skip("test.rebex.net requires TLS session resumption which github.com/jlaffaye/ftp might not support or needs more config")
-		s := NewStore(root)
+		t.Parallel()
+		s := NewStore(root, WithFtpClientFactory(factory))
 		s.SetTLS(true, false)
 		testReadDir(t, s)
 	})
 
 	t.Run("implicit_TLS", func(t *testing.T) {
-		t.Skip("test.rebex.net requires TLS session resumption which github.com/jlaffaye/ftp might not support or needs more config")
-		s := NewStore(root)
+		t.Parallel()
+		s := NewStore(root, WithFtpClientFactory(factory))
 		s.SetTLS(false, true)
 		testReadDir(t, s)
 	})
