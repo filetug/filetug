@@ -3,7 +3,6 @@ package viewers
 import (
 	"errors"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/filetug/filetug/pkg/files"
