@@ -102,7 +102,7 @@ func (s recordDeleteStore) Delete(ctx context.Context, path string) error {
 }
 
 func TestNavigator_Delete_And_Operations(t *testing.T) {
-	t.Parallel()
+	withTestGlobalLock(t)
 	nav, app, _ := newNavigatorForTest(t)
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 
@@ -175,6 +175,7 @@ func TestNavigator_Delete_And_Operations(t *testing.T) {
 	t.Run("delete_with_error", func(t *testing.T) {
 		store := newMockStore(t)
 		store.EXPECT().RootURL().Return(url.URL{Scheme: "file", Path: "/"}).AnyTimes()
+		store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 		store.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("delete error")).AnyTimes()
 		nav.store = store
 		nav.activeCol = 1
