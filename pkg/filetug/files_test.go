@@ -118,7 +118,6 @@ func TestNewFiles(t *testing.T) {
 }
 
 func TestFilesPanel_SetRows(t *testing.T) {
-	t.Skip("panics")
 	t.Parallel()
 
 	nav, _ := setupNavigatorForFilesTest(t)
