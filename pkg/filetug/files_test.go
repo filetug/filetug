@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +20,59 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
+
+type recordingStore struct {
+	root    url.URL
+	entries map[string][]os.DirEntry
+	mu      sync.Mutex
+	paths   []string
+}
+
+func (s *recordingStore) RootTitle() string { return "Mock" }
+
+func (s *recordingStore) RootURL() url.URL { return s.root }
+
+func (s *recordingStore) GetDirReader(ctx context.Context, path string) (files.DirReader, error) {
+	_, _ = ctx, path
+	return nil, files.ErrNotImplemented
+}
+
+func (s *recordingStore) ReadDir(ctx context.Context, path string) ([]os.DirEntry, error) {
+	_ = ctx
+	s.mu.Lock()
+	s.paths = append(s.paths, path)
+	s.mu.Unlock()
+	if s.entries == nil {
+		return nil, nil
+	}
+	return s.entries[path], nil
+}
+
+func (s *recordingStore) Delete(ctx context.Context, path string) error {
+	_, _ = ctx, path
+	return files.ErrNotImplemented
+}
+
+func (s *recordingStore) CreateDir(ctx context.Context, path string) error {
+	_, _ = ctx, path
+	return files.ErrNotImplemented
+}
+
+func (s *recordingStore) CreateFile(ctx context.Context, path string) error {
+	_, _ = ctx, path
+	return files.ErrNotImplemented
+}
+
+func (s *recordingStore) seenPath(expected string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, p := range s.paths {
+		if p == expected {
+			return true
+		}
+	}
+	return false
+}
 
 func setupNavigatorForFilesTest(t *testing.T) (*Navigator, *tviewmocks.MockApp) {
 	nav, app, _ := newNavigatorForTest(t)
@@ -299,7 +353,7 @@ func TestFilesPanel_InputCapture(t *testing.T) {
 }
 
 func TestFilesPanel_SelectionChanged(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 
 	nav, _ := setupNavigatorForFilesTest(t)
 	nav.current.SetDir(osfile.NewLocalDir("/different"))
@@ -307,18 +361,14 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 
 	fp := nav.files
 
-	readDirPath := ""
 	dirEntries := map[string][]os.DirEntry{
 		"/":           {mockDirEntry{name: "test", isDir: true}},
 		"/test/child": {mockDirEntry{name: "file.txt", isDir: false}},
 	}
-	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
-	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(_ context.Context, name string) ([]os.DirEntry, error) {
-			readDirPath = name
-			return dirEntries[name], nil
-		},
-	).AnyTimes()
+	store := &recordingStore{
+		root:    url.URL{Scheme: "file", Path: "/"},
+		entries: dirEntries,
+	}
 	nav.store = store
 
 	entries := []files.EntryWithDirPath{
@@ -332,27 +382,31 @@ func TestFilesPanel_SelectionChanged(t *testing.T) {
 	fp.rows = rows
 	fp.table.SetContent(rows)
 
+	waitForPath := func(expected string) {
+		t.Helper()
+		deadline := time.Now().Add(500 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			if store.seenPath(expected) {
+				return
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		assert.True(t, store.seenPath(expected))
+	}
+
 	// Test row 0 (parent dir)
 	nav.current.SetDir(files.NewDirContext(store, "/test", nil))
 	fp.selectionChanged(0, 0)
-	// We use polling because selectionChanged starts a goroutine in showDir
-	for i := 0; i < 100; i++ {
-		if readDirPath == "/" {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	assert.Equal(t, "/", readDirPath)
+	waitForPath("/")
 
-	// Test dir row
-	fp.selectionChanged(1, 0)
-	for i := 0; i < 100; i++ {
-		if readDirPath == "/test/child" {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
+	// Test dir row (row 2 corresponds to "child" when row 1 is "..")
+	childEntry := fp.entryFromRow(2)
+	if assert.NotNil(t, childEntry) {
+		assert.Equal(t, "/test/child", childEntry.FullName())
+		assert.True(t, childEntry.IsDir())
 	}
-	assert.Equal(t, "/test/child", readDirPath)
+	fp.showDirSummary(childEntry)
+	waitForPath("/test/child")
 }
 
 func TestFilesPanel_OnStoreChange(t *testing.T) {

@@ -3,6 +3,7 @@ package filetug
 import (
 	"errors"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -142,18 +143,15 @@ func TestFavoritesPanel_UpdateAddCurrentForm_ShowHide(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_GetFavoritesError(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 	oldGetFavorites := getFavorites
 	defer func() {
 		getFavorites = oldGetFavorites
 	}()
 	done := make(chan struct{})
-	isDone := false
+	var once sync.Once
 	getFavorites = func() ([]ftfav.Favorite, error) {
-		if !isDone {
-			isDone = true
-			close(done)
-		}
+		once.Do(func() { close(done) })
 		return nil, errors.New("favorites error")
 	}
 
@@ -168,8 +166,9 @@ func TestFavoritesPanel_NewFavoritesPanel_GetFavoritesError(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
+	//withTestGlobalLock(t)
 	t.Skip("flaky")
-	t.Parallel()
+	//t.Parallel()
 	oldGetFavorites := getFavorites
 	defer func() {
 		getFavorites = oldGetFavorites
@@ -205,7 +204,7 @@ func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_NoQueueUpdate(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 	oldGetFavorites := getFavorites
 	defer func() {
 		getFavorites = oldGetFavorites
@@ -234,7 +233,7 @@ func TestFavoritesPanel_NewFavoritesPanel_NoQueueUpdate(t *testing.T) {
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_InputCaptures(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 	oldGetFavorites := getFavorites
 	defer func() {
 		getFavorites = oldGetFavorites
@@ -303,7 +302,7 @@ func TestFavoritesPanel_AddCurrentFavorite_NoCurrent(t *testing.T) {
 }
 
 func TestFavoritesPanel_InputCapture_KeyEnter_Escape_Left(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 	oldGetFavorites := getFavorites
 	oldGetState := getState
 	oldSaveCurrentDir := saveCurrentDir

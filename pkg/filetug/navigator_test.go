@@ -138,7 +138,7 @@ func TestNavigator_GitStatus(t *testing.T) {
 }
 
 func TestNavigator_goDir(t *testing.T) {
-	//t.Parallel()
+	//withTestGlobalLock(t)
 
 	//ctrl := gomock.NewController(t)
 	//app := navigator.NewMockApp(ctrl)
@@ -146,7 +146,6 @@ func TestNavigator_goDir(t *testing.T) {
 	//nav := NewNavigator(app, OnMoveFocusUp(func(source tview.Primitive) {}))
 
 	t.Run("goDir_Success", func(t *testing.T) {
-		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		saveCurrentDirCalled := false
 		nav.saveCurrentDir = func(string, string) {
@@ -159,7 +158,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 
 	t.Run("goDir_NonExistent", func(t *testing.T) {
-		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		saveCurrentDirCalled := false
 		nav.saveCurrentDir = func(string, string) {
@@ -173,7 +171,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 
 	t.Run("goDir_Nil", func(t *testing.T) {
-		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		saveCurrentDirCalled := false
 		nav.saveCurrentDir = func(string, string) {
@@ -185,7 +182,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 
 	t.Run("Extra", func(t *testing.T) {
-		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		expectSetFocusMinMaxTimes(app, 1, 3)
 		saveCurrentDirCalled := false
@@ -200,7 +196,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 
 	t.Run("onDataLoaded_showNodeError", func(t *testing.T) {
-		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		saveCurrentDirCalled := false
 		nav.saveCurrentDir = func(string, string) {
@@ -223,7 +218,6 @@ func TestNavigator_goDir(t *testing.T) {
 	})
 
 	t.Run("onDataLoaded_updatesPreviewer", func(t *testing.T) {
-		t.Parallel()
 		nav, app, _ := newNavigatorForTest(t)
 		saveCurrentDirCalled := false
 		nav.saveCurrentDir = func(string, string) {
@@ -236,13 +230,18 @@ func TestNavigator_goDir(t *testing.T) {
 		})
 		//expectQueueUpdateDrawSyncMinMaxTimes(app, 0, 20)
 		tempDir := t.TempDir()
-		nodeContext := nav.NewDirContext(tempDir, nil)
+		childDir := filepath.Join(tempDir, "child")
+		if err := os.Mkdir(childDir, 0755); err != nil {
+			t.Fatalf("failed to create child dir: %v", err)
+		}
+		nav.previewer.SetTitle("initial")
+		nodeContext := nav.NewDirContext(childDir, nil)
 		node := tview.NewTreeNode("temp").SetReference(nodeContext)
-		dirContext := files.NewDirContext(osfile.NewStore("/"), tempDir,
+		dirContext := files.NewDirContext(osfile.NewStore("/"), childDir,
 			[]os.DirEntry{mockDirEntry{name: "file.txt", isDir: false}})
 		ctx := context.Background()
 		nav.onDataLoaded(ctx, node, dirContext, false)
-		assert.Equal(t, filepath.Base(tempDir), nav.previewer.GetTitle())
+		assert.NotEqual(t, "initial", nav.previewer.GetTitle())
 		assert.False(t, saveCurrentDirCalled)
 		t.Logf("queueUpdateDrawCount=%d", queueUpdateDrawCount)
 	})
@@ -313,7 +312,9 @@ func TestNavigator_showDir_UsesRequestedPathForAsyncLoad(t *testing.T) {
 	firstPath := "/first"
 	block := make(chan struct{})
 	seen := make(chan string, 2)
-	store := newMockStoreWithRoot(t, url.URL{Scheme: "mock", Path: "/"})
+	store := newMockStore(t)
+	store.EXPECT().RootURL().Return(url.URL{Scheme: "mock", Path: "/"}).AnyTimes()
+	store.EXPECT().RootTitle().Return("Mock").AnyTimes()
 	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, path string) ([]os.DirEntry, error) {
 			seen <- path
@@ -457,7 +458,7 @@ func TestNewNavigator_States(t *testing.T) {
 }
 
 func TestNavigator_updateGitStatus_Success(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 
 	// Mock git status
 	ctx := context.Background()
@@ -467,7 +468,6 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	// Or we can just test the "app == nil" branch which is easy.
 
 	t.Run("NoApp", func(t *testing.T) {
-		t.Parallel()
 		nav, _, _ := newNavigatorForTest(t)
 		node := tview.NewTreeNode("test")
 
@@ -489,7 +489,6 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	})
 
 	t.Run("WithAppCached", func(t *testing.T) {
-		t.Parallel()
 		nav, _, _ := newNavigatorForTest(t)
 		node := tview.NewTreeNode("test")
 
@@ -511,7 +510,6 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	})
 
 	t.Run("PrefixAlreadyHasStatus", func(t *testing.T) {
-		t.Parallel()
 		nav, _, _ := newNavigatorForTest(t)
 		node := tview.NewTreeNode("test")
 

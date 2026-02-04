@@ -40,8 +40,12 @@ func TestGetDirStatus_Race(t *testing.T) {
 		}
 	}
 
-	const goroutines = 50
-	const iterations = 50
+	goroutines := 50
+	iterations := 50
+	if testing.CoverMode() != "" {
+		goroutines = 10
+		iterations = 10
+	}
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
 

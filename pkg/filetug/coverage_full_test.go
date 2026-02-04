@@ -20,7 +20,6 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv/crumbs"
-	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
@@ -374,11 +373,20 @@ func TestFilesPanel_DoLoadingAnimation_ExtraBranches(t *testing.T) {
 	}
 }
 
-func setupGitStatusTest(t *testing.T) (*filesPanel, *Navigator, *tviewmocks.MockApp, string, *files.DirContext, files.EntryWithDirPath) {
-	nav, app := setupNavigatorForFilesTest(t)
+func setupGitStatusTest(t *testing.T) (*filesPanel, *Navigator, *testApp, string, *files.DirContext, files.EntryWithDirPath) {
+	t.Helper()
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+		},
+	}
+	nav := NewNavigator(app)
+	nav.current.SetDir(osfile.NewLocalDir("/"))
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
-	fp := newFiles(nav)
+	fp := nav.files
 
 	repoDir := t.TempDir()
 	_, initErr := git.PlainInit(repoDir, false)
@@ -400,7 +408,7 @@ func setupGitStatusTest(t *testing.T) (*filesPanel, *Navigator, *tviewmocks.Mock
 }
 
 func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 
 	fp, nav, app, _, _, _ := setupGitStatusTest(t)
 	ctx := context.Background()
@@ -465,14 +473,16 @@ func TestFilesPanel_UpdateGitStatuses_Coverage(t *testing.T) {
 
 	drawCalled := make(chan struct{})
 
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
-		f()
+	app.queueUpdateDraw = func(f func()) {
+		if f != nil {
+			f()
+		}
 		select {
 		case <-drawCalled:
 		default:
 			close(drawCalled)
 		}
-	})
+	}
 
 	nav.gitStatusCacheMu.Lock()
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
@@ -546,11 +556,17 @@ func TestFilesPanel_UpdateGitStatuses_Branches(t *testing.T) {
 	fp.rows.gitStatusText = make(map[string]string)
 	otherRows := NewFileRows(dirContext)
 	done := make(chan struct{})
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
+	app.queueUpdateDraw = func(f func()) {
 		fp.rows = otherRows
-		f()
-		close(done)
-	})
+		if f != nil {
+			f()
+		}
+		select {
+		case <-done:
+		default:
+			close(done)
+		}
+	}
 
 	clearCache()
 	fp.updateGitStatuses(context.Background(), dirContext)
@@ -748,11 +764,17 @@ func TestNavigator_GetGitStatus_OpenRepo(t *testing.T) {
 }
 
 func TestNavigator_GitStatusText_Coverage(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
 	nav, _, _ := newNavigatorForTest(t)
 
 	empty := nav.gitStatusText(nil, "/tmp", true)
 	assert.Equal(t, "", empty)
+
+	oldOsStat := gitutils.OsStat
+	gitutils.OsStat = func(name string) (os.FileInfo, error) {
+		return nil, os.ErrNotExist
+	}
+	defer func() { gitutils.OsStat = oldOsStat }()
 
 	status := &gitutils.RepoStatus{Branch: "main"}
 	text := nav.gitStatusText(status, "/tmp/not-a-repo", true)

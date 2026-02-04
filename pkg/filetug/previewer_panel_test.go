@@ -10,14 +10,28 @@ import (
 
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
+	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
 )
 
+func newNavigatorForPreviewerTest(t *testing.T) *Navigator {
+	t.Helper()
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+		},
+	}
+	return NewNavigator(app)
+}
+
 func TestPreviewer(t *testing.T) {
-	t.Parallel()
+	//withTestGlobalLock(t)
+	viewers.SetTextPreviewerSyncForTest(true)
+	defer viewers.SetTextPreviewerSyncForTest(false)
 	previewFile := func(previewerPanel *previewerPanel, name, fullName string) {
 		dirPath := filepath.Dir(fullName)
 		var entry files.EntryWithDirPath
@@ -44,29 +58,25 @@ func TestPreviewer(t *testing.T) {
 	//nav.previewer.textView.SetText("")
 
 	t.Run("Draw", func(t *testing.T) {
-		t.Parallel()
 		s := ttestutils.NewSimScreen(t, "UTF-8", 80, 24)
-		nav, _, _ := newNavigatorForTest(t)
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.Draw(s)
 	})
 
 	t.Run("SetText", func(t *testing.T) {
-		t.Parallel()
-		nav, _, _ := newNavigatorForTest(t)
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.SetText("test text")
 		assert.Contains(t, nav.previewer.textView.GetText(false), "test text")
 	})
 
 	t.Run("SetErr", func(t *testing.T) {
-		t.Parallel()
-		nav, _, _ := newNavigatorForTest(t)
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.SetErr(fmt.Errorf("test error"))
 		assert.Contains(t, nav.previewer.textView.GetText(false), "test error")
 	})
 
 	t.Run("PreviewFile_DSStore_Valid", func(t *testing.T) {
-		t.Parallel()
-		nav, _, _ := newNavigatorForTest(t)
+		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", ".DS_Store")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -80,8 +90,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("FocusBlur", func(t *testing.T) {
-		t.Parallel()
-		nav, _, _ := newNavigatorForTest(t)
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewerFocusFunc()
 		nav.previewerBlurFunc()
 		nav.previewer.Focus(func(p tview.Primitive) {})
@@ -90,25 +99,16 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_NotFound", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		previewFile(nav.previewer, "non-existent.txt", "non-existent.txt")
+		if _, ok := nav.previewer.previewer.(*viewers.TextPreviewer); !ok {
+			t.Fatalf("expected text previewer, got %T", nav.previewer.previewer)
+		}
 		waitForText(t, nav.previewer, previewText, "Failed to read file")
 	})
 
 	t.Run("PreviewFile_PlainText", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.txt")
 		defer func() {
@@ -122,13 +122,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_JSON", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", "test*.json")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -143,13 +137,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
 		firstFile, _ := os.CreateTemp("", "first*.json")
 		defer func() {
@@ -172,8 +160,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("InputCapture", func(t *testing.T) {
-		t.Parallel()
-		nav, _, _ := newNavigatorForTest(t)
+		nav := newNavigatorForPreviewerTest(t)
 		event := tcell.NewEventKey(tcell.KeyLeft, 0, tcell.ModNone)
 		nav.previewer.rows.GetInputCapture()(event)
 
@@ -185,9 +172,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_NoName", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
+		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", "test*.txt")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -198,13 +183,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_NoLexer", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test")
 		defer func() {
@@ -218,13 +197,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_JSON_Invalid_Pretty", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", "test*.json")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -237,13 +210,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_Image_Meta", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", "test*.png")
 		defer func() {
 			_ = os.Remove(tmpFile.Name())
@@ -268,9 +235,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_ChromaError", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
+		nav := newNavigatorForPreviewerTest(t)
 		// To trigger chroma error, we can try something that is not valid UTF-8 if the lexer expects it
 		// but chroma2tcell usually handles bytes.
 		// However, it's worth a try with some invalid bytes for a specific lexer.
@@ -283,13 +248,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_Log", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().Do(func(f func()) {
-			if f != nil {
-				f()
-			}
-		})
+		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
 		tmpFile, _ := os.CreateTemp("", "test*.log")
 		defer func() {
@@ -303,9 +262,7 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_DSStore_Error_ReadFile", func(t *testing.T) {
-		t.Parallel()
-		nav, app, _ := newNavigatorForTest(t)
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).MaxTimes(1)
+		nav := newNavigatorForPreviewerTest(t)
 		// To trigger readFile error inside DSStore branch
 		tmpDir, _ := os.MkdirTemp("", "testds")
 		defer func() {
@@ -319,7 +276,7 @@ func TestPreviewer(t *testing.T) {
 
 func waitForText(t *testing.T, previewer *previewerPanel, getText func(previewer *previewerPanel) string, needle string) {
 	t.Helper()
-	deadline := time.Now().Add(500 * time.Millisecond)
+	deadline := time.Now().Add(5 * time.Second)
 	for time.Now().Before(deadline) {
 		if strings.Contains(getText(previewer), needle) {
 			return

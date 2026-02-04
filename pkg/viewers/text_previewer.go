@@ -18,6 +18,15 @@ import (
 
 var _ Previewer = (*TextPreviewer)(nil)
 
+// textPreviewerSyncForTest forces PreviewSingle to run synchronously in tests.
+// It is a no-op unless explicitly enabled by tests.
+var textPreviewerSyncForTest bool
+
+// SetTextPreviewerSyncForTest toggles synchronous preview behavior for tests.
+func SetTextPreviewerSyncForTest(sync bool) {
+	textPreviewerSyncForTest = sync
+}
+
 type TextPreviewer struct {
 	*tview.TextView
 	previewID       uint64
@@ -40,7 +49,7 @@ func NewTextPreviewer(queueUpdateDraw navigator.UpdateDrawQueuer) *TextPreviewer
 
 func (p *TextPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte, dataErr error) {
 	previewID := atomic.AddUint64(&p.previewID, 1)
-	go func(previewID uint64) {
+	run := func(previewID uint64) {
 		if p.queueUpdateDraw == nil {
 			return
 		}
@@ -100,7 +109,12 @@ func (p *TextPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte,
 				p.SetWrap(true)
 			})
 		}
-	}(previewID)
+	}
+	if textPreviewerSyncForTest {
+		run(previewID)
+		return
+	}
+	go run(previewID)
 }
 
 func (p *TextPreviewer) Meta() tview.Primitive {

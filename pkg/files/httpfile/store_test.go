@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
@@ -140,14 +139,23 @@ func Test_httpFileStore_ReadDir(t *testing.T) {
 	})
 
 	t.Run("NilClient", func(t *testing.T) {
-		// This will actually try to make a real network request if we don't mock DefaultClient
-		// or use a local server. For testing purpose, we can use a local server.
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _ = fmt.Fprintln(w, `<a href="file1">file1</a>`)
-		}))
-		defer ts.Close()
+		// Use a mocked DefaultClient to avoid binding to a port.
+		oldDefaultClient := http.DefaultClient
+		mockDefault := &http.Client{
+			Transport: &mockTransport{
+				RoundTripFunc: func(req *http.Request) (*http.Response, error) {
+					_ = req
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewBufferString(`<a href="file1">file1</a>`)),
+					}, nil
+				},
+			},
+		}
+		http.DefaultClient = mockDefault
+		defer func() { http.DefaultClient = oldDefaultClient }()
 
-		u, _ := url.Parse(ts.URL)
+		u, _ := url.Parse("https://example.com/")
 		store2 := NewStore(*u)
 		entries, err := store2.ReadDir(ctx, "/")
 		assert.NoError(t, err)
