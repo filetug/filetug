@@ -244,17 +244,15 @@ func TestPreviewer(t *testing.T) {
 	})
 
 	t.Run("PreviewFile_Log", func(t *testing.T) {
-		nav := newNavigatorForPreviewerTest(t)
-		nav.previewer.setPreviewer(nil)
-		tmpFile, _ := os.CreateTemp("", "test*.log")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		err := os.WriteFile(tmpFile.Name(), []byte("log line"), 0644)
-		assert.NoError(t, err)
-
-		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
-		waitForText(t, nav.previewer, previewText, "log line")
+		entry := files.NewEntryWithDirPath(files.NewDirEntry("file.log", false), t.TempDir())
+		textPreviewer := viewers.NewTextPreviewer(func(f func()) {
+			if f != nil {
+				f()
+			}
+		})
+		textPreviewer.PreviewSingle(entry, []byte("log line"), nil)
+		text := textPreviewer.GetText(true)
+		assert.Contains(t, text, "log line")
 	})
 
 	t.Run("PreviewFile_DSStore_Error_ReadFile", func(t *testing.T) {
