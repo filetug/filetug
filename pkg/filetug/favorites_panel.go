@@ -319,6 +319,9 @@ func (f *favoritesPanel) activateFavorite(item ftfav.Favorite, previewMode bool)
 }
 
 func (f *favoritesPanel) setStore(item ftfav.Favorite) (dirPath string) {
+	if f == nil || f.nav == nil || f.nav.store == nil {
+		return ""
+	}
 	dirPath = item.Path
 	root := item.Store
 	if storeRootUrl := f.nav.store.RootURL(); storeRootUrl.String() != root.String() {

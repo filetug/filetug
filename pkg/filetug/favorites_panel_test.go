@@ -156,7 +156,6 @@ func TestNewFavorites_NilNav(t *testing.T) {
 }
 
 func TestFavorites_SetStore_InvalidURL(t *testing.T) {
-	t.Skip("panics")
 	t.Parallel()
 	nav, _, _ := newNavigatorForTest(t)
 	f := newFavoritesPanel(nav)
