@@ -102,8 +102,8 @@ func TestPreviewer(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
 		tmpDir := t.TempDir()
-		missingPath := filepath.Join(tmpDir, "non-existent.txt")
-		previewFile(nav.previewer, "non-existent.txt", missingPath)
+		entry := files.NewEntryWithDirPath(mockDirEntry{name: "non-existent.txt", isDir: false}, tmpDir)
+		nav.previewer.PreviewEntry(entry)
 		if _, ok := nav.previewer.previewer.(*viewers.TextPreviewer); !ok {
 			t.Fatalf("expected text previewer, got %T", nav.previewer.previewer)
 		}
