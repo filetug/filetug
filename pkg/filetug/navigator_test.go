@@ -393,7 +393,7 @@ func TestNavigator_setBreadcrumbs_Complex(t *testing.T) {
 }
 
 func TestNewNavigator_States(t *testing.T) {
-	t.Parallel()
+	withTestGlobalLock(t)
 	oldGetState := getState
 	defer func() { getState = oldGetState }()
 
@@ -420,7 +420,6 @@ func TestNewNavigator_States(t *testing.T) {
 	})
 
 	t.Run("File_State_With_Entry", func(t *testing.T) {
-		t.Skip("failing")
 		getState = func() (*ftstate.State, error) {
 			return &ftstate.State{
 				Store:           "file:",
@@ -429,6 +428,7 @@ func TestNewNavigator_States(t *testing.T) {
 			}, nil
 		}
 		nav, _, _ := newNavigatorForTest(t)
+		initNavigatorWithPersistedState(nav)
 		assert.True(t, nav != nil)
 		if nav.current.Dir() == nil {
 			t.Fatal("Current dir is nil")
