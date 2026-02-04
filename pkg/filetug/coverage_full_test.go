@@ -1432,8 +1432,14 @@ func TestNavigator_SetBreadcrumbs_RootTitle(t *testing.T) {
 
 func TestNavigator_ShowScriptsPanel_Selection(t *testing.T) {
 	t.Parallel()
-	t.Skip("panics")
-	nav, _, _ := newNavigatorForTest(t)
+	app := &testApp{
+		queueUpdateDraw: func(f func()) {
+			if f != nil {
+				f()
+			}
+		},
+	}
+	nav := NewNavigator(app)
 	nav.previewer = newPreviewerPanel(nav)
 
 	nav.showScriptsPanel()
