@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/filetug/filetug/pkg/files"
-	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/stretchr/testify/assert"
@@ -90,28 +89,25 @@ func TestTree(t *testing.T) {
 
 	t.Run("doLoadingAnimation_queueUpdateDrawExecutes", func(t *testing.T) {
 		t.Parallel()
-		nav, app, ctrl := newNavigatorForTest(t)
-		ctrl.Finish()
-		app = tviewmocks.NewMockApp(ctrl)
-		nav.app = app
+		done := make(chan struct{})
+		var once sync.Once
+		queued := false
+		app := &testApp{
+			queueUpdateDraw: func(f func()) {
+				queued = true
+				if f != nil {
+					f()
+				}
+				once.Do(func() {
+					close(done)
+				})
+			},
+		}
+		nav := &Navigator{app: app}
 		tree := NewTree(nav)
 		loading := tview.NewTreeNode(" Loading...")
 		tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
-
-		queued := false
-		done := make(chan struct{})
-		var once sync.Once
-		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes().DoAndReturn(func(f func()) {
-			queued = true
-			if f != nil {
-				f()
-			}
-			tree.rootNode.ClearChildren()
-			once.Do(func() {
-				close(done)
-			})
-		})
 
 		go tree.doLoadingAnimation(loading)
 		select {
