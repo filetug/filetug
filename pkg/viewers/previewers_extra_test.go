@@ -73,6 +73,7 @@ func waitForText(t *testing.T, previewer *TextPreviewer, needle string) {
 
 func TestTextPreviewerPreviewPlainText(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -93,6 +94,7 @@ func TestTextPreviewerPreviewPlainText(t *testing.T) {
 
 func TestTextPreviewerPreviewWithLexer(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -112,6 +114,7 @@ func TestTextPreviewerPreviewWithLexer(t *testing.T) {
 
 func TestTextPreviewerPreviewWithLexerError(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -139,6 +142,7 @@ func TestTextPreviewerPreviewWithLexerError(t *testing.T) {
 
 func TestTextPreviewerPreviewWithLexerDataErr(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -160,6 +164,7 @@ func TestTextPreviewerPreviewWithLexerDataErr(t *testing.T) {
 
 func TestTextPreviewerPreviewPlainTextDataErr(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -181,6 +186,7 @@ func TestTextPreviewerPreviewPlainTextDataErr(t *testing.T) {
 
 func TestTextPreviewerPreviewReadsFile(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	done := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		fn()
@@ -206,6 +212,7 @@ func TestTextPreviewerPreviewReadsFile(t *testing.T) {
 
 func TestTextPreviewerPreviewReadFileError(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	queueUpdateDraw := func(fn func()) { fn() }
 	previewer := NewTextPreviewer(queueUpdateDraw)
 	tmpDir := t.TempDir()
@@ -219,6 +226,7 @@ func TestTextPreviewerPreviewReadFileError(t *testing.T) {
 
 func TestTextPreviewerPreviewReadFileError_Stale(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	allow := make(chan struct{})
 	queueUpdateDraw := func(fn func()) {
 		<-allow
@@ -235,6 +243,7 @@ func TestTextPreviewerPreviewReadFileError_Stale(t *testing.T) {
 
 func TestTextPreviewerPreviewQueueUpdateNil(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	previewer := NewTextPreviewer(nil)
 	data := []byte("queue nil")
 	dir := filepath.Dir("note.unknownext")
@@ -249,6 +258,7 @@ func TestTextPreviewerPreviewQueueUpdateNil(t *testing.T) {
 
 func TestTextPreviewerPreviewStalePlain(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	dir := filepath.Dir("note.unknownext")
 	entry := files.NewEntryWithDirPath(mockDirEntry{name: "note.unknownext"}, dir)
 
@@ -307,6 +317,7 @@ func TestTextPreviewerPreviewStalePlain(t *testing.T) {
 
 func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	lexerDir := filepath.Dir("main.go")
 	plainDir := filepath.Dir("note.unknownext")
 	lexerEntry := files.NewEntryWithDirPath(mockDirEntry{name: "main.go"}, lexerDir)
@@ -344,6 +355,7 @@ func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
 }
 func TestTextPreviewerMetaAndMain(t *testing.T) {
 	t.Parallel()
+	withTextPreviewerTestLock(t)
 	previewer := NewTextPreviewer(nil)
 	meta := previewer.Meta()
 	main := previewer.Main()
