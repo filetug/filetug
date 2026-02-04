@@ -282,6 +282,8 @@ func TestLoadGitDirStatus_Seams(t *testing.T) {
 
 func TestLoadGitDirStatus_IgnoresMatcherEntries(t *testing.T) {
 	t.Parallel()
+	gitDirStatusTestLock.Lock()
+	t.Cleanup(gitDirStatusTestLock.Unlock)
 	origPlainOpen := gitPlainOpen
 	origRepoWorktree := repoWorktree
 	origStatus := worktreeStatus
