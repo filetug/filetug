@@ -119,7 +119,7 @@ func TestPreviewer(t *testing.T) {
 			}
 		})
 		textPreviewer.PreviewSingle(entry, []byte("hello world"), nil)
-		text := textPreviewer.TextView.GetText(true)
+		text := textPreviewer.GetText(true)
 		assert.Contains(t, text, "hello world")
 	})
 
@@ -131,7 +131,7 @@ func TestPreviewer(t *testing.T) {
 			}
 		})
 		jsonPreviewer.PreviewSingle(entry, []byte(`{"a":1}`), nil)
-		text := jsonPreviewer.TextView.GetText(true)
+		text := jsonPreviewer.GetText(true)
 		assert.Contains(t, text, "a")
 	})
 
@@ -189,7 +189,7 @@ func TestPreviewer(t *testing.T) {
 			}
 		})
 		textPreviewer.PreviewSingle(entry, []byte("hello world"), nil)
-		text := textPreviewer.TextView.GetText(true)
+		text := textPreviewer.GetText(true)
 		assert.Contains(t, text, "hello world")
 	})
 

@@ -15,44 +15,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-type localDeleteStore struct {
-	root string
-}
-
-func (s localDeleteStore) RootURL() url.URL {
-	return url.URL{Scheme: "file", Path: s.root}
-}
-
-func (s localDeleteStore) RootTitle() string { return "Local" }
-
-func (s localDeleteStore) ReadDir(ctx context.Context, name string) ([]os.DirEntry, error) {
-	_ = ctx
-	return os.ReadDir(name)
-}
-
-func (s localDeleteStore) GetDirReader(_ context.Context, _ string) (files.DirReader, error) {
-	return nil, files.ErrNotImplemented
-}
-
-func (s localDeleteStore) CreateDir(ctx context.Context, path string) error {
-	_ = ctx
-	return os.Mkdir(path, 0o755)
-}
-
-func (s localDeleteStore) CreateFile(ctx context.Context, path string) error {
-	_ = ctx
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	return f.Close()
-}
-
-func (s localDeleteStore) Delete(ctx context.Context, path string) error {
-	_ = ctx
-	return os.Remove(path)
-}
-
 type recordDeleteStore struct {
 	root    string
 	deleted chan string

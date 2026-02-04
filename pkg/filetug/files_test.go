@@ -71,17 +71,6 @@ func (s *recordingStore) CreateFile(ctx context.Context, path string) error {
 	return files.ErrNotImplemented
 }
 
-func (s *recordingStore) seenPath(expected string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, p := range s.paths {
-		if p == expected {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *recordingStore) seenPathClean(expected string) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -626,10 +615,8 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 	}
 	// nav.current.SetDir(files.NewDirContext(store, tempDir, nil))
 
-	fp := nav.files
-
-	targetDir := filepath.Join(tempDir, "target")
-	err := os.Mkdir(targetDir, 0o755)
+targetDir := filepath.Join(tempDir, "target")
+err := os.Mkdir(targetDir, 0o755)
 	if !assert.NoError(t, err) {
 		return
 	}
