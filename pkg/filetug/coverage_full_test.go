@@ -660,6 +660,7 @@ func TestNavigator_InputCapture_ExtraBranches(t *testing.T) {
 
 func TestNewNavigator_StateError(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	oldGetState := getState
 	defer func() {
 		getState = oldGetState
