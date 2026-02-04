@@ -199,6 +199,7 @@ func TestNavigator_ShowDir_GitStatusCall(t *testing.T) {
 
 func TestNewNavigator_EmptyState(t *testing.T) {
 	t.Parallel()
+	withTestGlobalLock(t)
 	oldGetState := getState
 	defer func() { getState = oldGetState }()
 
