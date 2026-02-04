@@ -171,7 +171,6 @@ func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
 	defer func() {
 		getFavorites = oldGetFavorites
 	}()
-	done := make(chan struct{})
 	userFavs := []ftfav.Favorite{{Store: url.URL{Scheme: "file"}, Path: "/tmp"}}
 	getFavorites = func() ([]ftfav.Favorite, error) {
 		return userFavs, nil
@@ -182,31 +181,30 @@ func TestFavoritesPanel_NewFavoritesPanel_QueueUpdate(t *testing.T) {
 			if f != nil {
 				f()
 			}
-			select {
-			case <-done:
-			default:
-				close(done)
-			}
 		},
 	}
 	nav := NewNavigator(app)
-	panel := newFavoritesPanel(nav)
+	panel := nav.favorites
 
-	select {
-	case <-done:
-	case <-time.After(time.Second):
-		t.Fatal("timeout waiting for favorites update")
-	}
-
-	assert.GreaterOrEqual(t, len(panel.items), len(userFavs))
-	found := false
-	for _, item := range panel.items {
-		if item.Path == "/tmp" {
-			found = true
+	deadline := time.After(time.Second)
+	for {
+		found := false
+		for _, item := range panel.items {
+			if item.Path == "/tmp" {
+				found = true
+				break
+			}
+		}
+		if found {
 			break
 		}
+		select {
+		case <-deadline:
+			t.Fatal("timeout waiting for favorites update")
+		default:
+			time.Sleep(5 * time.Millisecond)
+		}
 	}
-	assert.True(t, found)
 }
 
 func TestFavoritesPanel_NewFavoritesPanel_NoQueueUpdate(t *testing.T) {
