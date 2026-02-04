@@ -46,10 +46,7 @@ func TestTree(t *testing.T) {
 	t.Run("doLoadingAnimation", func(t *testing.T) {
 		//t.Parallel()
 		loading := tview.NewTreeNode(" Loading...")
-		nav, app, ctrl := newNavigatorForTest(t)
-		ctrl.Finish()
-		app = tviewmocks.NewMockApp(ctrl)
-		nav.app = app
+		nav, app, _ := newNavigatorForTest(t)
 		tree := NewTree(nav) //tree.rootNode.ClearChildren()
 		tree.rootNode.AddChild(loading)
 
