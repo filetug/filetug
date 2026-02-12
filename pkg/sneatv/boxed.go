@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 var (
@@ -195,7 +196,7 @@ func (b Boxed) drawBorders(screen tcell.Screen) {
 			title = tab.Title
 			if tab.Hotkey != 0 {
 				title = strings.Replace(title, string(tab.Hotkey),
-					fmt.Sprintf("[%s]%c[-][DarkGray]", CurrentTheme.HotkeyColor, tab.Hotkey), 1)
+					fmt.Sprintf("[%s]%c[-][DarkGray]", themes.CurrentTheme.HotkeyColor, tab.Hotkey), 1)
 			}
 			title = fmt.Sprintf("[DarkGray]%s[-]", title)
 			sb.WriteString(title)
