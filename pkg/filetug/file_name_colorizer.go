@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/strongo/strongo-tui/pkg/colors"
 )
 
 var fileColors = map[string]tcell.Color{
@@ -52,5 +53,5 @@ func GetColorByFileExt(name string) tcell.Color {
 	if color, ok := fileColors[ext]; ok {
 		return color
 	}
-	return tcell.ColorWhiteSmoke
+	return colors.TableHeaderColor
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/colors"
 )
 
 type Navigator struct {
@@ -136,7 +137,7 @@ func NewNavigator(app navigator.App, options ...NavigatorOption) *Navigator {
 	rootBreadcrumb := crumbs.NewBreadcrumb("FileTug: ", func() error {
 		return nil
 	})
-	rootBreadcrumb.SetColor(tcell.ColorWhiteSmoke)
+	rootBreadcrumb.SetColor(colors.TableHeaderColor)
 	flex := tview.NewFlex()
 	flex.SetDirection(tview.FlexRow)
 

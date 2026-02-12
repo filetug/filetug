@@ -12,6 +12,7 @@ import (
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/colors"
 	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
@@ -159,7 +160,7 @@ func (p *previewerPanel) SetText(text string) {
 	p.textView.Clear()
 	p.textView.SetDynamicColors(true)
 	p.textView.SetText(text)
-	p.textView.SetTextColor(tcell.ColorWhiteSmoke)
+	p.textView.SetTextColor(colors.TableHeaderColor)
 }
 
 func (p *previewerPanel) PreviewEntry(entry files.EntryWithDirPath) {

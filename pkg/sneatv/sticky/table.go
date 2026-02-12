@@ -3,6 +3,7 @@ package sticky
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/colors"
 )
 
 type Table struct {
@@ -60,7 +61,7 @@ func NewTable(columns []Column) *Table {
 func (t *Table) setHeader() {
 	for i, col := range t.columns {
 		th := tview.NewTableCell(col.Name)
-		th.SetTextColor(tcell.ColorDarkGray)
+		th.SetTextColor(colors.LabelColor)
 		if i == 0 {
 			th.SetExpansion(9)
 		}
