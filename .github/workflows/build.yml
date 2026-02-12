@@ -2,8 +2,9 @@ name: Build
 
 on:
   push:
-    branches-ignore:
-      - renovate/**
+    branches:
+      - main
+      - 'releases/*' # The release branches
     paths:
       - 'go.*'
       - '**/*.go'
