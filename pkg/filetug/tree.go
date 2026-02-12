@@ -16,6 +16,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 const dirEmoji = "📁"
@@ -137,7 +138,7 @@ func getNodePath(node *tview.TreeNode) string {
 }
 
 func (t *Tree) focus() {
-	t.nav.left.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
+	t.nav.left.SetBorderColor(themes.CurrentTheme.FocusedBorderColor)
 	t.nav.activeCol = 0
 	t.nav.right.SetContent(t.nav.previewer)
 	t.nav.previewer.Blur()
@@ -149,17 +150,17 @@ func (t *Tree) focus() {
 		t.tv.SetCurrentNode(currentNode)
 	}
 	if currentNode != nil {
-		currentNode.SetSelectedTextStyle(sneatv.CurrentTheme.FocusedSelectedTextStyle)
+		currentNode.SetSelectedTextStyle(themes.CurrentTheme.FocusedSelectedTextStyle)
 	}
 	t.tv.SetGraphicsColor(tcell.ColorWhite)
 }
 
 func (t *Tree) blur() {
-	t.nav.left.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
-	t.tv.SetGraphicsColor(sneatv.CurrentTheme.BlurredGraphicsColor)
+	t.nav.left.SetBorderColor(themes.CurrentTheme.BlurredBorderColor)
+	t.tv.SetGraphicsColor(themes.CurrentTheme.BlurredGraphicsColor)
 	currentNode := t.tv.GetCurrentNode()
 	if currentNode != nil {
-		currentNode.SetSelectedTextStyle(sneatv.CurrentTheme.BlurredSelectedTextStyle)
+		currentNode.SetSelectedTextStyle(themes.CurrentTheme.BlurredSelectedTextStyle)
 	}
 }
 

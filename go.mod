@@ -11,6 +11,7 @@ require (
 	github.com/rivo/tview v0.42.0
 	github.com/stretchr/testify v1.11.1
 	github.com/strongo/dsstore v0.0.1
+	github.com/strongo/strongo-tui v0.0.0-20260212115849-b2ccb1e586b1
 	golang.org/x/image v0.35.0
 	golang.org/x/sys v0.40.0
 )
@@ -41,7 +42,6 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
-	github.com/strongo/strongo-tui v0.0.0-20260212115849-b2ccb1e586b1 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.uber.org/mock v0.6.0 // indirect
 	golang.org/x/crypto v0.47.0 // indirect
