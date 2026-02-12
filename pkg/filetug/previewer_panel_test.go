@@ -164,23 +164,29 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
-		firstFile, _ := os.CreateTemp("", "first*.json")
-		defer func() {
-			_ = os.Remove(firstFile.Name())
-		}()
-		secondFile, _ := os.CreateTemp("", "second*.json")
-		defer func() {
-			_ = os.Remove(secondFile.Name())
-		}()
-		err := os.WriteFile(firstFile.Name(), []byte(`{"first":1}`), 0644)
+		
+		// Use t.TempDir() to create a unique directory for this test
+		tmpDir := t.TempDir()
+		
+		firstFile, err := os.CreateTemp(tmpDir, "first*.json")
 		assert.NoError(t, err)
-		err = os.WriteFile(secondFile.Name(), []byte(`{"second":2}`), 0644)
+		firstPath := firstFile.Name()
+		_ = firstFile.Close() // Close the file before writing to it
+		
+		secondFile, err := os.CreateTemp(tmpDir, "second*.json")
+		assert.NoError(t, err)
+		secondPath := secondFile.Name()
+		_ = secondFile.Close() // Close the file before writing to it
+		
+		err = os.WriteFile(firstPath, []byte(`{"first":1}`), 0644)
+		assert.NoError(t, err)
+		err = os.WriteFile(secondPath, []byte(`{"second":2}`), 0644)
 		assert.NoError(t, err)
 
-		previewFile(nav.previewer, filepath.Base(firstFile.Name()), firstFile.Name())
+		previewFile(nav.previewer, filepath.Base(firstPath), firstPath)
 		waitForText(t, nav.previewer, previewText, "first")
 
-		previewFile(nav.previewer, filepath.Base(secondFile.Name()), secondFile.Name())
+		previewFile(nav.previewer, filepath.Base(secondPath), secondPath)
 		waitForText(t, nav.previewer, previewText, "second")
 	})
 
