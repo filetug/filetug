@@ -90,8 +90,13 @@ func newFavoritesPanel(nav *Navigator) *favoritesPanel {
 	f.updateAddCurrentForm()
 	f.list.SetInputCapture(f.inputCapture)
 	f.list.SetChangedFunc(f.changed)
+	return f
+}
+
+func (f *favoritesPanel) loadUserFavorites() {
+	getter := getFavorites // capture before goroutine to avoid race on global
 	go func() {
-		userFavorites, err := getFavorites()
+		userFavorites, err := getter()
 		if err != nil {
 			return
 		}
@@ -109,7 +114,6 @@ func newFavoritesPanel(nav *Navigator) *favoritesPanel {
 			update()
 		}
 	}()
-	return f
 }
 
 func (f *favoritesPanel) setItems() {

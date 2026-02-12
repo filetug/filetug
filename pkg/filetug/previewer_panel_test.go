@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
@@ -30,6 +31,11 @@ func newNavigatorForPreviewerTest(t *testing.T) *Navigator {
 
 func TestPreviewer(t *testing.T) {
 	withTestGlobalLock(t)
+	oldGetFavorites := getFavorites
+	getFavorites = func() ([]ftfav.Favorite, error) {
+		return nil, fmt.Errorf("disabled in test")
+	}
+	defer func() { getFavorites = oldGetFavorites }()
 	viewers.SetTextPreviewerSyncForTest(true)
 	defer viewers.SetTextPreviewerSyncForTest(false)
 	previewFile := func(previewerPanel *previewerPanel, name, fullName string) {
@@ -89,7 +95,6 @@ func TestPreviewer(t *testing.T) {
 		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
 	})
 
-	// TODO: Flaky test needs fixing.
 	t.Run("PreviewFile_DSStore_Reuse_Previewer", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", ".DS_Store")

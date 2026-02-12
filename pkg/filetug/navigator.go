@@ -184,6 +184,8 @@ func NewNavigator(app navigator.App, options ...NavigatorOption) *Navigator {
 
 	nav.createColumns()
 
+	nav.favorites.loadUserFavorites()
+
 	return nav
 }
 
