@@ -6,7 +6,7 @@ require (
 	github.com/alecthomas/assert/v2 v2.11.0
 	github.com/alecthomas/chroma/v2 v2.23.1
 	github.com/gdamore/tcell/v2 v2.13.8
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/jlaffaye/ftp v0.2.0
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.42.0
@@ -14,8 +14,8 @@ require (
 	github.com/strongo/dsstore v0.0.1
 	github.com/strongo/strongo-tui v0.0.0-20260212115849-b2ccb1e586b1
 	go.uber.org/mock v0.6.0
-	golang.org/x/image v0.35.0
-	golang.org/x/sys v0.40.0
+	golang.org/x/image v0.36.0
+	golang.org/x/sys v0.41.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -45,9 +45,9 @@ require (
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/term v0.39.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
