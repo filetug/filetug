@@ -89,6 +89,7 @@ func TestPreviewer(t *testing.T) {
 		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
 	})
 
+	// TODO: Flaky test needs fixing.
 	t.Run("PreviewFile_DSStore_Reuse_Previewer", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
 		tmpFile, _ := os.CreateTemp("", ".DS_Store")
@@ -98,19 +99,19 @@ func TestPreviewer(t *testing.T) {
 		// Minimal DSStore header: 4 bytes Magic, 4 bytes "Bud1"
 		header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
 		_ = os.WriteFile(tmpFile.Name(), header, 0644)
-		
+
 		// First call creates DsstorePreviewer
 		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
 		firstPreviewer := nav.previewer.previewer
-		
+
 		// Verify it's a DsstorePreviewer
 		_, ok := firstPreviewer.(*viewers.DsstorePreviewer)
 		assert.True(t, ok, "First preview should create a DsstorePreviewer")
-		
+
 		// Second call should reuse the same previewer (covering lines 197-198)
 		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
 		secondPreviewer := nav.previewer.previewer
-		
+
 		// Verify same instance is reused (same pointer address)
 		assert.True(t, firstPreviewer == secondPreviewer, "Second preview should reuse the same DsstorePreviewer instance")
 	})
@@ -164,20 +165,20 @@ func TestPreviewer(t *testing.T) {
 	t.Run("PreviewFile_JSON_SameType_Updates", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
 		nav.previewer.setPreviewer(nil)
-		
+
 		// Use t.TempDir() to create a unique directory for this test
 		tmpDir := t.TempDir()
-		
+
 		firstFile, err := os.CreateTemp(tmpDir, "first*.json")
 		assert.NoError(t, err)
 		firstPath := firstFile.Name()
 		_ = firstFile.Close() // Close the file before writing to it
-		
+
 		secondFile, err := os.CreateTemp(tmpDir, "second*.json")
 		assert.NoError(t, err)
 		secondPath := secondFile.Name()
 		_ = secondFile.Close() // Close the file before writing to it
-		
+
 		err = os.WriteFile(firstPath, []byte(`{"first":1}`), 0644)
 		assert.NoError(t, err)
 		err = os.WriteFile(secondPath, []byte(`{"second":2}`), 0644)
@@ -208,7 +209,7 @@ func TestPreviewer(t *testing.T) {
 		previewFile(nav.previewer, filepath.Base(firstFile.Name()), firstFile.Name())
 		firstPreviewer := nav.previewer.previewer
 		assert.NotNil(t, firstPreviewer)
-		
+
 		// Second preview - should exercise the reuse code path for text previewer
 		previewFile(nav.previewer, filepath.Base(secondFile.Name()), secondFile.Name())
 		secondPreviewer := nav.previewer.previewer
