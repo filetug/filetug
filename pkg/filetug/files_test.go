@@ -178,6 +178,17 @@ func TestFilesPanel_Selection(t *testing.T) {
 		assert.Equal(t, 0, col)
 	})
 
+	t.Run("SetCurrentFile_already_selected", func(t *testing.T) {
+		fp.SetCurrentFile("file1.txt")
+		// Manually select file1 to row 1
+		fp.table.Select(1, 0)
+		// Call selectCurrentFile again - should skip the Select() call since row == i+1
+		fp.selectCurrentFile()
+		row, col := fp.table.GetSelection()
+		assert.Equal(t, 1, row)
+		assert.Equal(t, 0, col)
+	})
+
 	t.Run("focus_blur", func(t *testing.T) {
 		fp.focus()
 		assert.Equal(t, 1, nav.activeCol)

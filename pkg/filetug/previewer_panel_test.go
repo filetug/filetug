@@ -89,6 +89,32 @@ func TestPreviewer(t *testing.T) {
 		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
 	})
 
+	t.Run("PreviewFile_DSStore_Reuse_Previewer", func(t *testing.T) {
+		nav := newNavigatorForPreviewerTest(t)
+		tmpFile, _ := os.CreateTemp("", ".DS_Store")
+		defer func() {
+			_ = os.Remove(tmpFile.Name())
+		}()
+		// Minimal DSStore header: 4 bytes Magic, 4 bytes "Bud1"
+		header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
+		_ = os.WriteFile(tmpFile.Name(), header, 0644)
+		
+		// First call creates DsstorePreviewer
+		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
+		firstPreviewer := nav.previewer.previewer
+		
+		// Verify it's a DsstorePreviewer
+		_, ok := firstPreviewer.(*viewers.DsstorePreviewer)
+		assert.True(t, ok, "First preview should create a DsstorePreviewer")
+		
+		// Second call should reuse the same previewer (covering lines 197-198)
+		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
+		secondPreviewer := nav.previewer.previewer
+		
+		// Verify same instance is reused (same pointer address)
+		assert.True(t, firstPreviewer == secondPreviewer, "Second preview should reuse the same DsstorePreviewer instance")
+	})
+
 	t.Run("FocusBlur", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
 		nav.previewerFocusFunc()
@@ -156,6 +182,41 @@ func TestPreviewer(t *testing.T) {
 
 		previewFile(nav.previewer, filepath.Base(secondFile.Name()), secondFile.Name())
 		waitForText(t, nav.previewer, previewText, "second")
+	})
+
+	t.Run("PreviewFile_Text_SameType_Updates", func(t *testing.T) {
+		nav := newNavigatorForPreviewerTest(t)
+		nav.previewer.setPreviewer(nil)
+		firstFile, _ := os.CreateTemp("", "first*.txt")
+		defer func() {
+			_ = os.Remove(firstFile.Name())
+		}()
+		secondFile, _ := os.CreateTemp("", "second*.txt")
+		defer func() {
+			_ = os.Remove(secondFile.Name())
+		}()
+		err := os.WriteFile(firstFile.Name(), []byte("first text"), 0644)
+		assert.NoError(t, err)
+		err = os.WriteFile(secondFile.Name(), []byte("second text"), 0644)
+		assert.NoError(t, err)
+
+		previewFile(nav.previewer, filepath.Base(firstFile.Name()), firstFile.Name())
+		waitForText(t, nav.previewer, previewText, "first")
+
+		previewFile(nav.previewer, filepath.Base(secondFile.Name()), secondFile.Name())
+		waitForText(t, nav.previewer, previewText, "second")
+	})
+
+	t.Run("PreviewFile_JSONB", func(t *testing.T) {
+		nav := newNavigatorForPreviewerTest(t)
+		tmpFile, _ := os.CreateTemp("", "test*.jsonb")
+		defer func() {
+			_ = os.Remove(tmpFile.Name())
+		}()
+		err := os.WriteFile(tmpFile.Name(), []byte(`{"test": "jsonb"}`), 0644)
+		assert.NoError(t, err)
+		previewFile(nav.previewer, filepath.Base(tmpFile.Name()), tmpFile.Name())
+		waitForText(t, nav.previewer, previewText, "jsonb")
 	})
 
 	t.Run("InputCapture", func(t *testing.T) {
