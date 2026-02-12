@@ -13,6 +13,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/colors"
 )
 
 var (
@@ -72,7 +73,7 @@ func NewGitDirStatusPreviewer() *GitDirStatusPreviewer {
 
 	selectedStyle := tcell.StyleDefault
 	selectedStyle = selectedStyle.Foreground(tcell.ColorBlack)
-	selectedStyle = selectedStyle.Background(tcell.ColorWhiteSmoke)
+	selectedStyle = selectedStyle.Background(colors.TableHeaderColor)
 	p.table.SetSelectedStyle(selectedStyle)
 	p.table.SetInputCapture(p.handleInput)
 

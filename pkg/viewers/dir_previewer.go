@@ -18,6 +18,7 @@ import (
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/colors"
 )
 
 type DirSummaryOption func(*DirPreviewer)
@@ -91,13 +92,13 @@ func NewDirPreviewer(app DirPreviewerApp, options ...DirSummaryOption) *DirPrevi
 		flex,
 		sneatv.WithLeftBorder(0, -1),
 	)
-	d.colorByExt = func(_ string) tcell.Color { return tcell.ColorWhiteSmoke }
+	d.colorByExt = func(_ string) tcell.Color { return colors.TableHeaderColor }
 	d.GitPreviewer = NewGitDirStatusPreviewer()
 	d.setTabs(false)
 
 	selectedStyle := tcell.StyleDefault
 	selectedStyle = selectedStyle.Foreground(tcell.ColorBlack)
-	selectedStyle = selectedStyle.Background(tcell.ColorWhiteSmoke)
+	selectedStyle = selectedStyle.Background(colors.TableHeaderColor)
 	d.ExtTable.SetSelectedStyle(selectedStyle)
 
 	d.ExtTable.SetInputCapture(d.inputCapture)
@@ -522,13 +523,13 @@ func GetSizeCell(size int64, defaultColor tcell.Color) *tview.TableCell {
 	} else if size >= 1024*1024 { // MB
 		sizeCell.SetTextColor(tcell.ColorLightGreen)
 	} else if size >= 1024 { // KB
-		sizeCell.SetTextColor(tcell.ColorWhiteSmoke)
+		sizeCell.SetTextColor(colors.TableHeaderColor)
 	} else if size > 0 {
 		sizeCell.SetText(sizeText + " ")
 		sizeCell.SetTextColor(defaultColor)
 	} else {
 		sizeCell.SetText(sizeText + " ")
-		sizeCell.SetTextColor(tcell.ColorLightBlue)
+		sizeCell.SetTextColor(colors.TableColumnTitle)
 	}
 	return sizeCell
 }
