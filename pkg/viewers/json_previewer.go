@@ -27,6 +27,8 @@ func (p JsonPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte, 
 		var err error
 		data, err = p.readFile(entry, 0)
 		if err != nil {
+			// Pass error to TextPreviewer to display error message
+			p.TextPreviewer.PreviewSingle(entry, nil, err)
 			return
 		}
 	}

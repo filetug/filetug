@@ -93,6 +93,7 @@ func (p *TextPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []byte,
 			colorized, err := chroma2tcell.Colorize(string(data), "dracula", lexer)
 			p.queueUpdateDraw(func() {
 				if !p.isCurrentPreview(previewID) {
+					// DEBUG: Preview ID mismatch - this preview was superseded
 					return
 				}
 				if err != nil {
