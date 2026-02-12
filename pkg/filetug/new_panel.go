@@ -8,13 +8,14 @@ import (
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/components/button"
 )
 
 type NewPanel struct {
 	flex          *tview.Flex
 	input         *tview.InputField
-	createDirBtn  *sneatv.ButtonWithShortcut
-	createFileBtn *sneatv.ButtonWithShortcut
+	createDirBtn  *button.WithShortcut
+	createFileBtn *button.WithShortcut
 	nav           *Navigator
 	*sneatv.Boxed
 }
@@ -30,12 +31,12 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 		SetFieldBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
 		SetFieldTextColor(tview.Styles.PrimaryTextColor)
 
-	createDirBtn := sneatv.NewButtonWithShortcut("Create directory", 'd')
+	createDirBtn := button.NewWithShortcut("Create directory", 'd')
 	createDirBtn.SetSelectedFunc(func() {
 		p.createDir()
 	})
 
-	createFileBtn := sneatv.NewButtonWithShortcut("Create file", 'f')
+	createFileBtn := button.NewWithShortcut("Create file", 'f')
 	createFileBtn.SetSelectedFunc(func() {
 		p.createFile()
 	})

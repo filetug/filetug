@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/filetug/filetug/pkg/filetug/ftui"
-	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 type bottom struct {
@@ -63,7 +63,7 @@ func (b *bottom) renderMenuItems(menuItems []ftui.MenuItem) string {
 	for _, mi := range menuItems {
 		title := mi.Title
 		for _, key := range mi.HotKeys {
-			hotkeyText := fmt.Sprintf("[%s]%s[-]", sneatv.CurrentTheme.HotkeyColor, key)
+			hotkeyText := fmt.Sprintf("[%s]%s[-]", themes.CurrentTheme.HotkeyColor, key)
 			title = strings.Replace(title, key, hotkeyText, 1)
 		}
 		area := mi.HotKeys[0]

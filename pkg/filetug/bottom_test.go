@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/filetug/filetug/pkg/filetug/ftui"
-	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/stretchr/testify/assert"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 func Test_bottom_getCtrlMenuItems(t *testing.T) {
@@ -148,8 +148,8 @@ func TestBottom_RenderMenuItems_ReplacesHotkeysAndRegions(t *testing.T) {
 	assert.Contains(t, text, `["root"]`)
 	assert.Contains(t, text, `["home"]`)
 
-	hotkeyF6 := fmt.Sprintf("[%s]%s[-]", sneatv.CurrentTheme.HotkeyColor, "F6")
-	hotkeyR := fmt.Sprintf("[%s]%s[-]", sneatv.CurrentTheme.HotkeyColor, "R")
+	hotkeyF6 := fmt.Sprintf("[%s]%s[-]", themes.CurrentTheme.HotkeyColor, "F6")
+	hotkeyR := fmt.Sprintf("[%s]%s[-]", themes.CurrentTheme.HotkeyColor, "R")
 	assert.Contains(t, text, hotkeyF6)
 	assert.Contains(t, text, hotkeyR)
 }

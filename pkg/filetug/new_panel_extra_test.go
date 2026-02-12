@@ -98,7 +98,7 @@ func TestNewPanel_Coverage(t *testing.T) {
 	t.Run("createFile", func(t *testing.T) {
 		_, app, p, tmpDir := newNewPanel(t)
 		app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
-		app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
+		app.EXPECT().SetFocus(gomock.Any()).AnyTimes() // Keep AnyTimes to allow flexible behavior
 		p.input.SetText("newfile.txt")
 		// nav.showDir might cause issues if not mocked, but here we just want to ensure it creates the file
 		p.createFile()
@@ -106,14 +106,20 @@ func TestNewPanel_Coverage(t *testing.T) {
 		// Let's use a full path to be absolutely sure where it should be.
 		expectedFile := filepath.Join(tmpDir, "newfile.txt")
 		deadline := time.Now().Add(200 * time.Millisecond)
+		fileCreated := false
 		for time.Now().Before(deadline) {
 			if _, err := os.Stat(expectedFile); err == nil {
-				return
+				fileCreated = true
+				// File was created, verify the success path was executed if possible
+				// Note: SetCurrentFile might not be set if showDir fails, so we just check file creation
+				break
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
-		if _, err := os.Stat(expectedFile); err != nil {
-			t.Logf("file not created in time: %v", err)
+		if !fileCreated {
+			if _, err := os.Stat(expectedFile); err != nil {
+				t.Logf("file not created in time: %v", err)
+			}
 		}
 	})
 

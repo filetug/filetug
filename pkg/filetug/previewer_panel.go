@@ -12,6 +12,7 @@ import (
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 type previewerPanel struct {
@@ -73,17 +74,17 @@ func newPreviewerPanel(nav *Navigator) *previewerPanel {
 
 	p.rows.SetFocusFunc(func() {
 		nav.activeCol = 2
-		p.rows.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
+		p.rows.SetBorderColor(themes.CurrentTheme.FocusedBorderColor)
 	})
 	nav.previewerFocusFunc = func() {
 		nav.activeCol = 2
-		p.rows.SetBorderColor(sneatv.CurrentTheme.FocusedBorderColor)
+		p.rows.SetBorderColor(themes.CurrentTheme.FocusedBorderColor)
 	}
 	p.rows.SetBlurFunc(func() {
-		p.rows.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
+		p.rows.SetBorderColor(themes.CurrentTheme.BlurredBorderColor)
 	})
 	nav.previewerBlurFunc = func() {
-		p.rows.SetBorderColor(sneatv.CurrentTheme.BlurredBorderColor)
+		p.rows.SetBorderColor(themes.CurrentTheme.BlurredBorderColor)
 	}
 
 	p.rows.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -107,14 +108,14 @@ func (p *previewerPanel) createAttrsTable() *tview.Table {
 	t := tview.NewTable()
 	sizeLabelCell := tview.NewTableCell("Size")
 	sizeLabelCell.SetAlign(tview.AlignRight)
-	sizeLabelCell.SetTextColor(sneatv.CurrentTheme.LabelColor)
+	sizeLabelCell.SetTextColor(themes.CurrentTheme.LabelColor)
 	sizeLabelCell.SetSelectable(false)
 	t.SetCell(0, 0, sizeLabelCell)
 	p.sizeCell = tview.NewTableCell("")
 	t.SetCell(0, 1, p.sizeCell)
 	modLabelCell := tview.NewTableCell("Modified")
 	modLabelCell.SetAlign(tview.AlignRight)
-	modLabelCell.SetTextColor(sneatv.CurrentTheme.LabelColor)
+	modLabelCell.SetTextColor(themes.CurrentTheme.LabelColor)
 	modLabelCell.SetSelectable(false)
 	t.SetCell(1, 0, modLabelCell)
 	p.modCell = tview.NewTableCell("")

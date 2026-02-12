@@ -16,6 +16,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 var _ browser = (*filesPanel)(nil)
@@ -307,11 +308,11 @@ func newFiles(nav *Navigator) *filesPanel {
 func (f *filesPanel) focus() {
 	f.nav.activeCol = 1
 	f.nav.right.SetContent(f.nav.previewer)
-	f.table.SetSelectedStyle(sneatv.CurrentTheme.FocusedSelectedTextStyle)
+	f.table.SetSelectedStyle(themes.CurrentTheme.FocusedSelectedTextStyle)
 }
 
 func (f *filesPanel) blur() {
-	f.table.SetSelectedStyle(sneatv.CurrentTheme.BlurredSelectedTextStyle)
+	f.table.SetSelectedStyle(themes.CurrentTheme.BlurredSelectedTextStyle)
 }
 
 // selectionChangedNavFunc: TODO: is it a duplicate of selectionChangedNavFunc?

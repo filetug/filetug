@@ -96,6 +96,8 @@ github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/strongo/dsstore v0.0.1 h1:OwS+BIkI1CShxlUG40P5m+j/mpHPC5TRTUI0ZCLjCCA=
 github.com/strongo/dsstore v0.0.1/go.mod h1:Lwe80D8xUM44F8gPjJtLv1Sc0R3S4vTWJPeNzJNiCdo=
+github.com/strongo/strongo-tui v0.0.0-20260212115849-b2ccb1e586b1 h1:CmGwVMBrOaaODOSFdxnnn/LcyG2p9KulII9p2x8qvKA=
+github.com/strongo/strongo-tui v0.0.0-20260212115849-b2ccb1e586b1/go.mod h1:sEtvbg0XA7t4aO+10u8WlkqMtWGn1xnoZm12QkR0xqc=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
