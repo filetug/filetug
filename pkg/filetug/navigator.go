@@ -114,7 +114,8 @@ func (nav *Navigator) SetFocusToContainer(index int) {
 }
 
 type navigatorOptions struct {
-	moveFocusUp func(source tview.Primitive)
+	moveFocusUp            func(source tview.Primitive)
+	skipAsyncFavoritesLoad bool
 }
 
 type NavigatorOption func(o *navigatorOptions)
@@ -184,7 +185,9 @@ func NewNavigator(app navigator.App, options ...NavigatorOption) *Navigator {
 
 	nav.createColumns()
 
-	nav.favorites.loadUserFavorites()
+	if !nav.o.skipAsyncFavoritesLoad {
+		nav.favorites.loadUserFavorites()
+	}
 
 	return nav
 }

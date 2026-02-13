@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/filetug/filetug/pkg/files"
-	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/filetug/filetug/pkg/sneatv/ttestutils"
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
@@ -26,16 +25,11 @@ func newNavigatorForPreviewerTest(t *testing.T) *Navigator {
 			}
 		},
 	}
-	return NewNavigator(app)
+	return NewNavigator(app, withSkipAsyncFavoritesLoad())
 }
 
 func TestPreviewer(t *testing.T) {
 	withTestGlobalLock(t)
-	oldGetFavorites := getFavorites
-	getFavorites = func() ([]ftfav.Favorite, error) {
-		return nil, fmt.Errorf("disabled in test")
-	}
-	defer func() { getFavorites = oldGetFavorites }()
 	viewers.SetTextPreviewerSyncForTest(true)
 	defer viewers.SetTextPreviewerSyncForTest(false)
 	previewFile := func(previewerPanel *previewerPanel, name, fullName string) {

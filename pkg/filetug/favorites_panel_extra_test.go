@@ -155,7 +155,8 @@ func TestFavoritesPanel_NewFavoritesPanel_GetFavoritesError(t *testing.T) {
 	}
 
 	nav, _, _ := newNavigatorForTest(t)
-	_ = newFavoritesPanel(nav)
+	panel := newFavoritesPanel(nav)
+	panel.loadUserFavorites()
 
 	select {
 	case <-done:
@@ -219,6 +220,7 @@ func TestFavoritesPanel_NewFavoritesPanel_NoQueueUpdate(t *testing.T) {
 
 	nav, _, _ := newNavigatorForTest(t)
 	panel := newFavoritesPanel(nav)
+	panel.loadUserFavorites()
 
 	deadline := time.After(200 * time.Millisecond)
 	for len(panel.items) < len(userFavs) {
@@ -253,6 +255,7 @@ func TestFavoritesPanel_NewFavoritesPanel_InputCaptures(t *testing.T) {
 	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
 	app.EXPECT().SetFocus(gomock.Any()).AnyTimes()
 	panel := newFavoritesPanel(nav)
+	panel.loadUserFavorites()
 	// We need to wait for background goroutine to at least start and set list
 	for i := 0; i < 100; i++ {
 		if panel.list != nil {
