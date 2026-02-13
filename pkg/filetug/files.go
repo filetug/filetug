@@ -1,26 +1,15 @@
 package filetug
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"path"
-	"strings"
-	"time"
-
-	"github.com/filetug/filetug/pkg/files"
-	"github.com/filetug/filetug/pkg/filetug/ftstate"
 	"github.com/filetug/filetug/pkg/filetug/ftui"
-	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv"
-	"github.com/gdamore/tcell/v2"
-	"github.com/go-git/go-git/v5"
 	"github.com/rivo/tview"
-	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 var _ browser = (*filesPanel)(nil)
 
+// filesPanel is the main panel that displays the list of files and directories.
+// It integrates with git status display, filtering, and preview functionality.
 type filesPanel struct {
 	*sneatv.Boxed
 	table *tview.Table
@@ -32,218 +21,7 @@ type filesPanel struct {
 	loadingProgress int
 }
 
-func (f *filesPanel) GetCurrentEntry() files.EntryWithDirPath {
-	row, _ := f.table.GetSelection()
-	i := row - 1
-	if i < 0 || i >= len(f.rows.VisibleEntries) {
-		return nil
-	}
-	entry := f.rows.VisibleEntries[i]
-	if entry.DirPath() == "" {
-		if f.rows.Dir == nil {
-			_, _ = fmt.Fprintf(os.Stderr, "files panel missing dir path for entry %q\n", entry.Name())
-			return nil
-		}
-		entry = files.NewEntryWithDirPath(entry, f.rows.Dir.Path())
-	}
-
-	return entry
-}
-
-//func (f *filesPanel) Clear() {
-//	f.extTable.Clear()
-//}
-
-//func (f *filesPanel) Draw(screen tcell.Screen) {
-//	//f.selectCurrentFile()
-//	f.Boxed.Draw(screen)
-//}
-
-func (f *filesPanel) onStoreChange() {
-	f.loadingProgress = 0
-	f.table.SetContent(nil)
-	f.table.Clear()
-	loadingCell := tview.NewTableCell("Loading...")
-	loadingCell = loadingCell.SetTextColor(tcell.ColorLightGray)
-	progressCell := tview.NewTableCell("")
-	progressCell = progressCell.SetTextColor(tcell.ColorDarkGrey)
-	f.table.SetCell(0, 0, loadingCell)
-	f.table.SetCell(1, 0, progressCell)
-	f.table.SetSelectable(false, false)
-	// We only start animation if we have a real app running.
-	// In tests, NewNavigator(app) uses a sync QueueUpdateDraw which we check in doLoadingAnimation.
-	go func() {
-		f.doLoadingAnimation(progressCell)
-	}()
-}
-
-func (f *filesPanel) doLoadingAnimation(loading *tview.TableCell) {
-	// Simple heuristic: if we are in a test (no real app), don't loop
-	// Using a shorter sleep to avoid hanging tests that expect synchronous updates
-	for f.table.GetCell(1, 0) == loading {
-		q, r := f.loadingProgress/len(spinner), f.loadingProgress%len(spinner)
-		progressBar := strings.Repeat("█", q) + string(spinner[r])
-		if f.nav != nil && f.nav.app != nil {
-			f.nav.app.QueueUpdateDraw(func() {
-				loading.SetText(progressBar)
-			})
-		}
-		f.loadingProgress += 1
-		time.Sleep(10 * time.Millisecond)
-	}
-}
-
-func (f *filesPanel) SetRows(rows *FileRows, showDirs bool) {
-	f.table.Select(0, 0)
-	f.filter.ShowDirs = showDirs
-	rows.SetFilter(f.filter)
-	f.rows = rows
-	f.table.SetContent(rows)
-	if f.currentFileName != "" {
-		f.selectCurrentFile()
-	}
-	go func() {
-		time.Sleep(time.Millisecond)
-		if f.nav != nil && f.nav.app != nil {
-			f.nav.app.QueueUpdateDraw(func() {
-				f.table.ScrollToBeginning()
-			})
-		}
-	}()
-
-}
-
-func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.DirContext) {
-	if f.nav == nil || f.rows == nil || dirContext == nil {
-		return
-	}
-	if f.nav.store == nil || f.nav.store.RootURL().Scheme != "file" {
-		return
-	}
-	repoRoot := gitutils.GetRepositoryRoot(dirContext.Path())
-	if repoRoot == "" {
-		return
-	}
-	repo, err := git.PlainOpen(repoRoot)
-	if err != nil {
-		return
-	}
-
-	rows := f.rows
-	table := f.table
-	queueUpdateDraw := f.nav.app.QueueUpdateDraw
-	for _, entry := range rows.AllEntries {
-		entry := entry
-		fullPath := entry.FullName()
-		isDir := entry.IsDir()
-		if !isDir {
-			isDir = rows.isSymlinkToDir(entry)
-		}
-
-		go func() {
-			status := f.nav.getGitStatus(ctx, repo, fullPath, isDir)
-			if status == nil {
-				return
-			}
-			statusText := f.nav.gitStatusText(status, fullPath, isDir)
-			if statusText == "" {
-				return
-			}
-			updated := rows.SetGitStatusText(fullPath, statusText)
-			if !updated {
-				return
-			}
-			queueUpdateDraw(func() {
-				if f.rows != rows {
-					return
-				}
-				table.SetContent(rows)
-			})
-		}()
-	}
-}
-
-func (f *filesPanel) SetFilter(filter ftui.Filter) {
-	f.rows.SetFilter(filter)
-}
-
-func (f *filesPanel) selectCurrentFile() {
-	if f.currentFileName == "" || f.rows == nil {
-		return
-	}
-	for i, entry := range f.rows.AllEntries {
-		if entry.Name() == f.currentFileName {
-			row, _ := f.table.GetSelection()
-			if row != i+1 {
-				f.table.Select(i+1, 0)
-			}
-			return
-		}
-	}
-}
-
-func (f *filesPanel) SetCurrentFile(name string) {
-	f.currentFileName = name
-	f.selectCurrentFile()
-}
-
-func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
-	table := f.table
-	if string(event.Rune()) == " " {
-		row, _ := table.GetSelection()
-		cell := table.GetCell(row, 0)
-
-		if strings.HasPrefix(cell.Text, " ") {
-			trimmed := strings.TrimPrefix(cell.Text, " ")
-			cell.SetText("✓" + trimmed)
-		} else {
-			trimmed := strings.TrimPrefix(cell.Text, "✓")
-			cell.SetText(" " + trimmed)
-		}
-		return nil
-	}
-	switch event.Key() {
-	case tcell.KeyLeft:
-		f.nav.app.SetFocus(f.nav.dirsTree)
-		return nil
-	case tcell.KeyRight:
-		f.nav.app.SetFocus(f.nav.right)
-		return nil
-	case tcell.KeyUp:
-		row, _ := table.GetSelection()
-		if row == 0 {
-			if f.nav.o.moveFocusUp != nil {
-				f.nav.o.moveFocusUp(table)
-				return nil
-			}
-		}
-		return event
-	case tcell.KeyRune:
-		return f.nav.globalNavInputCapture(event)
-	case tcell.KeyEnter:
-		row, _ := table.GetSelection()
-		nameCell := table.GetCell(row, 0)
-		refValue := nameCell.GetReference()
-		entry, ok := refValue.(files.EntryWithDirPath)
-		if !ok || entry == nil {
-			return event
-		}
-		isDir := entry.IsDir()
-		if !isDir && f.rows != nil {
-			isDir = f.rows.isSymlinkToDir(entry)
-		}
-		if !isDir { // TODO: Open file for view?
-			return event
-		}
-		fullPath := entry.FullName()
-		dirContext := files.NewDirContext(f.nav.store, fullPath, nil)
-		f.nav.goDir(dirContext)
-		return nil
-	default:
-		return event
-	}
-}
-
+// filterTabs holds the tab definitions for filtering files, directories, and hidden files.
 type filterTabs struct {
 	nav       *Navigator
 	filesTab  *sneatv.PanelTab
@@ -251,6 +29,7 @@ type filterTabs struct {
 	hiddenTab *sneatv.PanelTab
 }
 
+// newFilterTabs creates a new set of filter tabs with default settings.
 func newFilterTabs(nav *Navigator) filterTabs {
 	return filterTabs{
 		nav:       nav,
@@ -260,23 +39,9 @@ func newFilterTabs(nav *Navigator) filterTabs {
 	}
 }
 
+// newFiles creates a new files panel with the given navigator.
 func newFiles(nav *Navigator) *filesPanel {
 	table := tview.NewTable()
-	//extTable := sticky.NewTable([]sticky.Column{
-	//	{
-	//		Name:      "Name",
-	//		Expansion: 1,
-	//		MinWidth:  20,
-	//	},
-	//	{
-	//		Name:       "Size",
-	//		FixedWidth: 6,
-	//	},
-	//	{
-	//		Name:       "Modified",
-	//		FixedWidth: 10,
-	//	},
-	//})
 	flex := tview.NewFlex()
 	flex.AddItem(table, 0, 1, true)
 
@@ -294,7 +59,6 @@ func newFiles(nav *Navigator) *filesPanel {
 		filterTabs: tabs,
 	}
 	table.SetSelectable(true, false)
-	//table.SetFixed(1, 0)
 	table.SetInputCapture(f.inputCapture)
 	table.SetFocusFunc(f.focus)
 	table.SetBlurFunc(f.blur)
@@ -303,135 +67,4 @@ func newFiles(nav *Navigator) *filesPanel {
 	nav.filesSelectionChangedFunc = f.selectionChangedNavFunc
 	f.blur()
 	return f
-}
-
-func (f *filesPanel) focus() {
-	f.nav.activeCol = 1
-	f.nav.right.SetContent(f.nav.previewer)
-	f.table.SetSelectedStyle(themes.CurrentTheme.FocusedSelectedTextStyle)
-}
-
-func (f *filesPanel) blur() {
-	f.table.SetSelectedStyle(themes.CurrentTheme.BlurredSelectedTextStyle)
-}
-
-// selectionChangedNavFunc: TODO: is it a duplicate of selectionChangedNavFunc?
-func (f *filesPanel) selectionChangedNavFunc(row, _ int) {
-	entry := f.entryFromRow(row)
-	if entry == nil {
-		return
-	}
-	f.updatePreviewForEntry(entry)
-}
-
-// selectionChanged: TODO: is it a duplicate of selectionChangedNavFunc?
-func (f *filesPanel) selectionChanged(row, _ int) {
-	entry := f.entryFromRow(row)
-	if entry == nil {
-		if f.nav != nil && f.nav.previewer != nil {
-			f.nav.previewer.SetText("cell has no reference")
-		}
-		return
-	}
-	f.updatePreviewForEntry(entry)
-}
-
-func (f *filesPanel) rememberCurrent(fullName string) {
-	_, f.currentFileName = path.Split(fullName)
-	ftstate.SaveCurrentFileName(f.currentFileName)
-}
-
-func (f *filesPanel) entryFromRow(row int) files.EntryWithDirPath {
-	if f.table == nil || f.rows == nil {
-		return nil
-	}
-	if row == 0 {
-		cell := f.table.GetCell(row, 0)
-		if cell != nil {
-			ref := cell.GetReference()
-			if ref != nil {
-				if entry, ok := ref.(files.EntryWithDirPath); ok {
-					return entry
-				}
-			}
-		}
-		// Fallback to generating reference if not set
-		return f.rows.getTopRowEntry()
-	}
-	i := row - 1
-	if i < 0 || i >= len(f.rows.VisibleEntries) {
-		return nil
-	}
-	entry := f.rows.VisibleEntries[i]
-	if entry.DirPath() == "" {
-		if f.rows.Dir != nil {
-			entry = files.NewEntryWithDirPath(entry, f.rows.Dir.Path())
-		}
-	}
-	return entry
-}
-
-func (f *filesPanel) updatePreviewForEntry(entry files.EntryWithDirPath) {
-	nav := f.nav
-	if nav == nil {
-		return
-	}
-	isDir := entry.IsDir()
-	if !isDir && f.rows != nil {
-		isDir = f.rows.isSymlinkToDir(entry)
-	}
-	if isDir {
-		f.showDirSummary(entry)
-		return
-	}
-
-	if nav.right != nil && nav.previewer != nil {
-		nav.right.SetContent(nav.previewer)
-	}
-	fullName := entry.FullName()
-	f.rememberCurrent(fullName)
-	if nav.previewer == nil {
-		return
-	}
-	nav.previewer.PreviewEntry(entry)
-}
-
-func (f *filesPanel) showDirSummary(entry files.EntryWithDirPath) {
-	nav := f.nav
-	if nav == nil {
-		return
-	}
-	if nav.right != nil && nav.previewer != nil {
-		nav.right.SetContent(nav.previewer)
-		nav.previewer.PreviewEntry(entry)
-	}
-
-	dirPath := entry.DirPath()
-	if entry.IsDir() {
-		dirPath = entry.FullName()
-	} else if f.rows != nil && f.rows.isSymlinkToDir(entry) {
-		dirPath = entry.FullName()
-	}
-
-	if nav.store == nil {
-		dirContext := files.NewDirContext(nil, dirPath, nil)
-		if nav.previewer != nil && nav.previewer.dirPreviewer != nil {
-			nav.previewer.dirPreviewer.SetDirEntries(dirContext)
-		}
-		return
-	}
-	ctx := context.Background()
-	entries, err := nav.store.ReadDir(ctx, dirPath)
-	if err != nil {
-		dirContext := files.NewDirContext(nav.store, dirPath, nil)
-		if nav.previewer != nil && nav.previewer.dirPreviewer != nil {
-			nav.previewer.dirPreviewer.SetDirEntries(dirContext)
-		}
-		return
-	}
-	sortedEntries := sortDirChildren(entries)
-	dirContext := files.NewDirContext(nav.store, dirPath, sortedEntries)
-	if nav.previewer != nil && nav.previewer.dirPreviewer != nil {
-		nav.previewer.dirPreviewer.SetDirEntries(dirContext)
-	}
 }

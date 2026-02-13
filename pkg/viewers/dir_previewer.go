@@ -1,11 +1,9 @@
 package viewers
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path"
-	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -13,39 +11,12 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/filetug/filetug/pkg/filetug/navigator"
-	"github.com/filetug/filetug/pkg/fsutils"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/strongo/strongo-tui/pkg/colors"
 )
-
-type DirSummaryOption func(*DirPreviewer)
-
-func WithDirSummaryFilterSetter(setter func(ftui.Filter)) DirSummaryOption {
-	return func(d *DirPreviewer) {
-		d.setFilter = setter
-	}
-}
-
-func WithDirSummaryFocusLeft(setter func()) DirSummaryOption {
-	return func(d *DirPreviewer) {
-		d.focusLeft = setter
-	}
-}
-
-func WithDirSummaryQueueUpdateDraw(setter navigator.UpdateDrawQueuer) DirSummaryOption {
-	return func(d *DirPreviewer) {
-		d.queueUpdateDraw = setter
-	}
-}
-
-func WithDirSummaryColorByExt(setter func(string) tcell.Color) DirSummaryOption {
-	return func(d *DirPreviewer) {
-		d.colorByExt = setter
-	}
-}
 
 var _ Previewer = (*DirPreviewer)(nil)
 
@@ -135,33 +106,6 @@ func (d *DirPreviewer) Meta() tview.Primitive {
 
 func (d *DirPreviewer) Focus(delegate func(p tview.Primitive)) {
 	d.ExtTable.Focus(delegate)
-}
-
-// UpdateTable exported for tests - try to move/refactor tests and remove
-func (d *DirPreviewer) UpdateTable() {
-	d.updateTable()
-}
-
-func (d *DirPreviewer) InputCapture(event *tcell.EventKey) *tcell.EventKey {
-	return d.inputCapture(event)
-}
-
-type ExtensionsGroup struct {
-	ID    string
-	Title string
-	*GroupStats
-	ExtStats []*ExtStat
-}
-
-type GroupStats struct {
-	Count     int
-	TotalSize int64
-}
-
-type ExtStat struct {
-	ID string
-	GroupStats
-	entries []os.DirEntry
 }
 
 func (d *DirPreviewer) SetDirEntries(dirContext *files.DirContext) {
@@ -349,259 +293,4 @@ func (d *DirPreviewer) queueUpdate(f func()) {
 		return
 	}
 	f()
-}
-
-func (d *DirPreviewer) inputCapture(event *tcell.EventKey) *tcell.EventKey {
-	switch event.Key() {
-	case tcell.KeyLeft:
-		if d.focusLeft != nil {
-			d.focusLeft()
-			return nil
-		}
-		return event
-	case tcell.KeyDown:
-		row, col := d.ExtTable.GetSelection()
-		if row >= d.ExtTable.GetRowCount()-1 {
-			return event
-		}
-		nextCell := d.ExtTable.GetCell(row+1, 1)
-		switch ref := nextCell.Reference.(type) {
-		case *ExtensionsGroup:
-			if len(ref.ExtStats) == 1 {
-				d.ExtTable.Select(row+2, col)
-				return nil
-			}
-			return event
-		}
-		return event
-	case tcell.KeyUp:
-		row, col := d.ExtTable.GetSelection()
-		if row <= 0 {
-			return event
-		}
-		nextCell := d.ExtTable.GetCell(row-1, 1)
-		switch ref := nextCell.Reference.(type) {
-		case *ExtensionsGroup:
-			if len(ref.ExtStats) == 1 {
-				if row == 1 {
-					return nil
-				}
-				d.ExtTable.Select(row-2, col)
-				return nil
-			}
-			return event
-		}
-		return event
-	default:
-		return event
-	}
-}
-
-func (d *DirPreviewer) selectionChanged(row int, _ int) {
-	for i := 0; i < d.ExtTable.GetRowCount(); i++ {
-		cell := d.ExtTable.GetCell(i, 0)
-		cell.SetText(" ")
-	}
-	i := row - 1
-	if row < 0 {
-		return
-	}
-
-	cell1 := d.ExtTable.GetCell(row, 1)
-	var filter ftui.Filter
-	if cell1.Reference != nil {
-		switch ref := cell1.Reference.(type) {
-		case string:
-			filter.Extensions = []string{ref}
-			cell0 := d.ExtTable.GetCell(i+1, 0)
-			color := d.colorByExt(ref)
-			cell0.SetText("⇐").SetTextColor(color)
-		case *ExtensionsGroup:
-			for _, ext := range ref.ExtStats {
-				filter.Extensions = append(filter.Extensions, ext.ID)
-			}
-		}
-	}
-	if d.setFilter == nil {
-		return
-	}
-	d.setFilter(filter)
-}
-
-func (d *DirPreviewer) updateTable() {
-	d.tableMu.Lock()
-	defer d.tableMu.Unlock()
-	d.ExtTable.Clear()
-	const cellTextColor = tcell.ColorLightGray
-
-	var row int
-
-	for _, g := range d.ExtGroups {
-		const bgColor = 0x1a1a1a
-		col := 1
-		nameCell := tview.NewTableCell(" ▼ " + g.Title)
-		nameCell.SetExpansion(1)
-		nameCell.SetReference(g)
-		nameCell.SetBackgroundColor(bgColor)
-		d.ExtTable.SetCell(row, col, nameCell)
-		col++
-
-		var countText string
-		if len(g.ExtStats) > 1 {
-			if g.Count == 1 {
-				countText = "[ghostwhite]1[-] file "
-			} else {
-				countText = fmt.Sprintf("[ghostwhite]%d[-] filesPanel", g.Count)
-			}
-		}
-		countCell := tview.NewTableCell(countText)
-		countCell.SetAlign(tview.AlignRight)
-		countCell.SetTextColor(cellTextColor)
-		countCell.SetBackgroundColor(bgColor)
-		d.ExtTable.SetCell(row, col, countCell)
-		col++
-
-		var sizeCell *tview.TableCell
-		if len(g.ExtStats) > 1 {
-			sizeCell = GetSizeCell(g.TotalSize, cellTextColor)
-		} else {
-			sizeCell = tview.NewTableCell("")
-		}
-		sizeCell.SetBackgroundColor(bgColor)
-		d.ExtTable.SetCell(row, col, sizeCell)
-
-		row++
-
-		for _, ext := range g.ExtStats {
-			col = 0
-			emptyCell := tview.NewTableCell(" ")
-			d.ExtTable.SetCell(row, col, emptyCell)
-			col++
-
-			nameText := "  *" + ext.ID
-			if ext.ID == "" {
-				nameText = "  <no extension>"
-			}
-			nameColor := d.colorByExt(nameText)
-			nameCell := tview.NewTableCell(nameText)
-			nameCell.SetExpansion(1)
-			nameCell.SetTextColor(nameColor)
-			nameCell.SetReference(ext.ID)
-			d.ExtTable.SetCell(row, col, nameCell)
-			col++
-
-			var countText string
-			if ext.Count == 1 {
-				countText = "[ghostwhite]1[-] file "
-			} else {
-				countText = fmt.Sprintf("[ghostwhite]%d[-] filesPanel", ext.Count)
-			}
-
-			countCell := tview.NewTableCell(countText)
-			countCell.SetAlign(tview.AlignRight)
-			countCell.SetTextColor(cellTextColor)
-			d.ExtTable.SetCell(row, col, countCell)
-			col++
-
-			sizeCell = GetSizeCell(ext.TotalSize, cellTextColor)
-			d.ExtTable.SetCell(row, col, sizeCell)
-
-			row++
-		}
-	}
-}
-
-func GetSizeCell(size int64, defaultColor tcell.Color) *tview.TableCell {
-	shortText := fsutils.GetSizeShortText(size)
-	sizeText := "  " + shortText
-	sizeCell := tview.NewTableCell(sizeText)
-	sizeCell.SetAlign(tview.AlignRight)
-	if size >= 1024*1024*1024*1024 { // TB
-		sizeCell.SetTextColor(tcell.ColorOrangeRed)
-	} else if size >= 1024*1024*1024 { // GB
-		sizeCell.SetTextColor(tcell.ColorYellow)
-	} else if size >= 1024*1024 { // MB
-		sizeCell.SetTextColor(tcell.ColorLightGreen)
-	} else if size >= 1024 { // KB
-		sizeCell.SetTextColor(colors.TableHeaderColor)
-	} else if size > 0 {
-		sizeCell.SetText(sizeText + " ")
-		sizeCell.SetTextColor(defaultColor)
-	} else {
-		sizeCell.SetText(sizeText + " ")
-		sizeCell.SetTextColor(colors.TableColumnTitle)
-	}
-	return sizeCell
-}
-
-func (d *DirPreviewer) GetSizes() error {
-	return getSizesForGroups(d.ExtGroups)
-}
-
-func getSizesForGroups(groups []*ExtensionsGroup) error {
-	for _, g := range groups {
-		g.TotalSize = 0
-		for _, ext := range g.ExtStats {
-			ext.TotalSize = 0
-			for _, entry := range ext.entries {
-				info, err := entry.Info()
-				if err != nil {
-					return err
-				}
-				if info == nil {
-					continue
-				}
-				rv := reflect.ValueOf(info)
-				if (rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Chan || rv.Kind() == reflect.Func) && rv.IsNil() {
-					continue
-				}
-				size := info.Size()
-				ext.TotalSize += size
-			}
-			g.TotalSize += ext.TotalSize
-		}
-	}
-	return nil
-}
-
-var fileExtTypes = map[string]string{
-	// Image file extStats
-	".jpg":  "Image",
-	".jpeg": "Image",
-	".png":  "Image",
-	".gif":  "Image",
-	".bmp":  "Image",
-	".riff": "Image",
-	".tiff": "Image",
-	".vp8":  "Image",
-	".vp8l": "Image",
-	".webp": "Image",
-
-	// Video file extStats
-	".mov":  "Video",
-	".mp4":  "Video",
-	".webm": "Video",
-	// Code file extStats
-	".go":   "Code",
-	".css":  "Code",
-	".js":   "Code",
-	".cpp":  "Code",
-	".java": "Code",
-	".cs":   "Code",
-	// Data file extStats
-	".json": "Data",
-	".xml":  "Data",
-	".dbf":  "Data",
-	// Text file extStats
-	".txt": "Text",
-	".md":  "Text",
-	// Log file extStats
-	".log": "Log",
-}
-
-const otherExtensionsGroupID = "Other"
-
-var fileExtPlurals = map[string]string{
-	"Data": "Data",
-	"Code": "Code",
 }
