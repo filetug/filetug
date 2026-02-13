@@ -134,11 +134,31 @@ func Test_newFileTugApp(t *testing.T) {
 	})
 
 	t.Run("with_pprof", func(t *testing.T) {
+		oldHTTPListenAndServe := httpListenAndServe
+		oldPprofAddr := *pprofAddr
+		defer func() {
+			httpListenAndServe = oldHTTPListenAndServe
+			*pprofAddr = oldPprofAddr
+		}()
+		
+		serverStarted := make(chan struct{})
+		// Mock the http server to synchronize with goroutine
+		httpListenAndServe = func(addr string, handler http.Handler) error {
+			close(serverStarted)
+			return nil
+		}
+		
 		*pprofAddr = "localhost:0" // Use port 0 for random available port
-		defer func() { *pprofAddr = "" }()
 		app := newFileTugApp()
 		if app == nil {
 			t.Error("newFileTugApp() returned nil")
+		}
+		
+		// Wait for goroutine to start to ensure it has read pprofAddr
+		select {
+		case <-serverStarted:
+		case <-time.After(time.Second):
+			t.Error("expected server to start")
 		}
 	})
 

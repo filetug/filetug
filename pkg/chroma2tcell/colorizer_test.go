@@ -11,16 +11,13 @@ import (
 )
 
 func TestColorizeYAMLForTview(t *testing.T) {
-	t.Parallel()
 	t.Run("empty", func(t *testing.T) {
-		t.Parallel()
 		s, err := ColorizeYAMLForTview("", lexers.Get)
 		assert.NoError(t, err)
 		assert.Equal(t, "", s)
 	})
 
 	t.Run("simple_yaml", func(t *testing.T) {
-		t.Parallel()
 		s, err := ColorizeYAMLForTview("key: value", lexers.Get)
 		assert.NoError(t, err)
 		assert.Contains(t, s, "[")
@@ -29,7 +26,6 @@ func TestColorizeYAMLForTview(t *testing.T) {
 	})
 
 	t.Run("lexer_not_found", func(t *testing.T) {
-		t.Parallel()
 		s, err := ColorizeYAMLForTview("key: value", func(string) chroma.Lexer { return nil })
 		assert.NoError(t, err)
 		assert.Contains(t, s, "key: value")
@@ -37,7 +33,7 @@ func TestColorizeYAMLForTview(t *testing.T) {
 }
 
 func TestColorize(t *testing.T) {
-	t.Parallel()
+	// Note: Cannot use t.Parallel() because subtests modify global getStyle and getFallbackStyle
 	t.Run("invalid_lexer", func(t *testing.T) {
 		defer func() {
 			if r := recover(); r == nil {

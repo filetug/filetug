@@ -10,12 +10,11 @@ import (
 )
 
 func TestNewStore(t *testing.T) {
-	t.Parallel()
+	// Note: Cannot use t.Parallel() here because subtests modify shared global osHostname
 	origHostname := osHostname
 	defer func() { osHostname = origHostname }()
 
 	t.Run("valid_root", func(t *testing.T) {
-		t.Parallel()
 		osHostname = func() (string, error) {
 			return "test-host", nil
 		}
@@ -26,7 +25,6 @@ func TestNewStore(t *testing.T) {
 	})
 
 	t.Run("hostname_error", func(t *testing.T) {
-		t.Parallel()
 		osHostname = func() (string, error) {
 			return "", errors.New("hostname error")
 		}
@@ -36,7 +34,6 @@ func TestNewStore(t *testing.T) {
 	})
 
 	t.Run("empty_root_defaults", func(t *testing.T) {
-		t.Parallel()
 		s := NewStore("")
 		assert.NotNil(t, s)
 		assert.Equal(t, "/", s.root)
@@ -60,7 +57,7 @@ func TestStore_RootTitle(t *testing.T) {
 }
 
 func TestStore_ReadDir(t *testing.T) {
-	t.Parallel()
+	// Note: Cannot use t.Parallel() because subtests modify global osReadDir
 	origReadDir := osReadDir
 	defer func() { osReadDir = origReadDir }()
 

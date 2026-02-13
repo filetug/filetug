@@ -10,7 +10,7 @@ import (
 )
 
 func TestStore_GetDirReader(t *testing.T) {
-	t.Parallel()
+	// Note: Cannot use t.Parallel() because subtest modifies global osOpen
 	tempDir := t.TempDir()
 	s := NewStore(tempDir)
 	ctx := context.Background()
