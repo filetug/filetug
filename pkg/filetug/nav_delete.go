@@ -23,7 +23,7 @@ func (nav *Navigator) delete() {
 
 const deleteOperation OperationType = "deleteEntries"
 
-func deleteEntries(ctx context.Context, store files.Store, entries []string, reportProgress ProgressReporter) error {
+func deleteEntries(ctx context.Context, store files.Store, entries []string, _ ProgressReporter) error {
 	for _, entry := range entries {
 		if err := store.Delete(ctx, entry); err != nil {
 			return err

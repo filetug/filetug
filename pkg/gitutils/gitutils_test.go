@@ -378,14 +378,7 @@ func TestGetRepositoryStatus(t *testing.T) {
 
 func TestGetDirStatus_BareRepo(t *testing.T) {
 	t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-bare-repo-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
+	tempDir := t.TempDir()
 	repo, err := git.PlainInit(tempDir, true)
 	if err != nil {
 		t.Fatalf("Failed to init bare repo: %v", err)

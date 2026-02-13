@@ -8,7 +8,10 @@ import (
 	"os"
 )
 
+// noinspection GoUnusedGlobalVariable // used by other packages
 var ErrNotImplemented = errors.New("not implemented")
+
+// noinspection GoUnusedGlobalVariable // used by other packages
 var ErrNotSupported = errors.New("not supported")
 
 type Store interface {

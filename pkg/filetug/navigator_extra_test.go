@@ -11,9 +11,11 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/filetug/filetug/pkg/filetug/ftstate"
+	"github.com/filetug/filetug/pkg/tviewmocks"
 	"github.com/filetug/filetug/pkg/viewers"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"go.uber.org/mock/gomock"
 )
 
 func getDirSummarySafe(nav *Navigator) *viewers.DirPreviewer {
@@ -21,6 +23,16 @@ func getDirSummarySafe(nav *Navigator) *viewers.DirPreviewer {
 		return nil
 	}
 	return nav.previewer.dirPreviewer
+}
+
+func setupNavigatorWithMockStore(t *testing.T) (*Navigator, *tviewmocks.MockApp) {
+	t.Helper()
+	nav, app, _ := newNavigatorForTest(t)
+	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
+	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
+	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+	nav.store = store
+	return nav, app
 }
 
 func TestNavigator_SetStore(t *testing.T) {

@@ -137,12 +137,8 @@ func TestStore_ReadDir_Errors(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to list directory")
 	})
 
-	t.Run("context_cancelled_dial", func(t *testing.T) {
-		factory := func(addr string, options ...ftp.DialOption) (FtpClient, error) {
-			time.Sleep(100 * time.Millisecond)
-			return &mockFtpClient{}, nil
-		}
-		s := NewStore(*root, WithFtpClientFactory(factory))
+	assertReadDirCancelledDuringDelay := func(t *testing.T, s *Store) {
+		t.Helper()
 		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
 			time.Sleep(50 * time.Millisecond)
@@ -151,6 +147,15 @@ func TestStore_ReadDir_Errors(t *testing.T) {
 		_, err := s.ReadDir(ctx, ".")
 		assert.Error(t, err)
 		assert.Equal(t, context.Canceled, err)
+	}
+
+	t.Run("context_cancelled_dial", func(t *testing.T) {
+		factory := func(addr string, options ...ftp.DialOption) (FtpClient, error) {
+			time.Sleep(100 * time.Millisecond)
+			return &mockFtpClient{}, nil
+		}
+		s := NewStore(*root, WithFtpClientFactory(factory))
+		assertReadDirCancelledDuringDelay(t, s)
 	})
 
 	t.Run("context_cancelled_login", func(t *testing.T) {
@@ -164,14 +169,7 @@ func TestStore_ReadDir_Errors(t *testing.T) {
 			return mockClient, nil
 		}
 		s := NewStore(*root, WithFtpClientFactory(factory))
-		ctx, cancel := context.WithCancel(context.Background())
-		go func() {
-			time.Sleep(50 * time.Millisecond)
-			cancel()
-		}()
-		_, err := s.ReadDir(ctx, ".")
-		assert.Error(t, err)
-		assert.Equal(t, context.Canceled, err)
+		assertReadDirCancelledDuringDelay(t, s)
 	})
 
 	t.Run("context_cancelled_list", func(t *testing.T) {
@@ -185,14 +183,7 @@ func TestStore_ReadDir_Errors(t *testing.T) {
 			return mockClient, nil
 		}
 		s := NewStore(*root, WithFtpClientFactory(factory))
-		ctx, cancel := context.WithCancel(context.Background())
-		go func() {
-			time.Sleep(50 * time.Millisecond)
-			cancel()
-		}()
-		_, err := s.ReadDir(ctx, ".")
-		assert.Error(t, err)
-		assert.Equal(t, context.Canceled, err)
+		assertReadDirCancelledDuringDelay(t, s)
 	})
 
 	t.Run("dot_and_dotdot_skipped", func(t *testing.T) {

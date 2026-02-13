@@ -34,21 +34,10 @@ func TestFileGitStatus_String(t *testing.T) {
 
 func TestGetFileStatus_UntrackedFile(t *testing.T) {
 	//t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	_, err = git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
+	tempDir, _ := initRepo(t)
 
 	filePath := filepath.Join(tempDir, "file.txt")
-	err = os.WriteFile(filePath, []byte("line1\nline2\n"), 0644)
+	err := os.WriteFile(filePath, []byte("line1\nline2\n"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}
@@ -73,42 +62,10 @@ func TestGetFileStatus_UntrackedFile(t *testing.T) {
 
 func TestGetFileStatus_UntrackedFileWithHead(t *testing.T) {
 	//t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-untracked-head-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	repo, err := git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
-
-	trackedPath := filepath.Join(tempDir, "tracked.txt")
-	err = os.WriteFile(trackedPath, []byte("tracked\n"), 0644)
-	if err != nil {
-		t.Fatalf("Failed to write tracked file: %v", err)
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		t.Fatalf("Failed to get worktree: %v", err)
-	}
-	_, err = worktree.Add("tracked.txt")
-	if err != nil {
-		t.Fatalf("Failed to add tracked file: %v", err)
-	}
-	now := time.Now()
-	signature := &object.Signature{Name: "T", Email: "e", When: now}
-	_, err = worktree.Commit("commit tracked file", &git.CommitOptions{Author: signature})
-	if err != nil {
-		t.Fatalf("Failed to commit: %v", err)
-	}
+	tempDir, repo, _ := initRepoWithCommit(t)
 
 	untrackedPath := filepath.Join(tempDir, "untracked.txt")
-	err = os.WriteFile(untrackedPath, []byte("line1\nline2\n"), 0644)
+	err := os.WriteFile(untrackedPath, []byte("line1\nline2\n"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write untracked file: %v", err)
 	}
@@ -137,14 +94,7 @@ func TestGetFileStatus_NilRepo(t *testing.T) {
 
 func TestGetFileStatus_BareRepo(t *testing.T) {
 	//t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-bare-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
+	tempDir := t.TempDir()
 	repo, err := git.PlainInit(tempDir, true)
 	if err != nil {
 		t.Fatalf("Failed to init bare repo: %v", err)
@@ -159,40 +109,7 @@ func TestGetFileStatus_BareRepo(t *testing.T) {
 
 func TestGetFileStatus_CleanFile(t *testing.T) {
 	//t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-clean-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	repo, err := git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
-
-	filePath := filepath.Join(tempDir, "file.txt")
-	content := []byte("line1\nline2\n")
-	err = os.WriteFile(filePath, content, 0644)
-	if err != nil {
-		t.Fatalf("Failed to write file: %v", err)
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		t.Fatalf("Failed to get worktree: %v", err)
-	}
-	_, err = worktree.Add("file.txt")
-	if err != nil {
-		t.Fatalf("Failed to add file: %v", err)
-	}
-	now := time.Now()
-	signature := &object.Signature{Name: "T", Email: "e", When: now}
-	_, err = worktree.Commit("commit clean file", &git.CommitOptions{Author: signature})
-	if err != nil {
-		t.Fatalf("Failed to commit: %v", err)
-	}
+	_, repo, filePath := initRepoWithCommit(t)
 
 	status := GetFileStatus(context.Background(), repo, filePath)
 	if status == nil {
@@ -211,43 +128,10 @@ func TestGetFileStatus_CleanFile(t *testing.T) {
 
 func TestGetFileStatus_ModifiedAndDeletedFile(t *testing.T) {
 	//t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-moddel-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	repo, err := git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
-
-	filePath := filepath.Join(tempDir, "file.txt")
-	content := []byte("line1\nline2\n")
-	err = os.WriteFile(filePath, content, 0644)
-	if err != nil {
-		t.Fatalf("Failed to write file: %v", err)
-	}
-
-	worktree, err := repo.Worktree()
-	if err != nil {
-		t.Fatalf("Failed to get worktree: %v", err)
-	}
-	_, err = worktree.Add("file.txt")
-	if err != nil {
-		t.Fatalf("Failed to add file: %v", err)
-	}
-	now := time.Now()
-	signature := &object.Signature{Name: "T", Email: "e", When: now}
-	_, err = worktree.Commit("commit file", &git.CommitOptions{Author: signature})
-	if err != nil {
-		t.Fatalf("Failed to commit: %v", err)
-	}
+	_, repo, filePath := initRepoWithCommit(t)
 
 	newContent := []byte("line1\nline2\nline3\n")
-	err = os.WriteFile(filePath, newContent, 0644)
+	err := os.WriteFile(filePath, newContent, 0644)
 	if err != nil {
 		t.Fatalf("Failed to modify file: %v", err)
 	}
@@ -281,21 +165,10 @@ func TestGetFileStatus_ModifiedAndDeletedFile(t *testing.T) {
 
 func TestGetFileStatus_FileNotInStatus(t *testing.T) {
 	t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-missing-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	repo, err := git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
+	tempDir, repo := initRepo(t)
 
 	untrackedPath := filepath.Join(tempDir, "untracked.txt")
-	err = os.WriteFile(untrackedPath, []byte("content\n"), 0644)
+	err := os.WriteFile(untrackedPath, []byte("content\n"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write untracked file: %v", err)
 	}
@@ -313,21 +186,10 @@ func TestGetFileStatus_FileNotInStatus(t *testing.T) {
 
 func TestGetFileStatus_RelPathError(t *testing.T) {
 	t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-relerr-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	repo, err := git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
+	tempDir, repo := initRepo(t)
 
 	untrackedPath := filepath.Join(tempDir, "untracked.txt")
-	err = os.WriteFile(untrackedPath, []byte("content\n"), 0644)
+	err := os.WriteFile(untrackedPath, []byte("content\n"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write untracked file: %v", err)
 	}
@@ -344,21 +206,10 @@ func TestGetFileStatus_RelPathError(t *testing.T) {
 
 func TestGetFileStatus_ContextCanceled(t *testing.T) {
 	t.Parallel()
-	tempDir, err := os.MkdirTemp("", "gitutils-file-status-cancel-*")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	defer func() {
-		_ = os.RemoveAll(tempDir)
-	}()
-
-	repo, err := git.PlainInit(tempDir, false)
-	if err != nil {
-		t.Fatalf("Failed to init git repo: %v", err)
-	}
+	tempDir, repo := initRepo(t)
 
 	filePath := filepath.Join(tempDir, "file.txt")
-	err = os.WriteFile(filePath, []byte("content\n"), 0644)
+	err := os.WriteFile(filePath, []byte("content\n"), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write file: %v", err)
 	}

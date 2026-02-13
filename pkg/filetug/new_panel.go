@@ -110,16 +110,23 @@ func (p *NewPanel) Focus(delegate func(p tview.Primitive)) {
 	delegate(p.input)
 }
 
-func (p *NewPanel) createDir() {
-	name := p.input.GetText()
+func (p *NewPanel) getFullPath() (name, fullPath string) {
+	name = p.input.GetText()
 	if name == "" {
-		return
+		return "", ""
 	}
 	currentDir := p.nav.currentDirPath()
 	if currentDir == "" {
+		return "", ""
+	}
+	return name, path.Join(currentDir, name)
+}
+
+func (p *NewPanel) createDir() {
+	_, fullPath := p.getFullPath()
+	if fullPath == "" {
 		return
 	}
-	fullPath := path.Join(currentDir, name)
 
 	ctx := context.Background()
 	err := p.nav.store.CreateDir(ctx, fullPath)
@@ -136,15 +143,10 @@ func (p *NewPanel) createDir() {
 }
 
 func (p *NewPanel) createFile() {
-	name := p.input.GetText()
-	if name == "" {
+	name, fullPath := p.getFullPath()
+	if fullPath == "" {
 		return
 	}
-	currentDir := p.nav.currentDirPath()
-	if currentDir == "" {
-		return
-	}
-	fullPath := path.Join(currentDir, name)
 
 	ctx := context.Background()
 	err := p.nav.store.CreateFile(ctx, fullPath)
@@ -154,7 +156,7 @@ func (p *NewPanel) createFile() {
 	}
 
 	p.nav.right.SetContent(p.nav.previewer)
-	ctx = context.Background()
+	currentDir := p.nav.currentDirPath()
 	dirContext := files.NewDirContext(p.nav.store, currentDir, nil)
 	p.nav.showDir(ctx, p.nav.dirsTree.rootNode, dirContext, false)
 	p.nav.files.SetCurrentFile(name)

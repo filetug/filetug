@@ -19,7 +19,7 @@ type mockT struct {
 	failed bool
 }
 
-func (m *mockT) Fatalf(format string, args ...any) {
+func (m *mockT) Fatalf(_ string, _ ...any) {
 	m.failed = true
 	// We need to stop execution of the current goroutine as Fatalf would do.
 	panic("mockT.Fatalf")

@@ -141,7 +141,7 @@ func (m *mockLexer) Config() *chroma.Config {
 	return nil
 }
 
-func (m *mockLexer) SetRegistry(*chroma.LexerRegistry) chroma.Lexer {
+func (m *mockLexer) SetRegistry(_ *chroma.LexerRegistry) chroma.Lexer {
 	return m
 }
 
@@ -150,6 +150,6 @@ func (m *mockLexer) SetAnalyser(analyser func(text string) float32) chroma.Lexer
 	return m
 }
 
-func (m *mockLexer) AnalyseText(string) float32 {
+func (m *mockLexer) AnalyseText(_ string) float32 {
 	return 0
 }

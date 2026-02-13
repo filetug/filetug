@@ -468,52 +468,10 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 	// We can't easily mock gitutils without changing it, but we can try to find a real git repo.
 	// Or we can just test the "app == nil" branch which is easy.
 
-	t.Run("NoApp", func(t *testing.T) {
+	setupGitStatusTest := func(t *testing.T) (*Navigator, *tview.TreeNode, *gitutils.RepoStatus, string) {
+		t.Helper()
 		nav, _, _ := newNavigatorForTest(t)
 		node := tview.NewTreeNode("test")
-
-		status := &gitutils.RepoStatus{Branch: "main"}
-		// Dir matches repo root to ensure status is shown even if clean
-		path := "/repo"
-		oldOsStat := gitutils.OsStat
-		gitutils.OsStat = func(name string) (os.FileInfo, error) {
-			if name == "/repo/.git" {
-				return mockFileInfo{isDir: true}, nil // exists and is a dir
-			}
-			return oldOsStat(name)
-		}
-		defer func() { gitutils.OsStat = oldOsStat }()
-
-		nav.gitStatusCache[path] = status
-		nav.updateGitStatus(ctx, nil, path, node, "prefix: ")
-		assert.Equal(t, "prefix: "+status.String(), node.GetText())
-	})
-
-	t.Run("WithAppCached", func(t *testing.T) {
-		nav, _, _ := newNavigatorForTest(t)
-		node := tview.NewTreeNode("test")
-
-		status := &gitutils.RepoStatus{Branch: "main"}
-		// Dir matches repo root to ensure status is shown even if clean
-		path := "/repo"
-		oldOsStat := gitutils.OsStat
-		gitutils.OsStat = func(name string) (os.FileInfo, error) {
-			if name == "/repo/.git" {
-				return mockFileInfo{isDir: true}, nil // exists and is a dir
-			}
-			return oldOsStat(name)
-		}
-		defer func() { gitutils.OsStat = oldOsStat }()
-
-		nav.gitStatusCache[path] = status
-		nav.updateGitStatus(ctx, nil, path, node, "prefix: ")
-		assert.Equal(t, "prefix: "+status.String(), node.GetText())
-	})
-
-	t.Run("PrefixAlreadyHasStatus", func(t *testing.T) {
-		nav, _, _ := newNavigatorForTest(t)
-		node := tview.NewTreeNode("test")
-
 		status := &gitutils.RepoStatus{Branch: "main"}
 		path := "/repo"
 		oldOsStat := gitutils.OsStat
@@ -523,9 +481,25 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 			}
 			return oldOsStat(name)
 		}
-		defer func() { gitutils.OsStat = oldOsStat }()
-
+		t.Cleanup(func() { gitutils.OsStat = oldOsStat })
 		nav.gitStatusCache[path] = status
+		return nav, node, status, path
+	}
+
+	t.Run("NoApp", func(t *testing.T) {
+		nav, node, status, path := setupGitStatusTest(t)
+		nav.updateGitStatus(ctx, nil, path, node, "prefix: ")
+		assert.Equal(t, "prefix: "+status.String(), node.GetText())
+	})
+
+	t.Run("WithAppCached", func(t *testing.T) {
+		nav, node, status, path := setupGitStatusTest(t)
+		nav.updateGitStatus(ctx, nil, path, node, "prefix: ")
+		assert.Equal(t, "prefix: "+status.String(), node.GetText())
+	})
+
+	t.Run("PrefixAlreadyHasStatus", func(t *testing.T) {
+		nav, node, status, path := setupGitStatusTest(t)
 		prefixWithStatus := "prefix: " + status.String()
 		nav.updateGitStatus(ctx, nil, path, node, prefixWithStatus)
 		expected := "prefix: " + status.String()

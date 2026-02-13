@@ -77,17 +77,7 @@ func GetFavorites() (favorites []Favorite, err error) {
 				homeDirChecked = true
 			}
 			if homeErr == nil && homeDir != "" {
-				cleanHome := filepath.Clean(homeDir)
-				cleanPath := filepath.Clean(mapped.Path)
-				if cleanPath == cleanHome {
-					mapped.Path = "~"
-				} else {
-					homePrefix := cleanHome + string(filepath.Separator)
-					if strings.HasPrefix(cleanPath, homePrefix) {
-						relative := strings.TrimPrefix(cleanPath, homePrefix)
-						mapped.Path = filepath.Join("~", relative)
-					}
-				}
+				mapped.Path = collapseTilde(mapped.Path, homeDir)
 			}
 		}
 		favorites = append(favorites, mapped)
@@ -102,17 +92,7 @@ func AddFavorite(f Favorite) (err error) {
 	if f.Store.Scheme == "file" && f.Path != "" {
 		homeDir, homeErr := os.UserHomeDir()
 		if homeErr == nil && homeDir != "" {
-			cleanHome := filepath.Clean(homeDir)
-			cleanPath := filepath.Clean(f.Path)
-			if cleanPath == cleanHome {
-				f.Path = "~"
-			} else {
-				homePrefix := cleanHome + string(filepath.Separator)
-				if strings.HasPrefix(cleanPath, homePrefix) {
-					relative := strings.TrimPrefix(cleanPath, homePrefix)
-					f.Path = filepath.Join("~", relative)
-				}
-			}
+			f.Path = collapseTilde(f.Path, homeDir)
 		}
 	}
 	favorites, err := GetFavorites()
@@ -185,6 +165,20 @@ func mapFavoriteToPersisted(item Favorite) favorite {
 		Shortcut:    item.Shortcut,
 		Description: item.Description,
 	}
+}
+
+func collapseTilde(p, homeDir string) string {
+	cleanHome := filepath.Clean(homeDir)
+	cleanPath := filepath.Clean(p)
+	if cleanPath == cleanHome {
+		return "~"
+	}
+	homePrefix := cleanHome + string(filepath.Separator)
+	if strings.HasPrefix(cleanPath, homePrefix) {
+		relative := strings.TrimPrefix(cleanPath, homePrefix)
+		return filepath.Join("~", relative)
+	}
+	return p
 }
 
 func defaultFavorites() []Favorite {

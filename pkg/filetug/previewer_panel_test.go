@@ -77,30 +77,17 @@ func TestPreviewer(t *testing.T) {
 
 	t.Run("PreviewFile_DSStore_Valid", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
-		tmpFile, _ := os.CreateTemp("", ".DS_Store")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		// Minimal DSStore header: 4 bytes Magic, 4 bytes "Bud1"
-		// See https://en.wikipedia.org/wiki/.DS_Store
-		header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
-		_ = os.WriteFile(tmpFile.Name(), header, 0644)
-		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
-		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
+		dsStorePath := createTempDSStoreFile(t)
+		previewFile(nav.previewer, ".DS_Store", dsStorePath)
+		previewFile(nav.previewer, ".DS_Store", dsStorePath)
 	})
 
 	t.Run("PreviewFile_DSStore_Reuse_Previewer", func(t *testing.T) {
 		nav := newNavigatorForPreviewerTest(t)
-		tmpFile, _ := os.CreateTemp("", ".DS_Store")
-		defer func() {
-			_ = os.Remove(tmpFile.Name())
-		}()
-		// Minimal DSStore header: 4 bytes Magic, 4 bytes "Bud1"
-		header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
-		_ = os.WriteFile(tmpFile.Name(), header, 0644)
+		dsStorePath := createTempDSStoreFile(t)
 
 		// First call creates DsstorePreviewer
-		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
+		previewFile(nav.previewer, ".DS_Store", dsStorePath)
 		firstPreviewer := nav.previewer.previewer
 
 		// Verify it's a DsstorePreviewer
@@ -108,7 +95,7 @@ func TestPreviewer(t *testing.T) {
 		assert.True(t, ok, "First preview should create a DsstorePreviewer")
 
 		// Second call should reuse the same previewer (covering lines 197-198)
-		previewFile(nav.previewer, ".DS_Store", tmpFile.Name())
+		previewFile(nav.previewer, ".DS_Store", dsStorePath)
 		secondPreviewer := nav.previewer.previewer
 
 		// Verify same instance is reused (same pointer address)
@@ -335,6 +322,20 @@ func TestPreviewer(t *testing.T) {
 		_ = os.Mkdir(dsPath, 0755) // Create as directory to cause read error
 		previewFile(nav.previewer, ".DS_Store", dsPath)
 	})
+}
+
+func createTempDSStoreFile(t *testing.T) string {
+	t.Helper()
+	tmpFile, err := os.CreateTemp("", ".DS_Store")
+	if err != nil {
+		t.Fatalf("failed to create temp DS_Store: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Remove(tmpFile.Name()) })
+	header := []byte{0x00, 0x00, 0x00, 0x01, 0x42, 0x75, 0x64, 0x31}
+	if err := os.WriteFile(tmpFile.Name(), header, 0644); err != nil {
+		t.Fatalf("failed to write DS_Store header: %v", err)
+	}
+	return tmpFile.Name()
 }
 
 func waitForText(t *testing.T, previewer *previewerPanel, getText func(previewer *previewerPanel) string, needle string) {

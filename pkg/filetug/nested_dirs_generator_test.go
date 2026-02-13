@@ -14,7 +14,7 @@ import (
 func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
 	t.Parallel()
 	var mu sync.Mutex
-	paths := []string{}
+	var paths []string
 	store := newMockStore(t)
 	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, path string) error {
@@ -59,7 +59,7 @@ func TestGeneratedNestedDirs_DefaultFormat(t *testing.T) {
 func TestGeneratedNestedDirs_DepthZero(t *testing.T) {
 	t.Parallel()
 	var mu sync.Mutex
-	paths := []string{}
+	var paths []string
 	store := newMockStore(t)
 	store.EXPECT().CreateDir(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, path string) error {

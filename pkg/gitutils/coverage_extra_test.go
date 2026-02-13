@@ -68,6 +68,38 @@ func stubIsCtxDone(t *testing.T, stub func(context.Context) bool) {
 	t.Cleanup(func() { isCtxDone = old })
 }
 
+func initRepo(t *testing.T) (string, *git.Repository) {
+	t.Helper()
+	tempDir, err := os.MkdirTemp("", "gitutils-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+	repo, err := git.PlainInit(tempDir, false)
+	if err != nil {
+		t.Fatalf("failed to init repo: %v", err)
+	}
+	return tempDir, repo
+}
+
+func initFakeGitRepo(t *testing.T) (string, string) {
+	t.Helper()
+	tempDir, err := os.MkdirTemp("", "gitutils-fake-git-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(tempDir) })
+	gitDir := filepath.Join(tempDir, ".git")
+	if err := os.MkdirAll(gitDir, 0755); err != nil {
+		t.Fatalf("failed to create fake .git dir: %v", err)
+	}
+	filePath := filepath.Join(tempDir, "file.txt")
+	if err := os.WriteFile(filePath, []byte("content"), 0644); err != nil {
+		t.Fatalf("failed to write file: %v", err)
+	}
+	return tempDir, filePath
+}
+
 func initRepoWithCommit(t *testing.T) (string, *git.Repository, string) {
 	t.Helper()
 

@@ -93,22 +93,6 @@ func setupNavigatorForFilesTest(t *testing.T) (*Navigator, *tviewmocks.MockApp) 
 	return nav, app
 }
 
-type TviewDirPreviewerApp struct {
-	*tview.Application
-}
-
-func (a TviewDirPreviewerApp) QueueUpdateDraw(f func()) {
-	if f != nil {
-		f()
-	}
-}
-
-func (a TviewDirPreviewerApp) SetFocus(p tview.Primitive) {
-	if a.Application != nil {
-		_ = a.Application.SetFocus(p)
-	}
-}
-
 func getDirSummary(nav *Navigator) *viewers.DirPreviewer {
 	if nav.previewer == nil {
 		return nil
@@ -573,7 +557,9 @@ func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 	entry := files.NewEntryWithDirPath(files.NewDirEntry("dir", true), "/tmp")
 	fp.showDirSummary(entry)
 	assert.Equal(t, nav.previewer, nav.right.content)
-	assert.Len(t, getDirSummary(nav).ExtStats, 0)
+	if ds := getDirSummary(nav); assert.NotNil(t, ds) {
+		assert.Len(t, ds.ExtStats, 0)
+	}
 }
 
 func TestFilesPanel_showDirSummary_ReadDirError(t *testing.T) {
@@ -626,8 +612,8 @@ func TestFilesPanel_showDirSummary_Symlink(t *testing.T) {
 	}
 	// nav.current.SetDir(files.NewDirContext(store, tempDir, nil))
 
-targetDir := filepath.Join(tempDir, "target")
-err := os.Mkdir(targetDir, 0o755)
+	targetDir := filepath.Join(tempDir, "target")
+	err := os.Mkdir(targetDir, 0o755)
 	if !assert.NoError(t, err) {
 		return
 	}

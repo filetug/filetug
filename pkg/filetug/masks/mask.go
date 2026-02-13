@@ -13,9 +13,9 @@ func (m *Mask) String() string {
 	return fmt.Sprintf("Mask{Name: %q, Patterns: %+v}", m.Name, m.Patterns)
 }
 
-func (p *Mask) Match(fileName string) (bool, error) {
+func (m *Mask) Match(fileName string) (bool, error) {
 	var result bool
-	for _, pattern := range p.Patterns {
+	for _, pattern := range m.Patterns {
 		matched, err := pattern.Match(fileName)
 		if err != nil {
 			return false, err

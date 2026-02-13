@@ -837,7 +837,7 @@ func TestNewPanel_InputCapture_Create(t *testing.T) {
 	withTestGlobalLock(t)
 	nav, app, _ := newNavigatorForTest(t)
 	nav.previewer = newPreviewerPanel(nav)
-	createdDirs := []string{}
+	var createdDirs []string
 	var mu sync.Mutex
 	var createDirErr error
 	var createFileErr error
@@ -1755,11 +1755,7 @@ func TestDirSummary_GetSizes_NilInfo(t *testing.T) {
 
 func TestNavigator_ShowDir_NoNode(t *testing.T) {
 	t.Parallel()
-	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
-	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
-	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
-	nav.store = store
+	nav, _ := setupNavigatorWithMockStore(t)
 
 	ctx := context.Background()
 	dirContext := newTestDirContext(nav.store, "/tmp", nil)
@@ -1804,12 +1800,7 @@ func TestTree_InputCapture_SpaceWithSearch(t *testing.T) {
 
 func TestNavigator_ShowDir_SetsBreadcrumbs(t *testing.T) {
 	t.Parallel()
-	nav, app, _ := newNavigatorForTest(t)
-	app.EXPECT().QueueUpdateDraw(gomock.Any()).AnyTimes()
-
-	store := newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
-	store.EXPECT().ReadDir(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
-	nav.store = store
+	nav, _ := setupNavigatorWithMockStore(t)
 	ctx := context.Background()
 	node := tview.NewTreeNode("node")
 	nodeContext := newTestDirContext(nav.store, "/tmp", nil)
@@ -1909,7 +1900,7 @@ type mockPreviewer struct {
 	main tview.Primitive
 }
 
-func (m *mockPreviewer) PreviewSingle(entry files.EntryWithDirPath, _ []byte, _ error) {
+func (m *mockPreviewer) PreviewSingle(_ files.EntryWithDirPath, _ []byte, _ error) {
 }
 
 func (m *mockPreviewer) Main() tview.Primitive { return m.main }
