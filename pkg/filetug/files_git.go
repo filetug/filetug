@@ -9,7 +9,7 @@ import (
 )
 
 // updateGitStatuses asynchronously updates git status indicators for all entries
-// in the files panel. It spawns a goroutine for each file to check its git status.
+// in the files panel. It uses a worker pool to efficiently process git status checks.
 func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.DirContext) {
 	if f.nav == nil || f.rows == nil || dirContext == nil {
 		return
@@ -29,6 +29,8 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 	rows := f.rows
 	table := f.table
 	queueUpdateDraw := f.nav.app.QueueUpdateDraw
+	pool := gitutils.GetGlobalPool()
+	
 	for _, entry := range rows.AllEntries {
 		entry := entry
 		fullPath := entry.FullName()
@@ -37,25 +39,30 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 			isDir = rows.isSymlinkToDir(entry)
 		}
 
-		go func() {
-			status := f.nav.getGitStatus(ctx, repo, fullPath, isDir)
-			if status == nil {
-				return
-			}
-			statusText := f.nav.gitStatusText(status, fullPath, isDir)
-			if statusText == "" {
-				return
-			}
-			updated := rows.SetGitStatusText(fullPath, statusText)
-			if !updated {
-				return
-			}
-			queueUpdateDraw(func() {
-				if f.rows != rows {
+		req := gitutils.GitStatusRequest{
+			Repo:  repo,
+			Path:  fullPath,
+			IsDir: isDir,
+			Callback: func(status *gitutils.RepoStatus) {
+				if status == nil {
 					return
 				}
-				table.SetContent(rows)
-			})
-		}()
+				statusText := f.nav.gitStatusText(status, fullPath, isDir)
+				if statusText == "" {
+					return
+				}
+				updated := rows.SetGitStatusText(fullPath, statusText)
+				if !updated {
+					return
+				}
+				queueUpdateDraw(func() {
+					if f.rows != rows {
+						return
+					}
+					table.SetContent(rows)
+				})
+			},
+		}
+		pool.Submit(req)
 	}
 }
