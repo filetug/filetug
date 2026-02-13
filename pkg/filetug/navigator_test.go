@@ -482,7 +482,9 @@ func TestNavigator_updateGitStatus_Success(t *testing.T) {
 			return oldOsStat(name)
 		}
 		t.Cleanup(func() { gitutils.OsStat = oldOsStat })
+		nav.gitStatusCacheMu.Lock()
 		nav.gitStatusCache[path] = status
+		nav.gitStatusCacheMu.Unlock()
 		return nav, node, status, path
 	}
 

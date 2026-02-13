@@ -384,7 +384,9 @@ func setupGitStatusTest(t *testing.T) (*filesPanel, *Navigator, *testApp, string
 	}
 	nav := NewNavigator(app)
 	nav.current.SetDir(osfile.NewLocalDir("/"))
+	nav.gitStatusCacheMu.Lock()
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
+	nav.gitStatusCacheMu.Unlock()
 	nav.store = newMockStoreWithRoot(t, url.URL{Scheme: "file", Path: "/"})
 	fp := nav.files
 
@@ -692,7 +694,9 @@ func TestNavigator_GetGitStatus_Coverage(t *testing.T) {
 
 	cached := &gitutils.RepoStatus{Branch: "main"}
 	fullPath := "/cached/path"
+	nav.gitStatusCacheMu.Lock()
 	nav.gitStatusCache[fullPath] = cached
+	nav.gitStatusCacheMu.Unlock()
 	status := nav.getGitStatus(context.Background(), nil, fullPath, true)
 	assert.Equal(t, cached, status)
 
@@ -2301,7 +2305,9 @@ func TestFilesPanel_UpdateGitStatuses_WaitGroup(t *testing.T) {
 	nav.previewer = newPreviewerPanel(nav)
 	nav.dirsTree = NewTree(nav)
 	nav.files = newFiles(nav)
+	nav.gitStatusCacheMu.Lock()
 	nav.gitStatusCache = make(map[string]*gitutils.RepoStatus)
+	nav.gitStatusCacheMu.Unlock()
 	fp := newFiles(nav)
 
 	repoDir := t.TempDir()
