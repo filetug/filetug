@@ -1,13 +1,12 @@
 {
   "lspServers": {
-    "typescript": {
-      "command": "typescript-language-server",
+    "go": {
+      "command": "gopls",
       "args": [
-        "--stdio"
+        "serve"
       ],
       "fileExtensions": {
-        ".ts": "typescript",
-        ".tsx": "typescript"
+        ".go": "go"
       }
     }
   }
