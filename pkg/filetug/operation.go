@@ -34,7 +34,9 @@ func NewOperation(
 	go func() {
 		reportOperProgress := func(progress OperationProgress) {
 			o.progress = progress
-			reportProgress(progress)
+			if reportProgress != nil {
+				reportProgress(progress)
+			}
 		}
 		err := f(ctx, reportOperProgress)
 		o.done <- err
