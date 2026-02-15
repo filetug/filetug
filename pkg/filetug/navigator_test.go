@@ -433,6 +433,9 @@ func TestNewNavigator_States(t *testing.T) {
 			}
 			time.Sleep(5 * time.Millisecond)
 		}
+		if nav.current.Dir() == nil {
+			t.Fatal("Current dir became nil after waiting")
+		}
 		currentPath := nav.current.Dir().Path()
 		assert.True(t, currentPath == tempDir || currentPath == "/")
 	})

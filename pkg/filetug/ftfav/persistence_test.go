@@ -9,15 +9,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_GetFavorites_InvalidYaml(t *testing.T) {
-	//t.Parallel()
+// setupFavoritesTestFile sets up a temporary favorites file for testing.
+// Returns the path to the temporary file and a cleanup function.
+func setupFavoritesTestFile(t *testing.T, filename string) (tempPath string, cleanup func()) {
+	t.Helper()
 	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
+	tempPath = filepath.Join(tempDir, filename)
 	oldPath := favoritesFilePath
 	favoritesFilePath = tempPath
-	defer func() {
+	cleanup = func() {
 		favoritesFilePath = oldPath
-	}()
+	}
+	return tempPath, cleanup
+}
+
+func Test_GetFavorites_InvalidYaml(t *testing.T) {
+	//t.Parallel()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	err := os.WriteFile(tempPath, []byte("invalid: ["), 0o644)
 	assert.NoError(t, err)
@@ -29,13 +38,8 @@ func Test_GetFavorites_InvalidYaml(t *testing.T) {
 
 func Test_GetFavorites_InvalidStoreURL(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	data := []byte("- store: \"http://[::1\"\n  path: /tmp\n")
 	err := os.WriteFile(tempPath, data, 0o644)
@@ -48,13 +52,8 @@ func Test_GetFavorites_InvalidStoreURL(t *testing.T) {
 
 func Test_GetFavorites_FileNotExists(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "missing.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "missing.yaml")
+	defer cleanup()
 
 	favorites, err := GetFavorites()
 	assert.NoError(t, err)
@@ -70,13 +69,8 @@ func Test_GetFavorites_FileNotExists(t *testing.T) {
 
 func Test_GetFavorites_EmptyFile(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	err := os.WriteFile(tempPath, []byte(""), 0o644)
 	assert.NoError(t, err)
@@ -88,13 +82,8 @@ func Test_GetFavorites_EmptyFile(t *testing.T) {
 
 func Test_GetFavorites_FileExists_NoDefaults(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	expected := []Favorite{{Path: "/custom"}}
 	err := writeFavorites(expected)
@@ -115,13 +104,8 @@ func Test_GetFavorites_FileExists_NoDefaults(t *testing.T) {
 
 func Test_GetFavorites_ReplacesHomeDir(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	homeDir, err := os.UserHomeDir()
 	assert.NoError(t, err)
@@ -196,13 +180,8 @@ func Test_AddDelete_GetFavoritesError(t *testing.T) {
 
 func Test_AddFavorite_ReplacesHomeDir(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	err := os.WriteFile(tempPath, []byte(""), 0o644)
 	assert.NoError(t, err)
@@ -261,13 +240,8 @@ func Test_WriteFavorites_MarshalError(t *testing.T) {
 
 func Test_DeleteFavorite_KeepsOtherItems(t *testing.T) {
 	//t.Parallel()
-	tempDir := t.TempDir()
-	tempPath := filepath.Join(tempDir, "favorites.yaml")
-	oldPath := favoritesFilePath
-	favoritesFilePath = tempPath
-	defer func() {
-		favoritesFilePath = oldPath
-	}()
+	tempPath, cleanup := setupFavoritesTestFile(t, "favorites.yaml")
+	defer cleanup()
 
 	err := os.WriteFile(tempPath, []byte(""), 0o644)
 	assert.NoError(t, err)
