@@ -11,7 +11,7 @@ import (
 
 // updateGitStatuses asynchronously updates git status indicators for all entries
 // in the files panel. It uses a worker pool to efficiently process git status checks.
-func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.DirContext) {
+func (f *filesPanel) updateGitStatuses(_ context.Context, dirContext *files.DirContext) {
 	if f.nav == nil || f.rows == nil || dirContext == nil {
 		return
 	}
