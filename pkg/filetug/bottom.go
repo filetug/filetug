@@ -63,7 +63,7 @@ func (b *bottom) renderMenuItems(menuItems []ftui.MenuItem) string {
 	for _, mi := range menuItems {
 		title := mi.Title
 		for _, key := range mi.HotKeys {
-			hotkeyText := fmt.Sprintf("[%s]%s[-]", themes.CurrentTheme.HotkeyColor, key)
+			hotkeyText := fmt.Sprintf("[#%06x]%s[-]", themes.CurrentTheme.HotkeyColor().Hex(), key)
 			title = strings.Replace(title, key, hotkeyText, 1)
 		}
 		area := mi.HotKeys[0]

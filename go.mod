@@ -1,6 +1,6 @@
 module github.com/filetug/filetug
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/alecthomas/assert/v2 v2.11.0
@@ -12,7 +12,7 @@ require (
 	github.com/rivo/tview v0.42.0
 	github.com/stretchr/testify v1.11.1
 	github.com/strongo/dsstore v0.0.1
-	github.com/strongo/strongo-tui v0.0.0-20260212115849-b2ccb1e586b1
+	github.com/strongo/strongo-tui v0.0.0-20260215000528-71bd9150836c
 	go.uber.org/mock v0.6.0
 	golang.org/x/image v0.36.0
 	golang.org/x/sys v0.41.0
@@ -24,6 +24,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
 	github.com/alecthomas/repr v0.5.2 // indirect
+	github.com/catppuccin/go v0.3.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -37,7 +38,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/kevinburke/ssh_config v1.4.0 // indirect
+	github.com/kevinburke/ssh_config v1.5.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect

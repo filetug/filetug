@@ -196,7 +196,7 @@ func (b Boxed) drawBorders(screen tcell.Screen) {
 			title = tab.Title
 			if tab.Hotkey != 0 {
 				title = strings.Replace(title, string(tab.Hotkey),
-					fmt.Sprintf("[%s]%c[-][DarkGray]", themes.CurrentTheme.HotkeyColor, tab.Hotkey), 1)
+					fmt.Sprintf("[#%06x]%c[-][DarkGray]", themes.CurrentTheme.HotkeyColor().Hex(), tab.Hotkey), 1)
 			}
 			title = fmt.Sprintf("[DarkGray]%s[-]", title)
 			sb.WriteString(title)

@@ -136,10 +136,10 @@ func (f *filesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 func (f *filesPanel) focus() {
 	f.nav.activeCol = 1
 	f.nav.right.SetContent(f.nav.previewer)
-	f.table.SetSelectedStyle(themes.CurrentTheme.FocusedSelectedTextStyle)
+	f.table.SetSelectedStyle(themes.CurrentTheme.FocusedSelectedTextStyle())
 }
 
 // blur is called when the files panel loses focus.
 func (f *filesPanel) blur() {
-	f.table.SetSelectedStyle(themes.CurrentTheme.BlurredSelectedTextStyle)
+	f.table.SetSelectedStyle(themes.CurrentTheme.BlurredSelectedTextStyle())
 }

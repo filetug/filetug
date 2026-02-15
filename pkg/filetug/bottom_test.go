@@ -148,8 +148,8 @@ func TestBottom_RenderMenuItems_ReplacesHotkeysAndRegions(t *testing.T) {
 	assert.Contains(t, text, `["root"]`)
 	assert.Contains(t, text, `["home"]`)
 
-	hotkeyF6 := fmt.Sprintf("[%s]%s[-]", themes.CurrentTheme.HotkeyColor, "F6")
-	hotkeyR := fmt.Sprintf("[%s]%s[-]", themes.CurrentTheme.HotkeyColor, "R")
+	hotkeyF6 := fmt.Sprintf("[#%06x]%s[-]", themes.CurrentTheme.HotkeyColor().Hex(), "F6")
+	hotkeyR := fmt.Sprintf("[#%06x]%s[-]", themes.CurrentTheme.HotkeyColor().Hex(), "R")
 	assert.Contains(t, text, hotkeyF6)
 	assert.Contains(t, text, hotkeyR)
 }

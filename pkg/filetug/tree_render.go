@@ -26,7 +26,7 @@ func (t *Tree) Draw(screen tcell.Screen) {
 }
 
 func (t *Tree) focus() {
-	t.nav.left.SetBorderColor(themes.CurrentTheme.FocusedBorderColor)
+	t.nav.left.SetBorderColor(themes.CurrentTheme.FocusedBorderColor())
 	t.nav.activeCol = 0
 	t.nav.right.SetContent(t.nav.previewer)
 	t.nav.previewer.Blur()
@@ -38,17 +38,17 @@ func (t *Tree) focus() {
 		t.tv.SetCurrentNode(currentNode)
 	}
 	if currentNode != nil {
-		currentNode.SetSelectedTextStyle(themes.CurrentTheme.FocusedSelectedTextStyle)
+		currentNode.SetSelectedTextStyle(themes.CurrentTheme.FocusedSelectedTextStyle())
 	}
 	t.tv.SetGraphicsColor(tcell.ColorWhite)
 }
 
 func (t *Tree) blur() {
-	t.nav.left.SetBorderColor(themes.CurrentTheme.BlurredBorderColor)
-	t.tv.SetGraphicsColor(themes.CurrentTheme.BlurredGraphicsColor)
+	t.nav.left.SetBorderColor(themes.CurrentTheme.BlurredBorderColor())
+	t.tv.SetGraphicsColor(themes.CurrentTheme.BlurredGraphicsColor())
 	currentNode := t.tv.GetCurrentNode()
 	if currentNode != nil {
-		currentNode.SetSelectedTextStyle(themes.CurrentTheme.BlurredSelectedTextStyle)
+		currentNode.SetSelectedTextStyle(themes.CurrentTheme.BlurredSelectedTextStyle())
 	}
 }
 
