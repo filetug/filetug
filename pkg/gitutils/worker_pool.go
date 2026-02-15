@@ -88,8 +88,6 @@ func (p *GitStatusWorkerPool) Submit(req GitStatusRequest) bool {
 	select {
 	case p.requests <- req:
 		return true
-	case <-p.ctx.Done():
-		return false
 	default:
 		// Non-blocking: drop request if queue is full
 		return false

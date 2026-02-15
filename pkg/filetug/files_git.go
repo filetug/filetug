@@ -6,6 +6,7 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/go-git/go-git/v5"
+	"github.com/rivo/tview"
 )
 
 // updateGitStatuses asynchronously updates git status indicators for all entries
@@ -30,7 +31,7 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 	table := f.table
 	queueUpdateDraw := f.nav.app.QueueUpdateDraw
 	pool := gitutils.GetGlobalPool()
-	
+
 	for _, entry := range rows.AllEntries {
 		entry := entry
 		fullPath := entry.FullName()
@@ -44,25 +45,29 @@ func (f *filesPanel) updateGitStatuses(ctx context.Context, dirContext *files.Di
 			Path:  fullPath,
 			IsDir: isDir,
 			Callback: func(status *gitutils.RepoStatus) {
-				if status == nil {
-					return
-				}
-				statusText := f.nav.gitStatusText(status, fullPath, isDir)
-				if statusText == "" {
-					return
-				}
-				updated := rows.SetGitStatusText(fullPath, statusText)
-				if !updated {
-					return
-				}
-				queueUpdateDraw(func() {
-					if f.rows != rows {
-						return
-					}
-					table.SetContent(rows)
-				})
+				f.onGitStatus(status, rows, table, queueUpdateDraw, fullPath, isDir)
 			},
 		}
 		pool.Submit(req)
 	}
+}
+
+func (f *filesPanel) onGitStatus(status *gitutils.RepoStatus, rows *FileRows, table *tview.Table, queueUpdateDraw func(func()), fullPath string, isDir bool) {
+	if status == nil {
+		return
+	}
+	statusText := f.nav.gitStatusText(status, fullPath, isDir)
+	if statusText == "" {
+		return
+	}
+	updated := rows.SetGitStatusText(fullPath, statusText)
+	if !updated {
+		return
+	}
+	queueUpdateDraw(func() {
+		if f.rows != rows {
+			return
+		}
+		table.SetContent(rows)
+	})
 }
