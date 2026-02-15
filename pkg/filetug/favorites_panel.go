@@ -192,8 +192,8 @@ func (f *favoritesPanel) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		f.deleteCurrentFavorite()
 		return nil
 	case tcell.KeyEscape:
-		if f.nav.prev.Dir() != nil {
-			f.nav.goDir(f.nav.prev.Dir())
+		if dir := f.nav.prev.Dir(); dir != nil {
+			f.nav.goDir(dir)
 		}
 		f.nav.left.SetContent(f.nav.dirsTree)
 		f.nav.app.SetFocus(f.nav.dirsTree)
