@@ -557,7 +557,9 @@ func TestFilesPanel_showDirSummary_StoreNil(t *testing.T) {
 	entry := files.NewEntryWithDirPath(files.NewDirEntry("dir", true), "/tmp")
 	fp.showDirSummary(entry)
 	assert.Equal(t, nav.previewer, nav.right.content)
-	if ds := getDirSummary(nav); assert.NotNil(t, ds) {
+	ds := getDirSummary(nav)
+	assert.NotNil(t, ds)
+	if ds != nil {
 		assert.Len(t, ds.ExtStats, 0)
 	}
 }
