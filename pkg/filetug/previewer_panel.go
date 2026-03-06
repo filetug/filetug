@@ -203,6 +203,11 @@ func (p *previewerPanel) getFilePreviewer(name string) viewers.Previewer {
 		nameExt := filepath.Ext(name)
 		ext := strings.ToLower(nameExt)
 		switch ext {
+		case ".md":
+			if mdPreviewer, ok := p.previewer.(*viewers.MarkdownPreviewer); ok {
+				return mdPreviewer
+			}
+			return viewers.NewMarkdownPreviewer(p.app.QueueUpdateDraw)
 		case ".json", ".jsonb":
 			if jsonPreviewer, ok := p.previewer.(*viewers.JsonPreviewer); ok {
 				return jsonPreviewer
