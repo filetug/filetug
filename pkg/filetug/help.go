@@ -20,6 +20,9 @@ Alt+M - Move filesPanel & directories
 Alt+D - Delete filesPanel & directories
 Alt+V - View file
 Alt+E - Edit file
+Alt+= - Increase panel size
+Alt+- - Decrease panel size
+Alt+0 - Reset panel sizes
 Alt+X - Exit the app`
 
 	helpView = tview.NewTextView().

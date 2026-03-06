@@ -8,7 +8,6 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 type bottom struct {
@@ -46,9 +45,9 @@ func (b *bottom) render() {
 		menuItemsText := b.renderMenuItems(b.fkMenuItems)
 		sb.WriteString(menuItemsText)
 	}
-	sb.WriteString("| ")
+	sb.WriteString("  ║  ")
 	{
-		sb.WriteString("[DarkGray]Alt[-]+: ")
+		sb.WriteString("[blue]Alt+[-]")
 		menuItemsText := b.renderMenuItems(b.altMenuItems)
 		sb.WriteString(menuItemsText)
 	}
@@ -63,7 +62,11 @@ func (b *bottom) renderMenuItems(menuItems []ftui.MenuItem) string {
 	for _, mi := range menuItems {
 		title := mi.Title
 		for _, key := range mi.HotKeys {
-			hotkeyText := fmt.Sprintf("[#%06x]%s[-]", themes.CurrentTheme.HotkeyColor().Hex(), key)
+			color := "white"
+			if mi.IsAltHotkey {
+				color = "blue"
+			}
+			hotkeyText := fmt.Sprintf("[%s]%s[-]", color, key)
 			title = strings.Replace(title, key, hotkeyText, 1)
 		}
 		area := mi.HotKeys[0]
@@ -72,6 +75,8 @@ func (b *bottom) renderMenuItems(menuItems []ftui.MenuItem) string {
 			area = "root"
 		case "~":
 			area = "home"
+		case "±":
+			area = "size"
 		}
 		title = fmt.Sprintf(`["%s"]%s[""]`, area, title)
 		sb.WriteString(title)
@@ -111,54 +116,59 @@ func (b *bottom) getCtrlMenuItems() []ftui.MenuItem {
 	// so we can't handle it to show an alternative menu when CTRL is pressed.
 	return []ftui.MenuItem{
 		{
-			Title:   "Archive",
-			HotKeys: []string{"A"},
-			Action:  archiveAction,
+			Title:       "Archive",
+			HotKeys:     []string{"A"},
+			Action:      archiveAction,
+			IsAltHotkey: true,
 		},
 		{
-			Title:   "Stage",
-			HotKeys: []string{"S"},
+			Title:       "Stage",
+			HotKeys:     []string{"S"},
+			IsAltHotkey: true,
 		},
 		{
-			Title:   "Commit",
-			HotKeys: []string{"C"},
+			Title:       "Commit",
+			HotKeys:     []string{"C"},
+			IsAltHotkey: true,
 		},
 		{
-			Title:   "Push",
-			HotKeys: []string{"P"},
+			Title:       "Push",
+			HotKeys:     []string{"P"},
+			IsAltHotkey: true,
 		},
 	}
 }
 
 func (b *bottom) getFKMenuItems() []ftui.MenuItem {
 	return []ftui.MenuItem{
-		{Title: "F1 Help", HotKeys: []string{"F1"}, Action: func() {}},
-		{Title: "F2 Menu", HotKeys: []string{"F2"}, Action: func() {}},
-		{Title: "F3 View", HotKeys: []string{"F3"}, Action: func() {}},
-		{Title: "F4 Edit", HotKeys: []string{"F4"}, Action: func() {}},
-		{Title: "F5 Copy", HotKeys: []string{"F5"}, Action: func() {}},
-		{Title: "F6 Rename", HotKeys: []string{"F6"}, Action: func() {}},
-		{Title: "F7 Create", HotKeys: []string{"F7"}, Action: func() {}},
-		{Title: "F8 Delete", HotKeys: []string{"F8"}, Action: func() {}},
+		{Title: "F1·Help", HotKeys: []string{"F1"}, Action: func() {}},
+		{Title: "F2·Menu", HotKeys: []string{"F2"}, Action: func() {}},
+		{Title: "F3·View", HotKeys: []string{"F3"}, Action: func() {}},
+		{Title: "F4·Edit", HotKeys: []string{"F4"}, Action: func() {}},
+		{Title: "F5·Copy", HotKeys: []string{"F5"}, Action: func() {}},
+		{Title: "F6·Rename", HotKeys: []string{"F6"}, Action: func() {}},
+		{Title: "F7·Create", HotKeys: []string{"F7"}, Action: func() {}},
+		{Title: "F8·Delete", HotKeys: []string{"F8"}, Action: func() {}},
 	}
 }
 
 func (b *bottom) getAltMenuItems() []ftui.MenuItem {
 	return []ftui.MenuItem{
-		{Title: "Exit", HotKeys: []string{"x"}, Action: func() { b.nav.app.Stop(); osExit(0) }},
-		{Title: "Go", HotKeys: []string{"o"}, Action: func() {}},
-		{Title: "/root", HotKeys: []string{"/"}, Action: func() {}},
-		{Title: "~Home", HotKeys: []string{"~"}, Action: func() {}},
-		{Title: "Favorites", HotKeys: []string{"F"}, Action: func() {}},
-		{Title: "Bookmarks", HotKeys: []string{"B"}, Action: func() {}},
-		{Title: "Lists", HotKeys: []string{"L"}, Action: func() {}},
-		{Title: "Masks", HotKeys: []string{"M"}, Action: func() {}},
-		{Title: "Git", HotKeys: []string{"G"}, Action: func() {}},
-		//{Title: "Previewer", HotKeys: []string{"P"}, Action: func() {}},
-		//{Title: "Copy", HotKeys: []string{"F5", "C"}, Action: func() {}},
-		//{Title: "Rename", HotKeys: []string{"F6", "R"}, Action: func() {}},
-		//{Title: "Delete", HotKeys: []string{"F8", "D"}, Action: func() {}},
-		//{Title: "View", HotKeys: []string{"V"}, Action: func() {}},
-		//{Title: "Edit", HotKeys: []string{"E"}, Action: func() {}},
+		{Title: "Exit", HotKeys: []string{"x"}, Action: func() { b.nav.app.Stop(); osExit(0) }, IsAltHotkey: true},
+		{Title: "Go", HotKeys: []string{"o"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "/root", HotKeys: []string{"/"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "~Home", HotKeys: []string{"~"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "Favorites", HotKeys: []string{"F"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "Bookmarks", HotKeys: []string{"B"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "Lists", HotKeys: []string{"L"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "Masks", HotKeys: []string{"M"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "±Size", HotKeys: []string{"±"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "Git", HotKeys: []string{"G"}, Action: func() {}, IsAltHotkey: true},
+		//{Title: "Previewer", HotKeys: []string{"P"}, Action: func() {}, IsAltHotkey: true},
+		//{Title: "Copy", HotKeys: []string{"F5", "C"}, Action: func() {}, IsAltHotkey: true},
+		//{Title: "Rename", HotKeys: []string{"F6", "R"}, Action: func() {}, IsAltHotkey: true},
+		//{Title: "Delete", HotKeys: []string{"F8", "D"}, Action: func() {}, IsAltHotkey: true},
+		//{Title: "View", HotKeys: []string{"V"}, Action: func() {}, IsAltHotkey: true},
+		//{Title: "Edit", HotKeys: []string{"E"}, Action: func() {}, IsAltHotkey: true},
 	}
 }
