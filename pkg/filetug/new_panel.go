@@ -31,12 +31,12 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 		SetFieldBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
 		SetFieldTextColor(tview.Styles.PrimaryTextColor)
 
-	createDirBtn := button.NewWithShortcut("Create directory", 'd')
+	createDirBtn := button.NewWithShortcut("Create directory", 0)
 	createDirBtn.SetSelectedFunc(func() {
 		p.createDir()
 	})
 
-	createFileBtn := button.NewWithShortcut("Create file", 'f')
+	createFileBtn := button.NewWithShortcut("Create file", 0)
 	createFileBtn.SetSelectedFunc(func() {
 		p.createFile()
 	})
@@ -44,8 +44,14 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 	p.createDirBtn = createDirBtn
 	p.createFileBtn = createFileBtn
 
+	helpText := tview.NewTextView().
+		SetText("[DarkGray]Tab: navigate  •  Enter: confirm  •  Esc: cancel[-]").
+		SetTextAlign(tview.AlignCenter).
+		SetDynamicColors(true)
+
 	p.flex = tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(p.input, 1, 1, true).
+		AddItem(helpText, 1, 0, false).
 		AddItem(nil, 1, 0, false).
 		AddItem(createDirBtn, 1, 1, false).
 		AddItem(nil, 1, 0, false).
@@ -76,22 +82,6 @@ func NewNewPanel(nav *Navigator) *NewPanel {
 				p.nav.app.SetFocus(p.createDirBtn)
 			}
 			return nil
-		}
-		if event.Key() == tcell.KeyRune {
-			switch event.Rune() {
-			case 'd':
-				if event.Modifiers()&tcell.ModAlt != 0 {
-					return event
-				}
-				p.createDir()
-				return nil
-			case 'f':
-				if event.Modifiers()&tcell.ModAlt != 0 {
-					return event
-				}
-				p.createFile()
-				return nil
-			}
 		}
 		return event
 	})
