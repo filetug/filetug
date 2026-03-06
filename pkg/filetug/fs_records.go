@@ -174,9 +174,9 @@ func (r *FileRows) GetCell(row, col int) *tview.TableCell {
 			statusText := r.getGitStatusText(fullPath)
 			displayName := name
 			if isDir {
-				displayName = dirEmoji + displayName
+				displayName = dirEmoji + " " + displayName
 			} else {
-				displayName = "📄" + displayName
+				displayName = "📄 " + displayName
 			}
 			if statusText != "" {
 				displayName = displayName + " " + statusText

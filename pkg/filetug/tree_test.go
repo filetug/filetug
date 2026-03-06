@@ -284,14 +284,14 @@ func TestTree(t *testing.T) {
 		rootContext := files.NewDirContext(nil, "/Users/demo", nil)
 		childContext := files.NewDirContext(nil, "/Users/demo/alpha", nil)
 		root := tview.NewTreeNode("..").SetReference(rootContext)
-		child := tview.NewTreeNode("alpha").SetReference(childContext)
+		child := tview.NewTreeNode("📁 alpha").SetReference(childContext)
 		root.AddChild(child)
 
 		searchCtx := &searchContext{pattern: "al"}
 		highlightTreeNodes(root, searchCtx, true)
 
 		assert.Equal(t, "..", root.GetText())
-		assert.Equal(t, "[black:lightgreen]al[-:-]pha", child.GetText())
+		assert.Equal(t, "📁 [black:lightgreen]al[-:-]pha", child.GetText())
 		assert.Equal(t, child, searchCtx.firstPrefixed)
 		assert.Len(t, searchCtx.found, 1)
 	})
@@ -392,4 +392,52 @@ func TestTree(t *testing.T) {
 		entry := tree.GetCurrentEntry()
 		assert.Nil(t, entry)
 	})
+}
+
+func TestTree_ESC_RestoresRootNodeAndTitle(t *testing.T) {
+	t.Parallel()
+	nav, _, _ := newNavigatorForTest(t)
+	tree := NewTree(nav)
+
+	// Set up root and a child node
+	rootContext := files.NewDirContext(nav.store, "/Users/demo", nil)
+	childContext := files.NewDirContext(nav.store, "/Users/demo/projects", nil)
+	tree.setCurrentDir(rootContext)
+	child := tview.NewTreeNode("📁 projects").SetReference(childContext)
+	tree.rootNode.AddChild(child)
+	tree.tv.SetCurrentNode(child)
+
+	// Simulate search then ESC
+	tree.SetSearch("pro")
+	assert.NotEqual(t, "demo", tree.GetTitle(), "title should show search pattern")
+	tree.SetSearch("")
+
+	assert.Equal(t, "demo", tree.GetTitle(), "title should be restored after ESC")
+	assert.Equal(t, tree.rootNode, tree.tv.GetCurrentNode(), "root node should be current after ESC")
+}
+
+func TestTree_ESC_PreservesEmojis(t *testing.T) {
+	t.Parallel()
+	nav, _, _ := newNavigatorForTest(t)
+	tree := NewTree(nav)
+
+	rootContext := files.NewDirContext(nil, "/Users/demo", nil)
+	childContext := files.NewDirContext(nil, "/Users/demo/projects", nil)
+	tree.rootNode.SetReference(rootContext)
+	child := tview.NewTreeNode("📁 projects").SetReference(childContext)
+	tree.rootNode.AddChild(child)
+
+	tree.SetSearch("pro")
+	tree.SetSearch("")
+
+	assert.Equal(t, "📁 projects", child.GetText(), "emoji should be restored after ESC")
+}
+
+func TestTree_InputCapture_AltF_OpensFavorites(t *testing.T) {
+	t.Parallel()
+	nav, _, _ := newNavigatorForTest(t)
+	tree := NewTree(nav)
+	altF := tcell.NewEventKey(tcell.KeyRune, 'f', tcell.ModAlt)
+	result := tree.inputCapture(altF)
+	assert.Nil(t, result, "Alt+F should open Favorites panel")
 }

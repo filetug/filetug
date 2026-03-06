@@ -52,6 +52,24 @@ func (t *Tree) blur() {
 	}
 }
 
+func (t *Tree) panelTitle() string {
+	ref := t.rootNode.GetReference()
+	dirContext, ok := ref.(*files.DirContext)
+	if !ok || dirContext == nil {
+		return ""
+	}
+	root := t.nav.store.RootURL()
+	if dirContext.Path() == root.Path {
+		return ""
+	}
+	trimmedDir := strings.TrimSuffix(dirContext.Path(), "/")
+	if root.Scheme == "file" && trimmedDir == userHomeDir {
+		return "~"
+	}
+	_, title := path.Split(trimmedDir)
+	return title
+}
+
 func (t *Tree) setCurrentDir(dirContext *files.DirContext) {
 	if dirContext == nil {
 		return
@@ -64,7 +82,7 @@ func (t *Tree) setCurrentDir(dirContext *files.DirContext) {
 		root.Path = "/"
 	}
 
-	var panelTitle, text string
+	var text string
 	if dirContext.Path() == root.Path {
 		if dirContext.Path() == "/" {
 			text = "/"
@@ -73,15 +91,10 @@ func (t *Tree) setCurrentDir(dirContext *files.DirContext) {
 		}
 	} else {
 		text = ".."
-		trimmedDir := strings.TrimSuffix(dirContext.Path(), "/")
-		_, panelTitle = path.Split(trimmedDir)
-		if root.Scheme == "file" && trimmedDir == userHomeDir {
-			panelTitle = "~"
-		}
 	}
-	t.SetTitle(panelTitle)
 
 	t.rootNode.SetText(text)
 	t.rootNode.SetReference(dirContext)
 	t.rootNode.SetColor(tcell.ColorWhite)
+	t.SetTitle(t.panelTitle())
 }

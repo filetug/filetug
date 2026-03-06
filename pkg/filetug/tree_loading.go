@@ -27,7 +27,7 @@ func (t *Tree) onStoreChange() {
 		rootPath = "/"
 	}
 	t.rootNode.SetText(rootPath)
-	loadingNode := tview.NewTreeNode(" Loading...")
+	loadingNode := tview.NewTreeNode(" Loading...").SetIndent(1)
 	loadingNode.SetColor(tcell.ColorGray)
 	t.rootNode.AddChild(loadingNode)
 	go func() {

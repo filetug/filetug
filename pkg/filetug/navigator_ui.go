@@ -29,8 +29,13 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 		nav.showScriptsPanel()
 		return nil
 	case tcell.KeyRune:
-		if event.Modifiers()&tcell.ModAlt != 0 {
-			switch r := event.Rune(); r {
+		r := event.Rune()
+		// Normalize macOS Option+key Unicode chars to their base letter + ModAlt
+		if normalized, ok := macOSOptionRune(r); ok {
+			r = normalized
+		}
+		if event.Modifiers()&tcell.ModAlt != 0 || r != event.Rune() {
+			switch r {
 			case 'f', 'F':
 				nav.ShowFavorites()
 				return nil
@@ -63,6 +68,67 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 	default:
 		return event
 	}
+}
+
+// macOSOptionRune maps macOS Option+key Unicode characters (US keyboard layout)
+// back to their base rune. Returns the base rune and true if recognized.
+// This handles terminals that send Unicode chars instead of ESC+key for Alt combos.
+func macOSOptionRune(r rune) (rune, bool) {
+	switch r {
+	case 'å':
+		return 'a', true
+	case '∫':
+		return 'b', true
+	case 'ç':
+		return 'c', true
+	case '∂':
+		return 'd', true
+	case 'ƒ':
+		return 'f', true
+	case '©':
+		return 'g', true
+	case '˙':
+		return 'h', true
+	case '∆':
+		return 'j', true
+	case '˚':
+		return 'k', true
+	case '¬':
+		return 'l', true
+	case 'µ':
+		return 'm', true
+	case 'ø':
+		return 'o', true
+	case 'π':
+		return 'p', true
+	case 'œ':
+		return 'q', true
+	case '®':
+		return 'r', true
+	case 'ß':
+		return 's', true
+	case '†':
+		return 't', true
+	case '√':
+		return 'v', true
+	case '∑':
+		return 'w', true
+	case '≈':
+		return 'x', true
+	case '¥':
+		return 'y', true
+	case 'Ω':
+		return 'z', true
+	case 'º':
+		return '0', true
+	case '–':
+		return '-', true
+	case '≠':
+		return '=', true
+	case '÷':
+		return '/', true
+	}
+	return r, false
 }
 
 // globalNavInputCapture should be invoked only from specific boxes like Tree and filesPanel.

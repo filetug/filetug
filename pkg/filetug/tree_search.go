@@ -18,17 +18,15 @@ type searchContext struct {
 
 func (t *Tree) SetSearch(pattern string) {
 	t.searchPattern = pattern
-	if pattern == "" {
-		t.searchPattern = ""
-		t.SetTitle("")
-	} else {
-		title := fmt.Sprintf("Find: %s", t.searchPattern)
-		t.SetTitle(title)
-	}
-	searchCtx := &searchContext{
-		pattern: t.searchPattern,
-	}
 	root := t.tv.GetRoot()
+	if pattern == "" {
+		t.SetTitle(t.panelTitle())
+		highlightTreeNodes(root, &searchContext{pattern: ""}, true)
+		t.tv.SetCurrentNode(root)
+		return
+	}
+	t.SetTitle(fmt.Sprintf("Find: %s", t.searchPattern))
+	searchCtx := &searchContext{pattern: t.searchPattern}
 	highlightTreeNodes(root, searchCtx, true)
 	if searchCtx.firstPrefixed != nil {
 		t.tv.SetCurrentNode(searchCtx.firstPrefixed)
@@ -44,12 +42,13 @@ func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext, isRoot bool
 		r := n.GetReference()
 		if dirContext, ok := r.(*files.DirContext); ok {
 			_, name := path.Split(dirContext.Path())
+			orig := dirNodeText(name)
 			lowerName := strings.ToLower(name)
-			if strings.Contains(lowerName, searchCtx.pattern) {
+			if searchCtx.pattern != "" && strings.Contains(lowerName, searchCtx.pattern) {
 				i := strings.Index(lowerName, searchCtx.pattern)
 				ss := name[i : i+len(searchCtx.pattern)]
 				formatted := fmt.Sprintf("[black:lightgreen]%s[-:-]", ss)
-				text := strings.ReplaceAll(name, ss, formatted)
+				text := strings.ReplaceAll(orig, ss, formatted)
 				n.SetText(text)
 				searchCtx.found = append(searchCtx.found, text)
 				if searchCtx.firstContains == nil {
@@ -59,7 +58,7 @@ func highlightTreeNodes(n *tview.TreeNode, searchCtx *searchContext, isRoot bool
 					searchCtx.firstPrefixed = n
 				}
 			} else {
-				n.SetText(name)
+				n.SetText(orig)
 			}
 		}
 	}

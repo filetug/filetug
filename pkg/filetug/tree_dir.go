@@ -17,6 +17,45 @@ import (
 
 const dirEmoji = "📁"
 
+func dirNodeText(name string) string {
+	return emojiForDir(name) + " " + name
+}
+
+func emojiForDir(name string) string {
+	switch strings.ToLower(name) {
+	case "library":
+		return "📚"
+	case "users":
+		return "👥"
+	case "applications":
+		return "🈸"
+	case "music":
+		return "🎹"
+	case "movies":
+		return "📺"
+	case "pictures":
+		return "🖼️"
+	case "desktop":
+		return "🖥️"
+	case "datatug":
+		return "🛥️"
+	case "documents":
+		return "🗃"
+	case "public":
+		return "📢"
+	case "temp":
+		return "⏳"
+	case "system":
+		return "🧠"
+	case "bin", "sbin":
+		return "🚀"
+	case "private":
+		return "🔒"
+	default:
+		return dirEmoji
+	}
+}
+
 func (t *Tree) changed(node *tview.TreeNode) {
 	ref := node.GetReference()
 
@@ -72,39 +111,8 @@ func (t *Tree) setDirContext(ctx context.Context, node *tview.TreeNode, dirConte
 		}
 		if child.IsDir() {
 			childPath := path.Join(dirContext.Path(), name)
-			emoji := dirEmoji
-			switch strings.ToLower(name) {
-			case "library":
-				emoji = "📚"
-			case "users":
-				emoji = "👥"
-			case "applications":
-				emoji = "🈸"
-			case "music":
-				emoji = "🎹"
-			case "movies":
-				emoji = "📺"
-			case "pictures":
-				emoji = "🖼️"
-			case "desktop":
-				emoji = "🖥️"
-			case "datatug":
-				emoji = "🛥️"
-			case "documents":
-				emoji = "🗃"
-			case "public":
-				emoji = "📢"
-			case "temp":
-				emoji = "⏳"
-			case "system":
-				emoji = "🧠"
-			case "bin", "sbin":
-				emoji = "🚀"
-			case "private":
-				emoji = "🔒"
-			}
-			prefix := emoji + name
-			n := tview.NewTreeNode(prefix)
+			prefix := dirNodeText(name)
+			n := tview.NewTreeNode(prefix).SetIndent(1)
 			childContext := files.NewDirContext(dirContext.Store(), childPath, nil)
 			n.SetReference(childContext)
 			node.AddChild(n)
