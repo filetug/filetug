@@ -125,25 +125,20 @@ func TestNewPanel_Coverage(t *testing.T) {
 
 	t.Run("input_handlers", func(t *testing.T) {
 		_, _, p, _ := newNewPanel(t)
-		// Escape
-		// Use a trick to get the function, as it might be private or not have a getter in some tview versions
-		// But usually it's public. Wait, tview.InputField has SetDoneFunc but NO GetDoneFunc?
-		// Actually it's public: DoneFunc.
-		// Let's check tview documentation/code if possible, or just assume it's private and we can't test it this way.
-		// Actually, I can just call p.input.InputCapture()(event) for Escape.
+		capture := p.input.GetInputCapture()
 
-		// Let's try to find if there is a way to trigger it.
-		// For now let's just use what's likely available or skip if not.
+		// Tab is the only key the panel's input capture consumes: it cycles
+		// focus between the filename input and the two buttons, returning nil.
+		tab := tcell.NewEventKey(tcell.KeyTab, 0, tcell.ModNone)
+		assert.Equal(t, (*tcell.EventKey)(nil), capture(tab))
 
-		// Alt-f
-		event := tcell.NewEventKey(tcell.KeyRune, 'f', tcell.ModNone)
-		res := p.input.GetInputCapture()(event)
-		assert.Equal(t, (*tcell.EventKey)(nil), res)
+		// Every other key passes through unchanged so it can be typed into the
+		// filename input (the handler returns the event as-is).
+		f := tcell.NewEventKey(tcell.KeyRune, 'f', tcell.ModNone)
+		assert.Equal(t, f, capture(f))
 
-		// Alt-d
-		event = tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone)
-		res = p.input.GetInputCapture()(event)
-		assert.Equal(t, (*tcell.EventKey)(nil), res)
+		d := tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone)
+		assert.Equal(t, d, capture(d))
 	})
 
 	t.Run("createDir_noCurrentDir", func(t *testing.T) {

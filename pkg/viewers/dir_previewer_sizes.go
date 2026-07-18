@@ -29,7 +29,7 @@ func getSizesForGroups(groups []*ExtensionsGroup) error {
 					continue
 				}
 				rv := reflect.ValueOf(info)
-				if (rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Chan || rv.Kind() == reflect.Func) && rv.IsNil() {
+				if (rv.Kind() == reflect.Pointer || rv.Kind() == reflect.Interface || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Chan || rv.Kind() == reflect.Func) && rv.IsNil() {
 					continue
 				}
 				size := info.Size()
