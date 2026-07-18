@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -266,22 +267,19 @@ func TestTextPreviewerPreviewStalePlain(t *testing.T) {
 	doneFirst := make(chan struct{})
 	doneSecond := make(chan struct{})
 
+	// The first (stale) preview and the second preview can both invoke the
+	// currently-assigned queueUpdateDraw concurrently, so guard each channel
+	// close with sync.Once — a plain select/close check-then-act would race and
+	// panic with "close of closed channel".
+	var firstOnce, secondOnce sync.Once
 	queueUpdateFirst := func(fn func()) {
 		<-allowFirst
 		fn()
-		select {
-		case <-doneFirst:
-		default:
-			close(doneFirst)
-		}
+		firstOnce.Do(func() { close(doneFirst) })
 	}
 	queueUpdateSecond := func(fn func()) {
 		fn()
-		select {
-		case <-doneSecond:
-		default:
-			close(doneSecond)
-		}
+		secondOnce.Do(func() { close(doneSecond) })
 	}
 
 	previewer := NewTextPreviewer(queueUpdateFirst)
@@ -327,25 +325,21 @@ func TestTextPreviewerPreviewStaleLexer(t *testing.T) {
 	doneFirst := make(chan struct{})
 	doneSecond := make(chan struct{})
 
+	// Guard each close with sync.Once — the released first (stale) preview and
+	// the second preview may both run the currently-assigned queueUpdateDraw
+	// concurrently, and a check-then-close would race into a double close.
+	var firstOnce, secondOnce sync.Once
 	queueUpdateFirst := func(fn func()) {
 		<-allowFirst
 		fn()
-		select {
-		case <-doneFirst:
-		default:
-			close(doneFirst)
-		}
+		firstOnce.Do(func() { close(doneFirst) })
 	}
 
 	previewer := NewTextPreviewer(queueUpdateFirst)
 	previewer.PreviewSingle(lexerEntry, []byte("package main\n"), nil)
 	previewer.queueUpdateDraw = func(fn func()) {
 		fn()
-		select {
-		case <-doneSecond:
-		default:
-			close(doneSecond)
-		}
+		secondOnce.Do(func() { close(doneSecond) })
 	}
 	previewer.PreviewSingle(plainEntry, []byte("second"), nil)
 	waitForUpdate(t, doneSecond)
