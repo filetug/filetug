@@ -1,37 +1,44 @@
 name: Release
 
+# Continuous delivery: every merge to `main` runs the shared strongo/cicd
+# release workflow, which bumps the version from conventional commits and
+# releases it in one run (GoReleaser against this repo's .goreleaser.yaml).
+# Pushing an explicit `vX.Y.Z` tag also works and releases that exact version.
+# A docs/chore-only merge cuts no tag and publishes nothing.
+#
+# filetug is pre-1.0: allow_major_version_bump stays false, so a stray `feat!:`
+# is capped to a minor bump instead of jumping to v1.0.0. Cut v1.0.0 deliberately
+# by pushing that tag.
+#
+# Homebrew publishing is a cask (see .goreleaser.yaml); the `ft` shortcut is
+# preserved via the cask's custom_block.
+
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  workflow_dispatch:
+
+# One release at a time; a second push queues instead of racing the first.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    uses: strongo/cicd/.github/workflows/release.yml@v1
     permissions:
       contents: write
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
-
-      - name: Debug Homebrew token
-        env:
-          HOMEBREW_FILETUG_GITHUB_TOKEN: ${{ secrets.HOMEBREW_FILETUG_GITHUB_TOKEN }}
-        run: |
-          if [ -z "${HOMEBREW_FILETUG_GITHUB_TOKEN:-}" ]; then
-            echo "❌ HOMEBREW_FILETUG_GITHUB_TOKEN is NOT set"
-            exit 1
-          else
-            echo "✅ HOMEBREW_FILETUG_GITHUB_TOKEN is set"
-          fi
-
-      - uses: goreleaser/goreleaser-action@v6
-        with:
-          version: v2
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_FILETUG_GITHUB_TOKEN: ${{ secrets.HOMEBREW_FILETUG_GITHUB_TOKEN }}
+    with:
+      # Pre-1.0: cap an accidental major (feat!:) to a minor bump.
+      allow_major_version_bump: false
+    secrets:
+      # Cross-repo PAT for the Homebrew tap (filetug/homebrew-filetug), forwarded
+      # to GoReleaser as $GORELEASER_GITHUB_TOKEN and referenced by the cask's
+      # repository.token. Reuses the repo's existing HOMEBREW_FILETUG_GITHUB_TOKEN.
+      GORELEASER_GITHUB_TOKEN: ${{ secrets.HOMEBREW_FILETUG_GITHUB_TOKEN }}

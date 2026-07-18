@@ -11,6 +11,10 @@ import (
 
 var _ Previewer = (*MarkdownPreviewer)(nil)
 
+// glamourRender is a seam over glamour.Render so tests can force a render error
+// (glamour.Render effectively never errors on a valid style + arbitrary input).
+var glamourRender = glamour.Render
+
 type MarkdownPreviewer struct {
 	TextPreviewer
 }
@@ -41,7 +45,7 @@ func (p *MarkdownPreviewer) PreviewSingle(entry files.EntryWithDirPath, data []b
 				return
 			}
 		}
-		rendered, err := glamour.Render(string(data), "dark")
+		rendered, err := glamourRender(string(data), "dark")
 		if err != nil {
 			errText := err.Error()
 			p.queueUpdateDraw(func() {

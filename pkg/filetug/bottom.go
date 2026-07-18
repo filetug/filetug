@@ -8,6 +8,7 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/ftui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 type bottom struct {
@@ -62,7 +63,7 @@ func (b *bottom) renderMenuItems(menuItems []ftui.MenuItem) string {
 	for _, mi := range menuItems {
 		title := mi.Title
 		for _, key := range mi.HotKeys {
-			color := "white"
+			color := fmt.Sprintf("#%06x", themes.CurrentTheme.HotkeyColor().Hex())
 			if mi.IsAltHotkey {
 				color = "blue"
 			}

@@ -51,14 +51,13 @@ release:
     owner: filetug
     name: filetug
 
-brews:
-  #  Warning: brews is being phased out in favor of homebrew_casks
-  #  •	GoReleaser warns that brews is being phased out
-  #  •	But the replacement is not functionally equivalent yet
-  #  •	CLI tools must use install + test
-  #  •	homebrew_casks is designed for .app bundles, not CLIs
-  #  So the only valid configuration right now is:
-  #    👉 Keep using brews and ignore the warning
+# Homebrew cask (ecosystem standard; `brews:` is deprecated — see
+# strongo/cicd README "Packaging conventions"). GoReleaser auto-installs the
+# `filetug` binary from the archive, so the old `bin.install "filetug"` and the
+# `--version` smoke tests are no longer needed (casks have no install/test
+# hook). The `ft` shortcut the old formula created is preserved via custom_block
+# below (raw cask DSL) — a second binary stanza symlinks filetug -> ft.
+homebrew_casks:
   - name: filetug
     ids:
       - tarball
@@ -70,12 +69,9 @@ brews:
     repository:
       owner: filetug
       name: homebrew-filetug
-      token: "{{ .Env.HOMEBREW_FILETUG_GITHUB_TOKEN }}"
+      # Forwarded by the shared strongo/cicd release.yml (mapped from the repo's
+      # HOMEBREW_FILETUG_GITHUB_TOKEN secret).
+      token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
 
-    install: |
-      bin.install "filetug"
-      bin.install_symlink "filetug" => "ft"
-
-    test: |
-      system "#{bin}/filetug", "--version"
-      system "#{bin}/ft", "--version"
+    custom_block: |
+      binary "filetug", target: "ft"
