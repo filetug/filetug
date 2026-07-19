@@ -70,7 +70,7 @@ homebrew_casks:
       owner: filetug
       name: homebrew-filetug
       # Forwarded by the shared strongo/cicd release.yml (mapped from the repo's
-      # HOMEBREW_FILETUG_GITHUB_TOKEN secret).
+      # FILETUG_GORELEASER_TOKEN secret).
       token: "{{ .Env.GORELEASER_GITHUB_TOKEN }}"
 
     custom_block: |
