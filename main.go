@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -15,22 +16,31 @@ import (
 )
 
 var (
-	cpuProfile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-	memProfile = flag.String("memprofile", "", "write memory profile to `file`")
-	pprofAddr  = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
+	cpuProfile  = flag.String("cpuprofile", "", "write cpu profile to `file`")
+	memProfile  = flag.String("memprofile", "", "write memory profile to `file`")
+	pprofAddr   = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
+	showVersion = flag.Bool("version", false, "print FileTug version and exit")
 )
 
 var httpListenAndServe = http.ListenAndServe
 var osExit = os.Exit
 var pprofStopCPUProfile = pprof.StopCPUProfile
+var version = "dev"
+var versionOutput io.Writer = os.Stdout
 
 func main() {
 	app := newFileTugApp()
-	run(app)
+	if app != nil {
+		run(app)
+	}
 }
 
 func newFileTugApp() (app navigator.App) {
 	flag.Parse()
+	if *showVersion {
+		_, _ = fmt.Fprintf(versionOutput, "filetug %s\n", version)
+		return nil
+	}
 	initialPath = ""
 	if flag.NArg() > 0 {
 		initialPath = flag.Arg(0)

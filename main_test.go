@@ -38,6 +38,34 @@ func TestMainRoot(t *testing.T) {
 	}
 }
 
+func TestMainVersion(t *testing.T) {
+	oldRun := run
+	oldShowVersion := *showVersion
+	oldVersion := version
+	oldVersionOutput := versionOutput
+	defer func() {
+		run = oldRun
+		*showVersion = oldShowVersion
+		version = oldVersion
+		versionOutput = oldVersionOutput
+	}()
+
+	runCalled := false
+	run = func(application) { runCalled = true }
+	*showVersion = true
+	version = "test-version"
+	var output bytes.Buffer
+	versionOutput = &output
+
+	main()
+	if runCalled {
+		t.Fatal("version output started the TUI")
+	}
+	if got := output.String(); got != "filetug test-version\n" {
+		t.Fatalf("version output = %q", got)
+	}
+}
+
 func Test_newApp(t *testing.T) {
 	oldSetupApp := setupApp
 	defer func() {
