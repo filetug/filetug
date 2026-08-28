@@ -281,30 +281,31 @@ func TestWorktreesPanelNavigation(t *testing.T) {
 	nonRepo := t.TempDir()
 	nav.current.SetDir(files.NewDirContext(nav.store, nonRepo, nil))
 	nav.showWorktreesPanel()
-	if !nav.worktrees.visible {
+	if !nav.worktrees.visible || nav.right.secondary != nav.worktrees || nav.right.content != nav.previewer {
 		t.Fatal("expected not-in-repository panel")
 	}
 
 	nav.worktrees.repoRoot = canonical
 	nav.worktrees.items = []worktreeInfo{{Path: canonical, Canonical: true, Branch: "main"}}
-	nav.right.content = nav.worktrees
+	nav.right.secondary = nav.worktrees
 	nav.showWorktreesPanel()
 	if len(app.focusCalls) == 0 {
 		t.Fatal("visible panel was not focused")
 	}
 
-	nav.right.content = nav.previewer
+	nav.right.secondary = nil
 	nav.current.SetDir(files.NewDirContext(nav.store, canonical, nil))
 	nav.showWorktreesPanel()
-	if nav.right.content != nav.worktrees {
-		t.Fatal("repository panel was not shown")
+	if nav.right.content != nav.previewer || nav.right.secondary != nav.worktrees {
+		t.Fatal("repository panel was not shown below the preview")
 	}
 
 	nav.worktrees.visible = true
-	nav.right.content = nav.worktrees
-	nav.right.SetContent(nav.previewer)
-	if nav.right.content != nav.worktrees {
-		t.Fatal("visible worktrees panel was overwritten")
+	nav.right.secondary = nav.worktrees
+	otherPrimary := tview.NewBox()
+	nav.right.SetContent(otherPrimary)
+	if nav.right.content != otherPrimary || nav.right.secondary != nav.worktrees {
+		t.Fatal("primary panel update removed the worktrees pane")
 	}
 
 	if got := nav.inputCapture(tcell.NewEventKey(tcell.KeyRune, 'w', tcell.ModAlt)); got != nil {

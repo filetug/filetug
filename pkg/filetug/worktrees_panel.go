@@ -136,7 +136,7 @@ func newWorktreesPanel(nav *Navigator) *worktreesPanel {
 		switch event.Key() {
 		case tcell.KeyEscape:
 			p.visible = false
-			nav.right.SetContent(nav.previewer)
+			nav.right.SetSecondary(nil)
 			nav.app.SetFocus(nav.files)
 			return nil
 		case tcell.KeyLeft:
@@ -157,9 +157,9 @@ func (nav *Navigator) showWorktreesPanel() {
 	if nav == nil || nav.worktrees == nil || nav.store == nil || nav.store.RootURL().Scheme != "file" {
 		return
 	}
-	if nav.right != nil && nav.right.content == nav.worktrees && nav.worktrees.repoRoot != "" {
+	if nav.right != nil && nav.right.secondary == nav.worktrees && nav.worktrees.repoRoot != "" {
 		nav.worktrees.visible = true
-		nav.right.SetContent(nav.worktrees)
+		nav.right.SetSecondary(nav.worktrees)
 		nav.app.SetFocus(nav.worktrees.table)
 		return
 	}
@@ -175,11 +175,11 @@ func (nav *Navigator) showWorktreesPanel() {
 		nav.worktrees.status.SetText("[yellow]Not inside a Git repository[-]")
 		nav.worktrees.table.Clear()
 		nav.worktrees.clearDetail()
-		nav.right.SetContent(nav.worktrees)
+		nav.right.SetSecondary(nav.worktrees)
 		return
 	}
 	nav.worktrees.visible = true
-	nav.right.SetContent(nav.worktrees)
+	nav.right.SetSecondary(nav.worktrees)
 	nav.worktrees.ensureLoaded(repoRoot)
 	nav.app.SetFocus(nav.worktrees.table)
 }
@@ -193,7 +193,7 @@ func (nav *Navigator) showWorktreesPanelAtRepositoryRoot(path string) {
 		return
 	}
 	nav.worktrees.visible = true
-	nav.right.SetContent(nav.worktrees)
+	nav.right.SetSecondary(nav.worktrees)
 	nav.worktrees.ensureLoaded(repoRoot)
 }
 

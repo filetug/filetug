@@ -53,6 +53,20 @@ func TestContainer_SetContent(t *testing.T) {
 	if c.GetItemCount() != 1 {
 		t.Errorf("Expected 1 item in Flex after second SetContent, got %d", c.GetItemCount())
 	}
+
+	secondary := tview.NewBox()
+	c.SetSecondary(secondary)
+	if c.secondary != secondary || c.GetItemCount() != 2 {
+		t.Fatalf("expected equal primary and secondary panes, secondary=%v items=%d", c.secondary, c.GetItemCount())
+	}
+	c.SetContent(p)
+	if c.content != p || c.secondary != secondary || c.GetItemCount() != 2 {
+		t.Fatal("updating primary content removed the secondary pane")
+	}
+	c.SetSecondary(nil)
+	if c.secondary != nil || c.GetItemCount() != 1 {
+		t.Fatal("clearing the secondary pane did not restore one full-height pane")
+	}
 }
 
 func TestContainer_SetContent_NilSafety(t *testing.T) {
@@ -60,11 +74,13 @@ func TestContainer_SetContent_NilSafety(t *testing.T) {
 	var nilContainer *Container
 	assert.NotPanics(t, func() {
 		nilContainer.SetContent(nil)
+		nilContainer.SetSecondary(nil)
 	})
 
 	empty := &Container{}
 	assert.NotPanics(t, func() {
 		empty.SetContent(tview.NewBox())
+		empty.SetSecondary(tview.NewBox())
 	})
 }
 

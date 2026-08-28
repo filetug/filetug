@@ -4,9 +4,10 @@ import "github.com/rivo/tview"
 
 type Container struct {
 	*tview.Flex
-	index   int
-	content tview.Primitive
-	nav     *Navigator
+	index     int
+	content   tview.Primitive
+	secondary tview.Primitive
+	nav       *Navigator
 }
 
 func NewContainer(index int, nav *Navigator) *Container {
@@ -29,10 +30,25 @@ func (r *Container) SetContent(p tview.Primitive) {
 	if r == nil || r.Flex == nil {
 		return
 	}
-	if r.nav != nil && r == r.nav.right && r.nav.worktrees != nil && r.nav.worktrees.visible && p != r.nav.worktrees {
+	r.content = p
+	r.render()
+}
+
+func (r *Container) SetSecondary(p tview.Primitive) {
+	if r == nil || r.Flex == nil {
 		return
 	}
-	r.content = p
+	r.secondary = p
+	r.render()
+}
+
+func (r *Container) render() {
 	r.Clear()
-	r.AddItem(p, 0, 1, false)
+	if r.content != nil {
+		r.AddItem(r.content, 0, 1, false)
+	}
+	if r.secondary != nil {
+		r.SetDirection(tview.FlexRow)
+		r.AddItem(r.secondary, 0, 1, false)
+	}
 }
