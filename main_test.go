@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -53,6 +54,47 @@ func Test_newApp(t *testing.T) {
 	}
 	if !setupAppCalled {
 		t.Errorf("expected newApp to call setupApp")
+	}
+}
+
+func Test_newAppWithInitialPath(t *testing.T) {
+	oldSetupAppAtPath := setupAppAtPath
+	oldInitialPath := initialPath
+	defer func() {
+		setupAppAtPath = oldSetupAppAtPath
+		initialPath = oldInitialPath
+	}()
+	calledWith := ""
+	setupAppAtPath = func(_ navigator.App, path string) {
+		calledWith = path
+	}
+	initialPath = "/tmp/filetug"
+
+	app := newApp()
+	if app == nil || calledWith != initialPath {
+		t.Fatalf("newApp path setup = %q", calledWith)
+	}
+}
+
+func Test_newFileTugAppWithPositionalPath(t *testing.T) {
+	oldArgs := os.Args
+	oldFlags := flag.CommandLine
+	oldNewApp := newApp
+	oldInitialPath := initialPath
+	defer func() {
+		os.Args = oldArgs
+		flag.CommandLine = oldFlags
+		newApp = oldNewApp
+		initialPath = oldInitialPath
+	}()
+
+	flag.CommandLine = flag.NewFlagSet("filetug-test", flag.ContinueOnError)
+	os.Args = []string{"ft", "/tmp/filetug"}
+	ctrl := gomock.NewController(t)
+	newApp = func() navigator.App { return tviewmocks.NewMockApp(ctrl) }
+
+	if app := newFileTugApp(); app == nil || initialPath != "/tmp/filetug" {
+		t.Fatalf("newFileTugApp positional path = %q", initialPath)
 	}
 }
 
@@ -140,20 +182,20 @@ func Test_newFileTugApp(t *testing.T) {
 			httpListenAndServe = oldHTTPListenAndServe
 			*pprofAddr = oldPprofAddr
 		}()
-		
+
 		serverStarted := make(chan struct{})
 		// Mock the http server to synchronize with goroutine
 		httpListenAndServe = func(addr string, handler http.Handler) error {
 			close(serverStarted)
 			return nil
 		}
-		
+
 		*pprofAddr = "localhost:0" // Use port 0 for random available port
 		app := newFileTugApp()
 		if app == nil {
 			t.Error("newFileTugApp() returned nil")
 		}
-		
+
 		// Wait for goroutine to start to ensure it has read pprofAddr
 		select {
 		case <-serverStarted:

@@ -63,6 +63,10 @@ type wbOrphanReport struct {
 	Families []wbWorktreeFamily `json:"families"`
 }
 
+var worktreeExecCommandContext = exec.CommandContext
+var worktreeExecCommand = exec.Command
+var worktreeExecLookPath = exec.LookPath
+
 type worktreesPanel struct {
 	*sneatv.Boxed
 	nav       *Navigator
@@ -79,6 +83,7 @@ type worktreesPanel struct {
 	selected  bool
 	loading   bool
 	cancel    context.CancelFunc
+	openPath  func(string)
 	loadID    atomic.Uint64
 }
 
@@ -99,7 +104,8 @@ func newWorktreesPanel(nav *Navigator) *worktreesPanel {
 
 	p := &worktreesPanel{
 		nav: nav, rows: rows, header: header, status: status, table: table, detail: detail,
-		Boxed: sneatv.NewBoxed(rows, sneatv.WithLeftBorder(0, -1)),
+		Boxed:    sneatv.NewBoxed(rows, sneatv.WithLeftBorder(0, -1)),
+		openPath: nav.goDirByPath,
 	}
 	p.SetTitle("Worktrees")
 	p.header.SetText("[#7aa2f7::b] WORKTREES[-]")
@@ -113,7 +119,7 @@ func newWorktreesPanel(nav *Navigator) *worktreesPanel {
 		if !p.selected || index < 0 || index >= len(p.items) || p.items[index].Prunable {
 			return
 		}
-		p.nav.goDirByPath(p.items[index].Path)
+		p.openPath(p.items[index].Path)
 	})
 	p.table.SetFocusFunc(func() {
 		p.focused = true
@@ -413,10 +419,18 @@ func readGitWorktrees(ctx context.Context, repoRoot string) (string, []worktreeI
 	if err != nil {
 		return "", nil, err
 	}
-	out, err := exec.CommandContext(ctx, "git", "-C", repoRoot, "worktree", "list", "--porcelain").Output()
+	out, err := worktreeExecCommandContext(ctx, "git", "-C", repoRoot, "worktree", "list", "--porcelain").Output()
 	if err != nil {
 		return "", nil, fmt.Errorf("git worktree list: %w", err)
 	}
+	items, err := parseGitWorktrees(string(out), canonical)
+	if err != nil {
+		return canonical, nil, err
+	}
+	return canonical, items, nil
+}
+
+func parseGitWorktrees(output, canonical string) ([]worktreeInfo, error) {
 	items := make([]worktreeInfo, 0)
 	var item worktreeInfo
 	flush := func() {
@@ -428,7 +442,7 @@ func readGitWorktrees(ctx context.Context, repoRoot string) (string, []worktreeI
 		items = append(items, item)
 		item = worktreeInfo{}
 	}
-	for _, line := range strings.Split(string(out), "\n") {
+	for _, line := range strings.Split(output, "\n") {
 		switch {
 		case strings.HasPrefix(line, "worktree "):
 			flush()
@@ -449,14 +463,14 @@ func readGitWorktrees(ctx context.Context, repoRoot string) (string, []worktreeI
 	}
 	flush()
 	if len(items) == 0 {
-		return canonical, nil, errors.New("Git reported no worktrees")
+		return nil, errors.New("git reported no worktrees")
 	}
 	sortWorktrees(items)
-	return canonical, items, nil
+	return items, nil
 }
 
 func canonicalWorktreePath(ctx context.Context, repoRoot string) (string, error) {
-	out, err := exec.CommandContext(ctx, "git", "-C", repoRoot, "rev-parse", "--path-format=absolute", "--git-common-dir").Output()
+	out, err := worktreeExecCommandContext(ctx, "git", "-C", repoRoot, "rev-parse", "--path-format=absolute", "--git-common-dir").Output()
 	if err != nil {
 		return "", fmt.Errorf("resolve Git common directory: %w", err)
 	}
@@ -468,7 +482,7 @@ func canonicalWorktreePath(ctx context.Context, repoRoot string) (string, error)
 }
 
 func gitRepositoryRoot(path string) string {
-	out, err := exec.Command("git", "-C", path, "rev-parse", "--show-toplevel").Output()
+	out, err := worktreeExecCommand("git", "-C", path, "rev-parse", "--show-toplevel").Output()
 	if err != nil {
 		return ""
 	}
@@ -487,12 +501,12 @@ func enrichGitWorktrees(ctx context.Context, items []worktreeInfo) {
 			defer wg.Done()
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
-			status, err := exec.CommandContext(ctx, "git", "-C", items[index].Path, "status", "--porcelain").Output()
+			status, err := worktreeExecCommandContext(ctx, "git", "-C", items[index].Path, "status", "--porcelain").Output()
 			if err == nil {
 				items[index].Dirty = len(status) > 0
 				items[index].StatusRead = true
 			}
-			commit, err := exec.CommandContext(ctx, "git", "-C", items[index].Path, "log", "-1", "--format=%cI").Output()
+			commit, err := worktreeExecCommandContext(ctx, "git", "-C", items[index].Path, "log", "-1", "--format=%cI").Output()
 			if err == nil {
 				items[index].LastCommit, _ = time.Parse(time.RFC3339, strings.TrimSpace(string(commit)))
 			}
@@ -503,12 +517,12 @@ func enrichGitWorktrees(ctx context.Context, items []worktreeInfo) {
 
 func readWBWorktreeMetadata(ctx context.Context, canonical string) (map[string]wbWorktreeInfo, string) {
 	metadata := make(map[string]wbWorktreeInfo)
-	wb, err := exec.LookPath("wb")
+	wb, err := worktreeExecLookPath("wb")
 	if err != nil {
 		return metadata, "WB not installed; showing raw Git"
 	}
 	projectsRoot := filepath.Dir(filepath.Dir(canonical))
-	command := exec.CommandContext(ctx, wb, "worktree", "orphans", "--format", "json", "--non-interactive", "--projects-root", projectsRoot)
+	command := worktreeExecCommandContext(ctx, wb, "worktree", "orphans", "--format", "json", "--non-interactive", "--projects-root", projectsRoot)
 	out, err := command.Output()
 	if err != nil {
 		return metadata, "WB metadata unavailable"

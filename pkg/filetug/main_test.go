@@ -1,6 +1,7 @@
 package filetug
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/rivo/tview"
@@ -43,5 +44,18 @@ func TestSetupApp(t *testing.T) {
 	}
 	if !app.setRootFullscreen {
 		t.Fatal("expected SetRoot to be called with fullscreen=true")
+	}
+}
+
+func TestSetupAppAtPath(t *testing.T) {
+	app := &setupApp{}
+	path := t.TempDir()
+	SetupAppAtPath(app, path)
+	if !app.enableMouseCalled || !app.setRootCalled {
+		t.Fatal("expected path setup to initialize the app")
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil || abs == "" {
+		t.Fatalf("absolute path = %q err=%v", abs, err)
 	}
 }
