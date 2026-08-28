@@ -6,6 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // View creates the terminal projection. Child components expose strings in
@@ -33,7 +34,8 @@ func (m *Model) View() tea.View {
 
 func (m *Model) titleView() string {
 	title := fmt.Sprintf("Filetug · %s", m.currentPath)
-	return m.styles.theme.Title().Width(maxInt(1, m.width)).Render(title)
+	truncatedTitle := ansi.Truncate(title, maxInt(1, m.width), "…")
+	return m.styles.theme.Title().Render(truncatedTitle)
 }
 
 func (m *Model) panel(title, content string, focus focusPanel, width int) string {

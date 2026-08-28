@@ -229,10 +229,14 @@ func (m *Model) loadDirectory(path string) tea.Cmd {
 	m.previewRequest++
 	request := m.dirRequest
 	m.currentPath = path
+	m.entries = nil
+	m.selected = 0
+	m.listOffset = 0
 	m.directoryState = "loading"
 	m.previewState = "Loading directory…"
 	m.preview.SetContent(m.previewState)
 	m.err = ""
+	m.rebuildTree()
 	ctx, cancel := context.WithCancel(context.Background())
 	m.dirCancel = cancel
 	return func() tea.Msg {
