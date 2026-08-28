@@ -11,20 +11,65 @@ status: Draft
 
 ## Summary
 
-Filetug can fully cut over from `tview` and `tcell` to Charm through an architectural UI and state rewrite.
+Filetug will fully cut over from `tview` and `tcell` to Charm in one release through an architectural UI and state rewrite.
 
 The target stack is Bubble Tea v2, Bubbles v2, Lip Gloss v2, and Glamour v2.
 
-A keyboard-driven three-panel MVP is estimated at
-5–8 working days for one experienced Go developer or roughly 6–12 focused
-agent-hours plus terminal QA. Full production parity is estimated at 3–5
-developer weeks or 3–6 focused agent-days plus review, CI, release coordination,
-and human terminal smoke testing.
+A keyboard-driven three-panel internal milestone is estimated at 5–8 working
+days for one experienced Go developer or roughly 6–12 focused agent-hours plus
+terminal QA. Full production parity through the approved hard-cutover route is
+estimated at 2.5–4.5 developer weeks or 2.5–5 focused agent-days plus review,
+CI, release coordination, and human terminal smoke testing.
 
-Unless an explicitly approved staged rollout says otherwise, “migrate” means
-full cutover: all Filetug surfaces move to Charm, the old UI implementation is
-removed, and no Filetug production or test code depends on `tview` or
-`tcell`.
+“Migrate” means full cutover: all Filetug surfaces move to Charm, the old UI
+implementation is removed, and no Filetug production or test code depends on
+`tview` or `tcell` when the implementation lands.
+
+## Decisions
+
+### D1 — Single-release hard cutover
+
+**Approved:** 2026-08-28 by the founder.
+
+- Filetug will not ship a public `--ui` selector or a release containing both
+  UI implementations.
+- The implementation starts from the latest `origin/main` in an isolated WB
+  worktree. The canonical clone is read-only source and synchronization state,
+  never the implementation checkout.
+- The existing executable may remain temporarily callable inside the private
+  implementation worktree while the Bubble Tea v2 packages compile and gain
+  targeted tests. This is an implementation technique, not a product mode.
+- The cutover candidate switches the production entry point once, then removes
+  the old root, panels, test helpers, and module dependencies before landing.
+- No Filetug consumer is retained on `tview` or `tcell` after the cutover.
+- Operational rollback is the immediately previous Filetug release or a
+  forward revert, not an in-product backend selector.
+
+**Reason:** this removes the public selector, two-backend regression matrix,
+rollback compatibility layer, later default switch, and separate retirement
+campaign. The estimated saving is 0.5–1.5 focused agent-days relative to a
+released dual-mode rollout. The accepted trade-off is a larger single release
+with no runtime fallback.
+
+## Implementation Handoff
+
+This Feature is the authoritative plan for the next implementation agent. This
+planning effort does not authorize or contain migration code.
+
+1. Re-read the exact current `origin/main` and inventory every old UI consumer;
+   the 2026-08-28 counts below are a baseline, not a substitute for a fresh
+   cutover inventory.
+2. Resolve Open Question 2 before changing `strongo/strongo-tui`. The
+   recommended boundary is a provider-first addition of backend-neutral theme
+   tokens and a Lip Gloss v2 adapter while its existing `tview` adapter remains
+   for unrelated repositories; Filetug must stop consuming that old adapter.
+3. Build the Bubble Tea v2 model in Filetug behind ordinary package boundaries
+   while the current root keeps the worktree compilable. Do not add a public
+   selector, ship an alternate binary, or merge an intermediate dual stack.
+4. Treat the three-panel MVP as an internal test checkpoint. Continue through
+   every parity phase before switching the production root.
+5. Land only when all Acceptance Criteria are satisfied, `origin/main` contains
+   the exact candidate, and every related branch and worktree is cleaned.
 
 ## End-to-End Journey
 
@@ -99,7 +144,7 @@ Assessment baseline: `filetug/filetug` commit
 | Technical feasibility | High | Bubble Tea v2 supports full-window applications, commands/messages, keyboard and mouse input, and declarative terminal state. Bubbles v2 provides interactive tree, table, list, text input, spinner, help, and viewport models. |
 | Mechanical replaceability | Low | Filetug has 50 production files (6,551 lines) and 37 test files (10,950 lines) directly importing `tview` or `tcell`. Approximately 66% of production Go lines are directly UI-coupled. |
 | Domain reuse | High | `pkg/files`, `pkg/gitutils`, `pkg/fsutils`, persistence, masks, and much of preview data extraction are reusable without changing their product behavior. |
-| Incremental delivery | Medium to high | A separate root Bubble Tea model can initially reuse stores and Git services while the existing UI remains the rollback path, but the dual stack must be time-bounded. |
+| Incremental development | Medium to high | A separate Bubble Tea model can initially reuse stores and Git services while the old executable keeps only the private worktree compilable. No intermediate dual-stack release is permitted. |
 | Performance confidence | Medium | Bubble Tea v2 has an optimized cell renderer, but Filetug's current file list uses lazy `tview.TableContent`; Bubbles v2 tables materialize rows. A custom virtualized file-list model or measured list delegate is required before claiming parity. |
 | Testability | Medium to high | Pure `Update` and `View` behavior is easier to test deterministically. Filetug must replace 12 simulation/draw test files and numerous callback mocks with reducer, render, race, and PTY journey tests. |
 | Migration risk | Medium to high | The main risks are state ownership, stale async results, focus/key routing, large directories, mouse hit testing, Unicode width, terminal restoration, and maintaining the repository's 100% coverage gate. |
@@ -156,30 +201,29 @@ Filesystem stores, favorites persistence, Git services, and preview data
 extractors remain UI-independent. Presenters convert their plain results to
 Lip Gloss v2 output at the edge.
 
-## Proposed Staged Rollout
+## Approved Delivery Strategy
 
-This rollout is a recommendation, not an approved policy decision.
+1. Create or resume one isolated implementation effort from the exact latest
+   `origin/main`; never edit the canonical clone.
+2. Add the new root and child models as normal Go packages, leaving the current
+   executable entry point unchanged while targeted model, render, and journey
+   tests are established.
+3. Keep all temporary coexistence private to the implementation branch. No
+   public CLI flag, alternate release artifact, or dual-backend CI promise is
+   created.
+4. Complete every parity phase, switch the production entry point once, and
+   delete all Filetug `tview`/`tcell` code in the same candidate.
+5. Validate the complete candidate, release once, and retain the previous
+   Filetug release as the operational rollback artifact.
 
-1. Add an explicit experimental entry point such as `ft --ui=bubbletea`.
-   The default remains the current `tview` UI during the MVP.
-2. The retained pilot consumers are favorites, masks, create/delete,
-   worktrees, advanced Git interactions, non-text previewers, and any mouse
-   interaction not yet ported. They remain available only through
-   `ft --ui=tview` until their parity tasks land.
-3. The rollback control is `ft --ui=tview`; it must preserve the same draft
-   and persisted filesystem state because both UIs use the same services.
-4. After full journey and performance parity, make Bubble Tea v2 the default
-   for one release while retaining `--ui=tview` as the explicit rollback.
-5. Remove `--ui=tview`, all old implementation code, and the old dependencies
-   no later than 20 working days after MVP acceptance. If the parity effort is
-   not actively converging by then, remove the experiment rather than maintain
-   two permanent UI stacks.
+The rejected alternative is a staged dual-mode rollout. It provides a runtime
+fallback but costs an estimated 0.5–1.5 additional agent-days and creates a
+temporary product surface and test matrix that must later be retired.
 
-The alternative is a one-shot cutover branch. It avoids temporary duplication
-but postpones realistic terminal feedback and makes regressions harder to
-isolate. It is not recommended.
+## Internal Three-Panel Milestone
 
-## MVP Scope
+This milestone is not releasable and may not land on `origin/main` without the
+remaining full-cutover phases.
 
 ### Included
 
@@ -193,7 +237,7 @@ isolate. It is not recommended.
 - cancellation and stale-result rejection;
 - deterministic model/view tests and a compiled-binary PTY journey smoke.
 
-### Excluded from the MVP, required for full cutover
+### Excluded from this milestone, required before landing
 
 - FTP and HTTP store journey parity;
 - favorites, masks, create, delete, scripts, and operations panels;
@@ -205,10 +249,10 @@ isolate. It is not recommended.
 
 ## High-Level Plan
 
-### Phase 0 — decisions and failing contract (1–2 days)
+### Phase 0 — current inventory and failing contract (1–2 days)
 
-1. Decide staged rollout versus one-shot cutover, keyboard-only MVP versus mouse
-   MVP, and the shared `strongo-tui` provider boundary.
+1. Resolve the remaining interaction, performance, and `strongo-tui` boundary
+   questions below before implementation reaches the affected surface.
 2. Inventory every current key, mouse action, panel, previewer, store, loading
    state, and error state in an executable parity matrix.
 3. Add the end-to-end three-panel journey harness before the new UI exists and
@@ -220,10 +264,11 @@ isolate. It is not recommended.
 **Verifies:** the existing `tview` journey passes; the new target fails because
 there is no Bubble Tea model, not because the fixture or terminal is broken.
 
-### Phase 1 — three-panel MVP (5–8 days)
+### Phase 1 — three-panel internal milestone (5–8 days)
 
-1. Extend `strongo-tui` with backend-neutral theme tokens and a Lip Gloss v2
-   adapter, release it, and consume that exact package from Filetug.
+1. Apply the approved `strongo-tui` boundary. Under the recommended option,
+   add backend-neutral theme tokens and a Lip Gloss v2 adapter, release it, and
+   consume that exact package from Filetug.
 2. Add the Bubble Tea v2 program boundary, root model, window sizing, keymap,
    focus state, layout, and terminal lifecycle.
 3. Adapt Bubbles v2 tree to Filetug's lazy `files.Store` reads.
@@ -237,8 +282,8 @@ there is no Bubble Tea model, not because the fixture or terminal is broken.
 **Verifies:** a fake store isolation test walks tree → file list → preview;
 selecting B before A finishes proves A cannot overwrite B; render tests cover
 80×24, 120×40, and narrow-terminal layouts; a PTY test launches
-`ft --ui=bubbletea <fixture>`, drives the journey, quits, and proves terminal
-restoration.
+the implementation candidate against `<fixture>`, drives the journey, quits,
+and proves terminal restoration.
 
 ### Phase 2 — navigation and auxiliary parity (4–6 days)
 
@@ -267,17 +312,19 @@ returning to navigation, and continuing without restart.
 path; mouse tests activate only the rendered target; candidate benchmarks stay
 within the approved regression budget relative to Phase 0.
 
-### Phase 4 — default switch and full retirement (2–3 days)
+### Phase 4 — production switch and full retirement (2–3 days)
 
 1. Run the entire parity matrix and PTY journey on the exact candidate.
-2. Make Bubble Tea v2 the default and exercise the explicit rollback release.
+2. Switch the production root from the old application to Bubble Tea v2 once.
 3. Remove the old root, old panels, `pkg/tviewmocks`,
    `pkg/chroma2tcell`, all `tview`/`tcell` imports, and obsolete
    `strongo-tui` adapter calls.
 4. Remove `github.com/rivo/tview` and `github.com/gdamore/tcell/v2` from
    Filetug's module graph, update documentation, and run the exact pre-push/CI
    mechanisms.
-5. Ship and perform a human smoke in the founder-visible terminal.
+5. Confirm the previous Filetug release can be reinstalled as the operational
+   rollback, then ship and perform a human smoke in the founder-visible
+   terminal.
 
 **Verifies:** repository and module-graph searches return zero Filetug
 `tview`/`tcell` consumers; `go test ./...`, the 100% coverage gate, race
@@ -289,8 +336,9 @@ smoke all pass for the exact landed commit.
 | Deliverable | One experienced Go developer | AI-agent implementation |
 |---|---:|---:|
 | Static visual three-panel spike | 1–2 days | 2–4 focused hours |
-| Tested keyboard-driven MVP | 5–8 days | 6–12 focused agent-hours plus terminal QA |
-| Full production cutover | 3–5 weeks | 3–6 focused agent-days plus review, CI, release coordination, and human QA |
+| Tested keyboard-driven internal milestone | 5–8 days | 6–12 focused agent-hours plus terminal QA |
+| Full approved hard cutover | 2.5–4.5 weeks | 2.5–5 focused agent-days plus review, CI, release coordination, and human QA |
+| Rejected released dual-mode route | 3–5 weeks | 3–6 focused agent-days plus the later retirement pass |
 
 Confidence is medium. The estimates should be recalibrated after Phase 1 using
 measured large-directory behavior and the number of parity gaps found by the
@@ -322,6 +370,8 @@ journey harness.
 - [ ] All current Filetug panels, stores, previewers, keyboard actions, mouse
       actions, loading states, empty states, and error states are either ported
       or explicitly removed by an approved product decision recorded here.
+- [ ] The landed product has one Bubble Tea v2 entry point and no public UI
+      backend selector, alternate legacy binary, or dual-backend release path.
 - [ ] Synthetic 100, 1,000, and 10,000-entry directory benchmarks meet the
       approved latency/allocation budget relative to the measured current UI.
 - [ ] Normal quit, handled error, signal, and panic paths restore the terminal.
@@ -336,18 +386,15 @@ journey harness.
 
 ## Open Questions
 
-1. Approve the recommended staged dual-run with
-   `--ui=bubbletea` → Bubble Tea v2 default → old UI removal, or require a
-   one-shot cutover?
-2. Is keyboard-only interaction acceptable for the 5–8 day MVP, with mouse
-   parity deferred to Phase 3?
-3. Should `strongo-tui` add backend-neutral theme tokens plus parallel
+1. Is keyboard-only interaction acceptable for the 5–8 day internal milestone,
+   with mouse parity deferred to Phase 3?
+2. Should `strongo-tui` add backend-neutral theme tokens plus parallel
    `tview` and Lip Gloss v2 adapters, or should its whole repository migrate
    in the same campaign? The former is recommended to avoid forcing unrelated
    consumers into this Filetug effort.
-4. Are text and Markdown previewers sufficient for MVP acceptance, with all
-   remaining previewers required before the default switch?
-5. What maximum measured regression is acceptable for 10,000-entry input
+3. Are text and Markdown previewers sufficient for the internal milestone, with
+   all remaining previewers required before the production switch?
+4. What maximum measured regression is acceptable for 10,000-entry input
    latency and allocation behavior? A default proposal is no more than 10%
    slower input-to-view latency and no more than 20% additional allocations
    than the measured current baseline.

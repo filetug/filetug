@@ -10,7 +10,7 @@ Feature specifications for this project.
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| [Bubble Tea migration](bubble-tea-migration/README.md) | Draft | Filetug can fully cut over from `tview` and `tcell` to Charm through an architectural UI and state rewrite. |
+| [Bubble Tea migration](bubble-tea-migration/README.md) | Draft | Filetug will fully cut over from `tview` and `tcell` to Charm in one release through an architectural UI and state rewrite. |
 
 ## Open Questions
 
