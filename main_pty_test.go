@@ -1,10 +1,12 @@
-//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
+//go:build darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris || zos
 
 package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -19,7 +21,11 @@ import (
 	"github.com/creack/pty"
 )
 
-const ptySmokeTimeout = 5 * time.Second
+const (
+	ptySmokeBuildTimeout = 20 * time.Second
+	ptySmokeTimeout      = 5 * time.Second
+	ptySmokeResizeRow    = "99-resize-sentinel.txt"
+)
 
 func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 	fixtureRoot := t.TempDir()
@@ -35,9 +41,22 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 	if err := os.WriteFile(targetPath, []byte("# TARGET_PTY_MARKER\n\nPTY navigation reached the Markdown preview.\n"), 0o600); err != nil {
 		t.Fatalf("write target fixture: %v", err)
 	}
+	for index := 0; index < 19; index++ {
+		fillerName := fmt.Sprintf("03-filler-%02d.txt", index)
+		fillerPath := filepath.Join(docsPath, fillerName)
+		if err := os.WriteFile(fillerPath, []byte("filler\n"), 0o600); err != nil {
+			t.Fatalf("write filler fixture %q: %v", fillerName, err)
+		}
+	}
+	resizePath := filepath.Join(docsPath, ptySmokeResizeRow)
+	if err := os.WriteFile(resizePath, []byte("resize sentinel\n"), 0o600); err != nil {
+		t.Fatalf("write resize sentinel fixture: %v", err)
+	}
 
 	binaryPath := filepath.Join(t.TempDir(), "filetug")
-	build := exec.Command("go", "build", "-o", binaryPath, ".")
+	buildContext, cancelBuild := context.WithTimeout(context.Background(), ptySmokeBuildTimeout)
+	defer cancelBuild()
+	build := exec.CommandContext(buildContext, "go", "build", "-o", binaryPath, ".")
 	build.Dir = ptySmokeWorkingDirectory(t)
 	buildOutput, err := build.CombinedOutput()
 	if err != nil {
@@ -52,23 +71,16 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("start root executable in PTY: %v", err)
 	}
-	rows, columns, err := pty.Getsize(terminal)
-	if err != nil {
-		t.Fatalf("read initial PTY dimensions: %v", err)
-	}
-	if rows != 24 || columns != 80 {
-		t.Fatalf("initial PTY dimensions = %dx%d, want 24x80", rows, columns)
-	}
-	transcript := newPTYSmokeTranscript()
-	readerDone := make(chan error, 1)
-	go readPTYSmokeTranscript(terminal, transcript, readerDone)
 	processDone := make(chan error, 1)
 	go func() {
 		processDone <- command.Wait()
 	}()
 	processWaited := false
+	readerDone := make(chan error, 1)
+	readerStarted := false
 	readerWaited := false
 	t.Cleanup(func() {
+		_ = terminal.Close()
 		if !processWaited {
 			_ = command.Process.Kill()
 			timer := time.NewTimer(ptySmokeTimeout)
@@ -79,8 +91,7 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 			}
 			timer.Stop()
 		}
-		if !readerWaited {
-			_ = terminal.Close()
+		if readerStarted && !readerWaited {
 			timer := time.NewTimer(ptySmokeTimeout)
 			select {
 			case <-readerDone:
@@ -90,6 +101,16 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 			timer.Stop()
 		}
 	})
+	rows, columns, err := pty.Getsize(terminal)
+	if err != nil {
+		t.Fatalf("read initial PTY dimensions: %v", err)
+	}
+	if rows != 24 || columns != 80 {
+		t.Fatalf("initial PTY dimensions = %dx%d, want 24x80", rows, columns)
+	}
+	transcript := newPTYSmokeTranscript()
+	go readPTYSmokeTranscript(terminal, transcript, readerDone)
+	readerStarted = true
 
 	transcript.waitForAll(t, 0, ptySmokeTimeout, "Directories", "Files", "Preview", "docs")
 	if _, err := io.WriteString(terminal, "\x1b[B\r"); err != nil {
@@ -105,6 +126,11 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 		t.Fatalf("focus preview: %v", err)
 	}
 	transcript.waitForAll(t, focusOffset, ptySmokeTimeout, "TARGET_PTY_MARKER")
+	preResizeTranscript := transcript.snapshot()
+	preResizeView := ansi.Strip(preResizeTranscript)
+	if strings.Contains(preResizeView, ptySmokeResizeRow) {
+		t.Fatalf("resize sentinel is visible before 100x30 resize: %q", ptySmokeResizeRow)
+	}
 
 	resizeOffset := transcript.offset()
 	resized := &pty.Winsize{Rows: 30, Cols: 100}
@@ -118,7 +144,7 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 	if rows != 30 || columns != 100 {
 		t.Fatalf("resized PTY dimensions = %dx%d, want 30x100", rows, columns)
 	}
-	transcript.waitForAll(t, resizeOffset, ptySmokeTimeout, "TARGET_PTY_MARKER")
+	transcript.waitForAll(t, resizeOffset, ptySmokeTimeout, ptySmokeResizeRow)
 
 	if _, err := io.WriteString(terminal, "q"); err != nil {
 		t.Fatalf("quit root executable: %v", err)
@@ -129,6 +155,9 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 		t.Fatalf("root executable exit: %v", processErr)
 	}
 	readerErr := awaitPTYSmokeReader(t, terminal, readerDone, transcript, "normal quit")
+	if err := terminal.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+		t.Fatalf("close PTY after normal quit: %v", err)
+	}
 	readerWaited = true
 	if readerErr != nil {
 		t.Fatalf("PTY reader: %v", readerErr)
