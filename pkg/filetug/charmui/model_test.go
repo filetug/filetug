@@ -36,7 +36,22 @@ func TestModelJourneyTreeToFileToMarkdownPreview(t *testing.T) {
 	if initial == nil {
 		t.Fatal("Init did not request the root directory")
 	}
+	_, _ = model.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	if model.width != 80 || model.height != 24 {
+		t.Fatalf("initial window size = %dx%d, want 80x24", model.width, model.height)
+	}
+	initialLayout := model.panelLayout()
 	_, _ = model.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+	if model.width != 100 || model.height != 30 {
+		t.Fatalf("resized window = %dx%d, want 100x30", model.width, model.height)
+	}
+	resizedLayout := model.panelLayout()
+	if resizedLayout == initialLayout {
+		t.Fatalf("panel layout did not change after resize: %+v", resizedLayout)
+	}
+	if model.focus != focusTree {
+		t.Fatalf("initial focus = %d, want directory tree", model.focus)
+	}
 	_, _ = model.Update(directoryLoadedMsg{
 		path:    root,
 		request: model.dirRequest,
@@ -65,6 +80,14 @@ func TestModelJourneyTreeToFileToMarkdownPreview(t *testing.T) {
 	}
 	if model.currentPath != filepath.Join(root, "docs") {
 		t.Fatalf("current directory = %q", model.currentPath)
+	}
+	_, _ = model.Update(tea.KeyPressMsg{Code: tea.KeyTab})
+	if model.focus != focusFiles {
+		t.Fatalf("focus after tab = %d, want files", model.focus)
+	}
+	_, _ = model.Update(tea.KeyPressMsg{Code: tea.KeyTab})
+	if model.focus != focusPreview {
+		t.Fatalf("focus after second tab = %d, want preview", model.focus)
 	}
 }
 
