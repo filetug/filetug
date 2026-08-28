@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -37,14 +38,12 @@ func TestDoCPUProfiling_ErrorOsCreate(t *testing.T) {
 	defer func() {
 		osCreate = origOsCreate
 	}()
-	
-	t.Cleanup(func() {
-		_ = os.Remove("invalid")
-	})
+
+	profilePath := filepath.Join(t.TempDir(), "invalid")
 	osCreate = func(name string) (*os.File, error) {
 		return nil, errors.New("mock error")
 	}
-	closeFunc := DoCPUProfiling("invalid")
+	closeFunc := DoCPUProfiling(profilePath)
 	if closeFunc == nil {
 		t.Fatal("expected closeFunc to be not nil even on error (returns empty func)")
 	}
@@ -58,7 +57,7 @@ func TestDoCPUProfiling_ErrorPprofStartCPUProfile(t *testing.T) {
 		osCreate = origOsCreate
 		pprofStartCPUProfile = origStart
 	}()
-	
+
 	tempFile := "cpu_err.prof"
 	defer func() {
 		_ = os.Remove(tempFile)

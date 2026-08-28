@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"runtime/pprof"
 	"testing"
 	"time"
@@ -37,7 +38,7 @@ func TestDoMemProfiling(t *testing.T) {
 	pprofWriteHeapProfile = func(w io.Writer) error {
 		return pprof.WriteHeapProfile(w)
 	}
-	
+
 	writeMemProfile := DoMemProfiling(tempFile)
 	if writeMemProfile == nil {
 		t.Fatal("expected writeMemProfile to be not nil")
@@ -67,7 +68,7 @@ func TestDoMemProfiling_ErrorOsCreate(t *testing.T) {
 		pprofWriteHeapProfile = origPprofWrite
 		time.Sleep(500 * time.Millisecond)
 	}()
-	
+
 	memProfilingInterval = 100 * time.Millisecond
 	osCreate = func(name string) (*os.File, error) {
 		return nil, errors.New("mock error")
@@ -75,11 +76,9 @@ func TestDoMemProfiling_ErrorOsCreate(t *testing.T) {
 	pprofWriteHeapProfile = func(w io.Writer) error {
 		return pprof.WriteHeapProfile(w)
 	}
-	
-	t.Cleanup(func() {
-		_ = os.Remove("invalid")
-	})
-	writeMemProfile := DoMemProfiling("invalid")
+
+	profilePath := filepath.Join(t.TempDir(), "invalid")
+	writeMemProfile := DoMemProfiling(profilePath)
 	writeMemProfile()
 	time.Sleep(300 * time.Millisecond)
 }
@@ -97,12 +96,9 @@ func TestDoMemProfiling_ErrorPprofWriteHeapProfile(t *testing.T) {
 		pprofWriteHeapProfile = origPprofWrite
 		time.Sleep(500 * time.Millisecond)
 	}()
-	
+
 	memProfilingInterval = 100 * time.Millisecond
-	tempFile := "mem_err.prof"
-	defer func() {
-		_ = os.Remove(tempFile)
-	}()
+	tempFile := filepath.Join(t.TempDir(), "mem_err.prof")
 
 	osCreate = os.Create
 	pprofWriteHeapProfile = func(w io.Writer) error {
