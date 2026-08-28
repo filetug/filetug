@@ -1,0 +1,7 @@
+# SpecScore Repo Config Schema: https://specscore.md/repo-config
+
+project:
+    title: Filetug
+    host: github.com
+    org: filetug
+    repo: filetug
