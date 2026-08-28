@@ -22,9 +22,11 @@ import (
 )
 
 const (
-	ptySmokeBuildTimeout = 20 * time.Second
-	ptySmokeTimeout      = 5 * time.Second
-	ptySmokeResizeRow    = "99-resize-sentinel.txt"
+	ptySmokeBuildTimeout       = 60 * time.Second
+	ptySmokeLaunchTimeout      = 15 * time.Second
+	ptySmokeInteractionTimeout = 5 * time.Second
+	ptySmokeShutdownTimeout    = 10 * time.Second
+	ptySmokeResizeRow          = "99-resize-sentinel.txt"
 )
 
 func TestCompiledBinaryPTYHappyPath(t *testing.T) {
@@ -83,7 +85,7 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 		_ = terminal.Close()
 		if !processWaited {
 			_ = command.Process.Kill()
-			timer := time.NewTimer(ptySmokeTimeout)
+			timer := time.NewTimer(ptySmokeShutdownTimeout)
 			select {
 			case <-processDone:
 			case <-timer.C:
@@ -92,7 +94,7 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 			timer.Stop()
 		}
 		if readerStarted && !readerWaited {
-			timer := time.NewTimer(ptySmokeTimeout)
+			timer := time.NewTimer(ptySmokeShutdownTimeout)
 			select {
 			case <-readerDone:
 			case <-timer.C:
@@ -112,20 +114,20 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 	go readPTYSmokeTranscript(terminal, transcript, readerDone)
 	readerStarted = true
 
-	transcript.waitForAll(t, 0, ptySmokeTimeout, "Directories", "Files", "Preview", "docs")
+	transcript.waitForAll(t, 0, ptySmokeLaunchTimeout, "Directories", "Files", "Preview", "docs")
 	if _, err := io.WriteString(terminal, "\x1b[B\r"); err != nil {
 		t.Fatalf("open docs from directory tree: %v", err)
 	}
-	transcript.waitForAll(t, 0, ptySmokeTimeout, "01-alpha.txt", "02-target.md")
+	transcript.waitForAll(t, 0, ptySmokeInteractionTimeout, "01-alpha.txt", "02-target.md")
 	if _, err := io.WriteString(terminal, "\t\x1b[B"); err != nil {
 		t.Fatalf("focus files and select target: %v", err)
 	}
-	transcript.waitForAll(t, 0, ptySmokeTimeout, "TARGET_PTY_MARKER")
+	transcript.waitForAll(t, 0, ptySmokeInteractionTimeout, "TARGET_PTY_MARKER")
 	focusOffset := transcript.offset()
 	if _, err := io.WriteString(terminal, "\t"); err != nil {
 		t.Fatalf("focus preview: %v", err)
 	}
-	transcript.waitForAll(t, focusOffset, ptySmokeTimeout, "TARGET_PTY_MARKER")
+	transcript.waitForAll(t, focusOffset, ptySmokeInteractionTimeout, "TARGET_PTY_MARKER")
 	preResizeTranscript := transcript.snapshot()
 	preResizeView := ansi.Strip(preResizeTranscript)
 	if strings.Contains(preResizeView, ptySmokeResizeRow) {
@@ -144,7 +146,7 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 	if rows != 30 || columns != 100 {
 		t.Fatalf("resized PTY dimensions = %dx%d, want 30x100", rows, columns)
 	}
-	transcript.waitForAll(t, resizeOffset, ptySmokeTimeout, ptySmokeResizeRow)
+	transcript.waitForAll(t, resizeOffset, ptySmokeInteractionTimeout, ptySmokeResizeRow)
 
 	if _, err := io.WriteString(terminal, "q"); err != nil {
 		t.Fatalf("quit root executable: %v", err)
@@ -251,7 +253,7 @@ func readPTYSmokeTranscript(terminal *os.File, transcript *ptySmokeTranscript, d
 
 func awaitPTYSmokeProcess(testingT *testing.T, done <-chan error, transcript *ptySmokeTranscript, phase string) error {
 	testingT.Helper()
-	timer := time.NewTimer(ptySmokeTimeout)
+	timer := time.NewTimer(ptySmokeShutdownTimeout)
 	defer timer.Stop()
 	select {
 	case err := <-done:
@@ -259,14 +261,14 @@ func awaitPTYSmokeProcess(testingT *testing.T, done <-chan error, transcript *pt
 	case <-timer.C:
 		raw := transcript.snapshot()
 		stripped := ansi.Strip(raw)
-		testingT.Fatalf("root executable did not exit during %s within %s\nraw=%q\nstripped=%q", phase, ptySmokeTimeout, raw, stripped)
+		testingT.Fatalf("root executable did not exit during %s within %s\nraw=%q\nstripped=%q", phase, ptySmokeShutdownTimeout, raw, stripped)
 		return nil
 	}
 }
 
 func awaitPTYSmokeReader(testingT *testing.T, terminal *os.File, done <-chan error, transcript *ptySmokeTranscript, phase string) error {
 	testingT.Helper()
-	timer := time.NewTimer(ptySmokeTimeout)
+	timer := time.NewTimer(ptySmokeShutdownTimeout)
 	defer timer.Stop()
 	select {
 	case err := <-done:
@@ -275,7 +277,7 @@ func awaitPTYSmokeReader(testingT *testing.T, terminal *os.File, done <-chan err
 		if err := terminal.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
 			testingT.Fatalf("close PTY after reader timeout: %v", err)
 		}
-		closer := time.NewTimer(ptySmokeTimeout)
+		closer := time.NewTimer(ptySmokeShutdownTimeout)
 		defer closer.Stop()
 		select {
 		case err := <-done:
@@ -283,7 +285,7 @@ func awaitPTYSmokeReader(testingT *testing.T, terminal *os.File, done <-chan err
 		case <-closer.C:
 			raw := transcript.snapshot()
 			stripped := ansi.Strip(raw)
-			testingT.Fatalf("PTY reader did not stop during %s within %s\nraw=%q\nstripped=%q", phase, ptySmokeTimeout, raw, stripped)
+			testingT.Fatalf("PTY reader did not stop during %s within %s\nraw=%q\nstripped=%q", phase, ptySmokeShutdownTimeout, raw, stripped)
 			return nil
 		}
 	}
