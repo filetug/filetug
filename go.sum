@@ -140,8 +140,8 @@ github.com/strongo/dsstore v0.0.1 h1:OwS+BIkI1CShxlUG40P5m+j/mpHPC5TRTUI0ZCLjCCA
 github.com/strongo/dsstore v0.0.1/go.mod h1:Lwe80D8xUM44F8gPjJtLv1Sc0R3S4vTWJPeNzJNiCdo=
 github.com/strongo/strongo-tui v0.0.0-20260215000528-71bd9150836c h1:BcOhOsre5j3WymxIMmJdveRdzGKYYV4JB4AMpGwdoyk=
 github.com/strongo/strongo-tui v0.0.0-20260215000528-71bd9150836c/go.mod h1:V6bqDiE9ZnjzP6COkoMwGjDBNTI+MEPRa1iD4XZ/H+k=
-github.com/strongo/strongo-tui/charm v0.0.0-20260828170159-297f5eb68801 h1:gdCF9O5mSBKhHy9FoznQrE2COQpZhAmqh93fc6tZYAE=
-github.com/strongo/strongo-tui/charm v0.0.0-20260828170159-297f5eb68801/go.mod h1:eOai/GTTT4Jr31pVF1nESCfyE+IhOd1d9OYrZxQQ0o4=
+github.com/strongo/strongo-tui/charm v0.1.0 h1:3RwsDq4Yu6bjPpAHvD88v3QUdr7azMPPk6NQcAE26/M=
+github.com/strongo/strongo-tui/charm v0.1.0/go.mod h1:eOai/GTTT4Jr31pVF1nESCfyE+IhOd1d9OYrZxQQ0o4=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=

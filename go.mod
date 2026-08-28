@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/strongo/dsstore v0.0.1
 	github.com/strongo/strongo-tui v0.0.0-20260215000528-71bd9150836c
-	github.com/strongo/strongo-tui/charm v0.0.0-20260828170159-297f5eb68801
+	github.com/strongo/strongo-tui/charm v0.1.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/image v0.36.0
 	golang.org/x/sys v0.47.0

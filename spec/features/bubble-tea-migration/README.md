@@ -79,6 +79,16 @@ with no runtime fallback.
   recorded baseline.
 - Filetug pins Bubble Tea v2.0.9, Bubbles v2.2.1, Lip Gloss v2.0.6, and
   Glamour v2.0.1 for this checkpoint.
+- Architecture-evaluation context: Filetug and DataTug are considering the
+  `tview`/`tcell` to Bubble Tea v2/Charm direction because its Model/Update/View
+  separation, deterministic UI testing, compositional styling, command/message
+  async behavior, and domain/UI decoupling should improve complex state and
+  long-term maintenance. The counterweight is that `tview` has mature
+  `Table`, `TreeView`, `TextView`, `Flex`, and `Grid` widgets, while Bubble Tea
+  lacks equivalent mature first-party tree functionality. This MVP supplies
+  evidence rather than assuming superiority; this rationale does not replace,
+  reduce, or pause the already-approved Filetug MVP or hard cutover, and adds
+  no evaluation deliverables beyond the existing scope.
 
 **Reason:** this gives the team a useful, direct terminal journey quickly
 without pretending that the checkpoint completes the approved production
