@@ -46,6 +46,27 @@ archives:
 checksum:
   name_template: checksums.txt
 
+# macOS signing + notarization — DORMANT unless MACOS_SIGN_P12 is set, in
+# which case the shared strongo/cicd release.yml forwards it (and the other
+# four Apple secrets) to this job. GoReleaser's notarize is pure Go (quill),
+# so this runs on the existing job — no macOS runner needed. `filetug-unix`
+# also builds linux artifacts; notarize only ever touches the darwin ones.
+# See ingitdb/ingitdb-cli's .goreleaser.yaml, the reference implementation
+# this block is copied from.
+notarize:
+  macos:
+    - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
+      ids: [filetug-unix]
+      sign:
+        certificate: "{{ .Env.MACOS_SIGN_P12 }}"
+        password: "{{ .Env.MACOS_SIGN_PASSWORD }}"
+      notarize:
+        wait: true
+        issuer_id: "{{ .Env.NOTARIZE_ISSUER_ID }}"
+        key_id: "{{ .Env.NOTARIZE_KEY_ID }}"
+        key: "{{ .Env.NOTARIZE_KEY }}"
+        timeout: 20m
+
 release:
   github:
     owner: filetug
