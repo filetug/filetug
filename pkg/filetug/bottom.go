@@ -165,6 +165,7 @@ func (b *bottom) getAltMenuItems() []ftui.MenuItem {
 		{Title: "Masks", HotKeys: []string{"M"}, Action: func() {}, IsAltHotkey: true},
 		{Title: "±Size", HotKeys: []string{"±"}, Action: func() {}, IsAltHotkey: true},
 		{Title: "Git", HotKeys: []string{"G"}, Action: func() {}, IsAltHotkey: true},
+		{Title: "Worktrees", HotKeys: []string{"W"}, Action: b.nav.showWorktreesPanel, IsAltHotkey: true},
 		//{Title: "Previewer", HotKeys: []string{"P"}, Action: func() {}, IsAltHotkey: true},
 		//{Title: "Copy", HotKeys: []string{"F5", "C"}, Action: func() {}, IsAltHotkey: true},
 		//{Title: "Rename", HotKeys: []string{"F6", "R"}, Action: func() {}, IsAltHotkey: true},

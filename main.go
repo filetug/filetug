@@ -31,6 +31,10 @@ func main() {
 
 func newFileTugApp() (app navigator.App) {
 	flag.Parse()
+	initialPath = ""
+	if flag.NArg() > 0 {
+		initialPath = flag.Arg(0)
+	}
 
 	if *pprofAddr != "" {
 		go func() {
@@ -64,11 +68,17 @@ func newFileTugApp() (app navigator.App) {
 }
 
 var setupApp = filetug.SetupApp
+var setupAppAtPath = filetug.SetupAppAtPath
+var initialPath string
 
 var newApp = func() navigator.App {
 	tvApp := tview.NewApplication()
 	app := navigator.NewApp(tvApp)
-	setupApp(app)
+	if initialPath == "" {
+		setupApp(app)
+	} else {
+		setupAppAtPath(app, initialPath)
+	}
 	return app
 }
 

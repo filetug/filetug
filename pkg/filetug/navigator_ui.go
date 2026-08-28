@@ -42,6 +42,9 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 			case 'm', 'M':
 				nav.showMasks()
 				return nil
+			case 'w', 'W':
+				nav.showWorktreesPanel()
+				return nil
 			case '0':
 				copy(nav.proportions, defaultProportions)
 				nav.createColumns()
@@ -58,6 +61,9 @@ func (nav *Navigator) inputCapture(event *tcell.EventKey) *tcell.EventKey {
 				nav.goHome()
 				return nil
 			case 'x', 'X':
+				if nav.worktrees != nil {
+					nav.worktrees.stopLoading()
+				}
 				nav.app.Stop()
 				return nil
 			default:

@@ -29,6 +29,9 @@ func (r *Container) SetContent(p tview.Primitive) {
 	if r == nil || r.Flex == nil {
 		return
 	}
+	if r.nav != nil && r == r.nav.right && r.nav.worktrees != nil && r.nav.worktrees.visible && p != r.nav.worktrees {
+		return
+	}
 	r.content = p
 	r.Clear()
 	r.AddItem(p, 0, 1, false)

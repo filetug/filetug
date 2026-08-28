@@ -68,6 +68,7 @@ type Navigator struct {
 	// dirSummary *viewers.DirPreviewer - we do not want this anymore as it's part of the previewerPanel now.
 
 	previewer *previewerPanel
+	worktrees *worktreesPanel
 
 	bottom *bottom
 
@@ -163,6 +164,7 @@ func NewNavigator(app navigator.App, options ...NavigatorOption) *Navigator {
 
 	nav.files = newFiles(nav)
 	nav.previewer = newPreviewerPanel(nav)
+	nav.worktrees = newWorktreesPanel(nav)
 
 	nav.right.SetContent(nav.previewer)
 

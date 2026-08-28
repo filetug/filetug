@@ -74,6 +74,9 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirCont
 	}
 
 	nav.setBreadcrumbs()
+	if nav.worktrees != nil {
+		nav.worktrees.visible = false
+	}
 	if nav.right != nil {
 		nav.right.SetContent(nav.previewer)
 	}
@@ -113,6 +116,7 @@ func (nav *Navigator) onDataLoaded(ctx context.Context, node *tview.TreeNode, di
 	if nav.files != nil {
 		nav.files.updateGitStatuses(ctx, dirContext)
 	}
+	nav.showWorktreesPanelAtRepositoryRoot(dirContext.Path())
 }
 
 func (nav *Navigator) getDirData(ctx context.Context, dirPath string) (dirContext *files.DirContext, err error) {

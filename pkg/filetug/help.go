@@ -13,6 +13,7 @@ func showHelpModal(nav *Navigator) {
 func createHelpModal(nav *Navigator, root tview.Primitive) (modal tview.Primitive, helpView *tview.TextView, button *tview.Button) {
 	const helpText = `F1 - Help
 Alt+F - Favorites
+Alt+W - Git worktrees with optional WB metadata
 Alt+G - Go to...
 Al+P - Show/Hide previewerPanel
 Alt+C - Copy filesPanel & directories
