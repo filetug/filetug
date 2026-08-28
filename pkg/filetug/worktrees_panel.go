@@ -135,8 +135,7 @@ func newWorktreesPanel(nav *Navigator) *worktreesPanel {
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
-			p.visible = false
-			nav.right.SetSecondary(nil)
+			p.hide()
 			nav.app.SetFocus(nav.files)
 			return nil
 		case tcell.KeyLeft:
@@ -151,6 +150,32 @@ func newWorktreesPanel(nav *Navigator) *worktreesPanel {
 		return event
 	})
 	return p
+}
+
+func (p *worktreesPanel) hide() {
+	if p == nil {
+		return
+	}
+	p.visible = false
+	p.selected = false
+	p.table.SetSelectable(false, false)
+	p.clearDetail()
+	if p.nav != nil && p.nav.right != nil {
+		p.nav.right.SetSecondary(nil)
+	}
+}
+
+func (nav *Navigator) syncVisibleWorktreesPanel(path string) {
+	if nav == nil || nav.worktrees == nil || nav.right == nil || !nav.worktrees.visible {
+		return
+	}
+	repoRoot := gitRepositoryRoot(path)
+	if repoRoot == "" {
+		nav.worktrees.hide()
+		return
+	}
+	nav.right.SetSecondary(nav.worktrees)
+	nav.worktrees.ensureLoaded(repoRoot)
 }
 
 func (nav *Navigator) showWorktreesPanel() {

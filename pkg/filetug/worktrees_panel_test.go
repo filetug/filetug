@@ -268,7 +268,7 @@ func TestWorktreesPanelLoadAndPresentation(t *testing.T) {
 }
 
 func TestWorktreesPanelNavigation(t *testing.T) {
-	canonical, _ := newWorktreeTestRepository(t)
+	canonical, linked := newWorktreeTestRepository(t)
 	app := &recordApp{}
 	nav := NewNavigator(app, withSkipAsyncFavoritesLoad())
 
@@ -311,6 +311,26 @@ func TestWorktreesPanelNavigation(t *testing.T) {
 	if got := nav.inputCapture(tcell.NewEventKey(tcell.KeyRune, 'w', tcell.ModAlt)); got != nil {
 		t.Fatalf("Option-W was not consumed: %v", got)
 	}
+
+	nav.worktrees.repoRoot = linked
+	nav.worktrees.items = []worktreeInfo{{Path: canonical}, {Path: linked}}
+	nav.worktrees.visible = true
+	nav.right.SetSecondary(nav.worktrees)
+	nav.syncVisibleWorktreesPanel(linked)
+	if !nav.worktrees.visible || nav.right.secondary != nav.worktrees {
+		t.Fatal("worktrees pane closed inside a linked Git worktree")
+	}
+	nav.worktrees.selected = true
+	nav.syncVisibleWorktreesPanel(filepath.Dir(canonical))
+	if nav.worktrees.visible || nav.worktrees.selected || nav.right.secondary != nil {
+		t.Fatal("worktrees pane retained stale repository context outside Git")
+	}
+
+	var nilPanel *worktreesPanel
+	nilPanel.hide()
+	nilNav.syncVisibleWorktreesPanel(canonical)
+	nav.worktrees.visible = false
+	nav.syncVisibleWorktreesPanel(canonical)
 
 	nav.showWorktreesPanelAtRepositoryRoot(nonRepo)
 	nav.showWorktreesPanelAtRepositoryRoot(filepath.Dir(canonical))

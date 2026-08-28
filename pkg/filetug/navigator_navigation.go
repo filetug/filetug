@@ -77,6 +77,7 @@ func (nav *Navigator) showDir(ctx context.Context, node *tview.TreeNode, dirCont
 	if nav.right != nil {
 		nav.right.SetContent(nav.previewer)
 	}
+	nav.syncVisibleWorktreesPanel(expandedDir)
 
 	dirPath := expandedDir
 	// Start loading data in a goroutine
