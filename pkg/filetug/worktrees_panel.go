@@ -16,6 +16,7 @@ import (
 	"github.com/filetug/filetug/pkg/sneatv"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/strongo/strongo-tui/pkg/themes"
 )
 
 type worktreeInfo struct {
@@ -66,6 +67,7 @@ type worktreesPanel struct {
 	*sneatv.Boxed
 	nav       *Navigator
 	rows      *tview.Flex
+	header    *tview.TextView
 	status    *tview.TextView
 	table     *tview.Table
 	detail    *tview.TextView
@@ -73,37 +75,57 @@ type worktreesPanel struct {
 	canonical string
 	items     []worktreeInfo
 	visible   bool
+	focused   bool
+	selected  bool
 	loading   bool
 	cancel    context.CancelFunc
 	loadID    atomic.Uint64
 }
 
 func newWorktreesPanel(nav *Navigator) *worktreesPanel {
+	header := tview.NewTextView().SetDynamicColors(true)
 	status := tview.NewTextView().SetDynamicColors(true)
-	table := tview.NewTable().SetSelectable(true, false)
+	table := tview.NewTable().SetSelectable(false, false)
+	table.SetSelectedStyle(themes.CurrentTheme.BlurredSelectedTextStyle())
 	table.SetFixed(1, 0)
 	detail := tview.NewTextView().SetDynamicColors(true).SetWrap(true)
 	detail.SetBorderPadding(0, 0, 1, 1)
 
 	rows := tview.NewFlex().SetDirection(tview.FlexRow)
+	rows.AddItem(header, 1, 0, false)
 	rows.AddItem(status, 1, 0, false)
 	rows.AddItem(table, 0, 3, true)
-	rows.AddItem(detail, 0, 2, false)
+	rows.AddItem(detail, 0, 0, false)
 
 	p := &worktreesPanel{
-		nav: nav, rows: rows, status: status, table: table, detail: detail,
+		nav: nav, rows: rows, header: header, status: status, table: table, detail: detail,
 		Boxed: sneatv.NewBoxed(rows, sneatv.WithLeftBorder(0, -1)),
 	}
 	p.SetTitle("Worktrees")
-	p.table.SetSelectionChangedFunc(func(row, _ int) { p.renderDetail(row - 1) })
+	p.header.SetText("[#7aa2f7::b] WORKTREES[-]")
+	p.table.SetSelectionChangedFunc(func(row, _ int) {
+		if p.selected {
+			p.renderDetail(row - 1)
+		}
+	})
 	p.table.SetSelectedFunc(func(row, _ int) {
 		index := row - 1
-		if index < 0 || index >= len(p.items) || p.items[index].Prunable {
+		if !p.selected || index < 0 || index >= len(p.items) || p.items[index].Prunable {
 			return
 		}
 		p.nav.goDirByPath(p.items[index].Path)
 	})
-	p.table.SetFocusFunc(func() { nav.activeCol = 2 })
+	p.table.SetFocusFunc(func() {
+		p.focused = true
+		p.table.SetSelectable(true, false)
+		p.table.SetSelectedStyle(themes.CurrentTheme.FocusedSelectedTextStyle())
+		p.selectDefaultRow()
+		nav.activeCol = 2
+	})
+	p.table.SetBlurFunc(func() {
+		p.focused = false
+		p.table.SetSelectedStyle(themes.CurrentTheme.BlurredSelectedTextStyle())
+	})
 	p.table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEscape:
@@ -129,6 +151,12 @@ func (nav *Navigator) showWorktreesPanel() {
 	if nav == nil || nav.worktrees == nil || nav.store == nil || nav.store.RootURL().Scheme != "file" {
 		return
 	}
+	if nav.right != nil && nav.right.content == nav.worktrees && nav.worktrees.repoRoot != "" {
+		nav.worktrees.visible = true
+		nav.right.SetContent(nav.worktrees)
+		nav.app.SetFocus(nav.worktrees.table)
+		return
+	}
 	path := nav.currentDirPath()
 	if path == "" {
 		return
@@ -137,9 +165,10 @@ func (nav *Navigator) showWorktreesPanel() {
 	if repoRoot == "" {
 		nav.worktrees.visible = true
 		nav.worktrees.SetTitle("Worktrees")
+		nav.worktrees.header.SetText("[#7aa2f7::b] WORKTREES[-]")
 		nav.worktrees.status.SetText("[yellow]Not inside a Git repository[-]")
 		nav.worktrees.table.Clear()
-		nav.worktrees.detail.SetText("")
+		nav.worktrees.clearDetail()
 		nav.right.SetContent(nav.worktrees)
 		return
 	}
@@ -179,11 +208,17 @@ func (p *worktreesPanel) Load(repoRoot string) {
 	p.cancel = cancel
 	p.loading = true
 	loadID := p.loadID.Add(1)
-	p.repoRoot = filepath.Clean(repoRoot)
-	p.SetTitle("Worktrees · " + repositoryLabel(repoRoot))
+	cleanRepoRoot := filepath.Clean(repoRoot)
+	if p.repoRoot != cleanRepoRoot {
+		p.selected = false
+		p.table.SetSelectable(p.focused, false)
+	}
+	p.repoRoot = cleanRepoRoot
+	p.SetTitle("Worktrees")
+	p.header.SetText("[#7aa2f7::b] WORKTREES[-] · [gray]" + tview.Escape(repositoryLabel(repoRoot)) + "[-]")
 	p.status.SetText("[yellow]Loading Git worktree registry…[-]")
 	p.table.Clear()
-	p.detail.SetText("")
+	p.clearDetail()
 
 	go func() {
 		defer cancel()
@@ -267,13 +302,13 @@ func (p *worktreesPanel) renderTable(currentPath string) {
 		cell := tview.NewTableCell(title).SetTextColor(tcell.ColorLightSteelBlue).SetSelectable(false)
 		p.table.SetCell(0, column, cell)
 	}
-	selected := 1
+	selectedRow := 1
 	for index, item := range p.items {
 		kind := "Git"
 		kindColor := tcell.ColorGray
 		switch {
 		case item.Canonical:
-			kind, kindColor = "main", tcell.ColorCornflowerBlue
+			kind, kindColor = "Clone", tcell.ColorCornflowerBlue
 		case item.WB != nil && item.WB.HasManifest:
 			kind, kindColor = "WB", tcell.ColorMediumPurple
 		}
@@ -299,20 +334,45 @@ func (p *worktreesPanel) renderTable(currentPath string) {
 		p.table.SetCell(index+1, 1, tview.NewTableCell(branch).SetExpansion(1))
 		p.table.SetCell(index+1, 2, tview.NewTableCell(state).SetTextColor(stateColor))
 		if filepath.Clean(item.Path) == filepath.Clean(currentPath) || filepath.Clean(item.Path) == filepath.Clean(p.repoRoot) {
-			selected = index + 1
+			selectedRow = index + 1
 		}
 	}
-	if len(p.items) > 0 {
-		p.table.Select(selected, 0)
-		p.renderDetail(selected - 1)
+	if len(p.items) > 0 && p.selected {
+		p.table.Select(selectedRow, 0)
+		p.renderDetail(selectedRow - 1)
+	} else {
+		p.clearDetail()
+	}
+}
+
+func (p *worktreesPanel) selectDefaultRow() {
+	if p == nil || len(p.items) == 0 {
+		return
+	}
+	if !p.selected {
+		p.selected = true
+		p.table.Select(1, 0)
+	}
+	row, _ := p.table.GetSelection()
+	p.renderDetail(row - 1)
+}
+
+func (p *worktreesPanel) clearDetail() {
+	if p == nil || p.detail == nil {
+		return
+	}
+	p.detail.SetText("")
+	if p.rows != nil {
+		p.rows.ResizeItem(p.detail, 0, 0)
 	}
 }
 
 func (p *worktreesPanel) renderDetail(index int) {
-	if index < 0 || index >= len(p.items) {
-		p.detail.SetText("")
+	if !p.selected || index < 0 || index >= len(p.items) {
+		p.clearDetail()
 		return
 	}
+	p.rows.ResizeItem(p.detail, 0, 2)
 	item := p.items[index]
 	var detail strings.Builder
 	fmt.Fprintf(&detail, "[::b]%s[-]\n", tview.Escape(item.Path))
