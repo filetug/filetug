@@ -28,6 +28,8 @@ type DirectoryStore interface {
 
 type fileReader func(context.Context, string, int64) (string, error)
 
+type previewRenderer func(string, string) (string, error)
+
 type focusPanel uint8
 
 const (
@@ -55,6 +57,7 @@ type previewLoadedMsg struct {
 type Model struct {
 	store    DirectoryStore
 	readFile fileReader
+	render   previewRenderer
 
 	rootPath    string
 	currentPath string
@@ -96,6 +99,7 @@ func NewModel(path string, store DirectoryStore) (*Model, error) {
 	return &Model{
 		store:          store,
 		readFile:       readLocalFile,
+		render:         renderPreview,
 		rootPath:       absolutePath,
 		currentPath:    absolutePath,
 		tree:           treeModel,
@@ -179,18 +183,19 @@ func (m *Model) updateTree(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) updateFiles(key string) (tea.Model, tea.Cmd) {
-	if len(m.entries) == 0 {
-		return m, nil
-	}
-	previous := m.selected
-	switch key {
-	case "left", "h", "backspace":
+	if key == "left" || key == "h" || key == "backspace" {
 		if m.currentPath != m.rootPath {
 			parent := filepath.Dir(m.currentPath)
 			if isPathWithinRoot(parent, m.rootPath) {
 				return m, m.loadDirectory(parent)
 			}
 		}
+	}
+	if len(m.entries) == 0 {
+		return m, nil
+	}
+	previous := m.selected
+	switch key {
 	case "down", "j":
 		if m.selected < len(m.entries)-1 {
 			m.selected++
@@ -257,6 +262,10 @@ func (m *Model) loadPreviewForSelection() tea.Cmd {
 	m.previewCancel = cancel
 	return func() tea.Msg {
 		content, err := m.readFile(ctx, path, maxPreviewBytes)
+		if err != nil {
+			return previewLoadedMsg{path: path, request: request, err: err}
+		}
+		content, err = m.render(path, content)
 		return previewLoadedMsg{path: path, request: request, content: content, err: err}
 	}
 }
@@ -300,18 +309,8 @@ func (m *Model) acceptPreview(msg previewLoadedMsg) {
 		m.preview.SetContent(m.previewState)
 		return
 	}
-	content := msg.content
-	if strings.EqualFold(filepath.Ext(msg.path), ".md") || strings.EqualFold(filepath.Ext(msg.path), ".markdown") {
-		rendered, err := glamour.Render(content, "dark")
-		if err != nil {
-			m.previewState = "Preview error: " + err.Error()
-			m.preview.SetContent(m.previewState)
-			return
-		}
-		content = rendered
-	}
 	m.previewState = "ready"
-	m.preview.SetContent(content)
+	m.preview.SetContent(msg.content)
 }
 
 func (m *Model) rebuildTree() {
@@ -342,6 +341,17 @@ func (m *Model) rebuildTree() {
 	}
 	m.tree.SetNodes(root)
 	m.tree.SetSize(m.treeContentWidth(), m.panelBodyHeight())
+	m.selectCurrentTreeNode()
+}
+
+func (m *Model) selectCurrentTreeNode() {
+	for _, node := range m.tree.AllNodes() {
+		path, ok := node.GivenValue().(string)
+		if ok && path == m.currentPath {
+			m.tree.SetYOffset(node.YOffset())
+			return
+		}
+	}
 }
 
 func (m *Model) setSize(width, height int) {
@@ -395,10 +405,6 @@ func (m *Model) treeContentWidth() int {
 	return maxInt(1, m.panelLayout().treeOuter-m.styles.panelFrameWidth())
 }
 
-func (m *Model) fileContentWidth() int {
-	return maxInt(1, m.panelLayout().filesOuter-m.styles.panelFrameWidth())
-}
-
 func (m *Model) previewContentWidth() int {
 	return maxInt(1, m.panelLayout().previewOuter-m.styles.panelFrameWidth())
 }
@@ -433,6 +439,17 @@ func readLocalFile(ctx context.Context, path string, limit int64) (string, error
 		content = append(content[:limit], []byte("\n\n[preview truncated]")...)
 	}
 	return string(content), nil
+}
+
+func renderPreview(path, content string) (string, error) {
+	if strings.EqualFold(filepath.Ext(path), ".md") || strings.EqualFold(filepath.Ext(path), ".markdown") {
+		rendered, err := glamour.Render(content, "dark")
+		if err != nil {
+			return "", err
+		}
+		return rendered, nil
+	}
+	return content, nil
 }
 
 func minInt(left, right int) int {

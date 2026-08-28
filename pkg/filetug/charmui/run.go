@@ -9,6 +9,9 @@ import (
 
 // RunLocal starts Filetug's direct Bubble Tea MVP entry point.
 func RunLocal(path string) error {
+	if path == "" {
+		path = "."
+	}
 	store := osfile.NewStore(path)
 	model, err := NewModel(path, store)
 	if err != nil {

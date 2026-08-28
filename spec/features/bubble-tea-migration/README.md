@@ -62,11 +62,11 @@ with no runtime fallback.
 - The Filetug MVP is designed for eventual 100% coverage, but its coverage is
   measured rather than gated at 100%. It retains one focused model-journey test
   and one compiled-PTY smoke, then adds tests only for an observed defect or an
-  essential happy-path mechanism. After implementation, the umbrella branch
-  explicitly and temporarily replaces Filetug's current 100% CI threshold with
-  the measured MVP floor; the full hard cutover restores the 100% threshold
-  when its retirement and parity acceptance criteria are complete. No numeric
-  MVP floor is chosen before measurement.
+  essential happy-path mechanism. The observed Filetug MVP baseline is 97.6%
+  total statement coverage. The umbrella branch explicitly and temporarily
+  replaces Filetug's current 100% CI threshold with the 97.5% MVP floor; the
+  final hard cutover must restore the 100% threshold before it lands, after its
+  full retirement and parity acceptance criteria are complete.
 - The provider boundary is a dependency-clean nested Charm/theme module in
   `github.com/strongo/strongo-tui`; Filetug consumes its published module
   without a local `replace`. The legacy root remains available to Datatug CLI
