@@ -3,7 +3,7 @@ package viewers
 import (
 	"sync/atomic"
 
-	"github.com/charmbracelet/glamour"
+	"charm.land/glamour/v2"
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/rivo/tview"

@@ -10,6 +10,7 @@ import (
 	"runtime/pprof"
 
 	"github.com/filetug/filetug/pkg/filetug"
+	"github.com/filetug/filetug/pkg/filetug/charmui"
 	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/profiling"
 	"github.com/rivo/tview"
@@ -29,10 +30,56 @@ var version = "dev"
 var versionOutput io.Writer = os.Stdout
 
 func main() {
-	app := newFileTugApp()
+	app := newMVPFileTugApp()
 	if app != nil {
 		run(app)
 	}
+}
+
+// charmApplication keeps runtime profiling alive for the direct Bubble Tea
+// process, then relies on Bubble Tea v2 to restore terminal state on exit.
+type charmApplication struct {
+	path     string
+	cleanups []func()
+}
+
+func (a charmApplication) Run() error {
+	defer func() {
+		for index := len(a.cleanups) - 1; index >= 0; index-- {
+			a.cleanups[index]()
+		}
+	}()
+	return charmui.RunLocal(a.path)
+}
+
+func newMVPFileTugApp() (app application) {
+	flag.Parse()
+	if *showVersion {
+		_, _ = fmt.Fprintf(versionOutput, "filetug %s\n", version)
+		return nil
+	}
+	initialPath = ""
+	if flag.NArg() > 0 {
+		initialPath = flag.Arg(0)
+	}
+	if *pprofAddr != "" {
+		go func() {
+			err := httpListenAndServe(*pprofAddr, nil)
+			if err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "pprof server error: %v\n", err)
+			}
+		}()
+	}
+	cleanups := make([]func(), 0, 2)
+	if *cpuProfile != "" {
+		cleanup := profiling.DoCPUProfiling(*cpuProfile)
+		cleanups = append(cleanups, cleanup)
+	}
+	if *memProfile != "" {
+		cleanup := profiling.DoMemProfiling(*memProfile)
+		cleanups = append(cleanups, cleanup)
+	}
+	return charmApplication{path: initialPath, cleanups: cleanups}
 }
 
 func newFileTugApp() (app navigator.App) {

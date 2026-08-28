@@ -51,6 +51,39 @@ campaign. The estimated saving is 0.5–1.5 focused agent-days relative to a
 released dual-mode rollout. The accepted trade-off is a larger single release
 with no runtime fallback.
 
+### D2 — MVP checkpoint decisions
+
+**Approved:** 2026-08-28 by the founder.
+
+- The Filetug MVP is a direct Bubble Tea entry point on the implementation
+  branch: `ft <path>` launches the new UI and there is no public backend
+  selector. This remains an internal checkpoint until the approved hard
+  cutover reaches Filetug `main`.
+- The Filetug MVP is designed for eventual 100% coverage, but its coverage is
+  measured rather than gated at 100%. It retains one focused model-journey test
+  and one compiled-PTY smoke, then adds tests only for an observed defect or an
+  essential happy-path mechanism. After implementation, the umbrella branch
+  explicitly and temporarily replaces Filetug's current 100% CI threshold with
+  the measured MVP floor; the full hard cutover restores the 100% threshold
+  when its retirement and parity acceptance criteria are complete. No numeric
+  MVP floor is chosen before measurement.
+- The provider boundary is a dependency-clean nested Charm/theme module in
+  `github.com/strongo/strongo-tui`; Filetug consumes its published module
+  without a local `replace`. The legacy root remains available to Datatug CLI
+  while that separate consumer continues to need its legacy adapter.
+- Keyboard-only operation is sufficient for this MVP; text and Markdown are
+  the supported preview types. Mouse interaction and other preview types stay
+  in the later parity work.
+- At 10,000 entries, the Filetug MVP budget is no more than 10% additional
+  input-to-view latency and no more than 20% additional allocations versus its
+  recorded baseline.
+- Filetug pins Bubble Tea v2.0.9, Bubbles v2.2.1, Lip Gloss v2.0.6, and
+  Glamour v2.0.1 for this checkpoint.
+
+**Reason:** this gives the team a useful, direct terminal journey quickly
+without pretending that the checkpoint completes the approved production
+retirement or that superficial coverage tests prove the architecture.
+
 ## Implementation Handoff
 
 This Feature is the authoritative plan for the next implementation agent. This
@@ -386,18 +419,8 @@ journey harness.
 
 ## Open Questions
 
-1. Is keyboard-only interaction acceptable for the 5–8 day internal milestone,
-   with mouse parity deferred to Phase 3?
-2. Should `strongo-tui` add backend-neutral theme tokens plus parallel
-   `tview` and Lip Gloss v2 adapters, or should its whole repository migrate
-   in the same campaign? The former is recommended to avoid forcing unrelated
-   consumers into this Filetug effort.
-3. Are text and Markdown previewers sufficient for the internal milestone, with
-   all remaining previewers required before the production switch?
-4. What maximum measured regression is acceptable for 10,000-entry input
-   latency and allocation behavior? A default proposal is no more than 10%
-   slower input-to-view latency and no more than 20% additional allocations
-   than the measured current baseline.
+None for the Filetug MVP checkpoint. Production cutover retains the explicitly
+deferred parity work described above.
 
 ## Primary Sources
 
