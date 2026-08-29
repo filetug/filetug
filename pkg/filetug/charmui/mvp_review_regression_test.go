@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/filetug/filetug/pkg/files"
 )
@@ -86,5 +87,30 @@ func TestLongTitleStaysOneLineWithin80By24Layout(t *testing.T) {
 	content := ansi.Strip(model.View().Content)
 	if lines := strings.Count(content, "\n") + 1; lines > model.height {
 		t.Fatalf("view rendered %d lines in a %d-line terminal", lines, model.height)
+	}
+}
+
+func TestPanelsKeepEqualOuterHeightWithSparseContent(t *testing.T) {
+	t.Parallel()
+	root := t.TempDir()
+	model, err := NewModel(root, testStore{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model.setSize(80, 24)
+	layout := model.panelLayout()
+	panels := []struct {
+		name   string
+		height int
+	}{
+		{name: "directories", height: lipgloss.Height(model.panel("Directories", model.tree.View(), focusTree, layout.treeOuter))},
+		{name: "files", height: lipgloss.Height(model.panel("Files", model.filesView(), focusFiles, layout.filesOuter))},
+		{name: "preview", height: lipgloss.Height(model.panel("Preview", model.preview.View(), focusPreview, layout.previewOuter))},
+	}
+	want := model.height - 2 // One application title row and one footer row.
+	for _, panel := range panels {
+		if panel.height != want {
+			t.Errorf("%s panel height = %d, want %d", panel.name, panel.height, want)
+		}
 	}
 }

@@ -22,7 +22,7 @@ func (adapter styleAdapter) panel(focused bool, outerWidth, contentHeight int) l
 		style = adapter.theme.FocusedPanel()
 	}
 	contentWidth := maxInt(1, outerWidth-style.GetHorizontalFrameSize())
-	return style.Width(contentWidth).Height(contentHeight)
+	return style.Width(contentWidth).Height(contentHeight + style.GetVerticalFrameSize())
 }
 
 func (adapter styleAdapter) panelFrameWidth() int {
