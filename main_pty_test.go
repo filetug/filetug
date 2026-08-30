@@ -1,0 +1,310 @@
+//go:build darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris || zos
+
+package main
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+	"syscall"
+	"testing"
+	"time"
+
+	"github.com/charmbracelet/x/ansi"
+	"github.com/creack/pty"
+)
+
+const (
+	ptySmokeBuildTimeout       = 60 * time.Second
+	ptySmokeLaunchTimeout      = 15 * time.Second
+	ptySmokeInteractionTimeout = 5 * time.Second
+	ptySmokeShutdownTimeout    = 10 * time.Second
+	ptySmokeResizeRow          = "99-resize-sentinel.txt"
+)
+
+func TestCompiledBinaryPTYHappyPath(t *testing.T) {
+	fixtureRoot := t.TempDir()
+	docsPath := filepath.Join(fixtureRoot, "docs")
+	if err := os.Mkdir(docsPath, 0o700); err != nil {
+		t.Fatalf("create docs fixture: %v", err)
+	}
+	alphaPath := filepath.Join(docsPath, "01-alpha.txt")
+	if err := os.WriteFile(alphaPath, []byte("ALPHA_PTY_MARKER\n"), 0o600); err != nil {
+		t.Fatalf("write alpha fixture: %v", err)
+	}
+	targetPath := filepath.Join(docsPath, "02-target.md")
+	if err := os.WriteFile(targetPath, []byte("# TARGET_PTY_MARKER\n\nPTY navigation reached the Markdown preview.\n"), 0o600); err != nil {
+		t.Fatalf("write target fixture: %v", err)
+	}
+	for index := 0; index < 19; index++ {
+		fillerName := fmt.Sprintf("03-filler-%02d.txt", index)
+		fillerPath := filepath.Join(docsPath, fillerName)
+		if err := os.WriteFile(fillerPath, []byte("filler\n"), 0o600); err != nil {
+			t.Fatalf("write filler fixture %q: %v", fillerName, err)
+		}
+	}
+	resizePath := filepath.Join(docsPath, ptySmokeResizeRow)
+	if err := os.WriteFile(resizePath, []byte("resize sentinel\n"), 0o600); err != nil {
+		t.Fatalf("write resize sentinel fixture: %v", err)
+	}
+
+	binaryPath := filepath.Join(t.TempDir(), "filetug")
+	buildContext, cancelBuild := context.WithTimeout(context.Background(), ptySmokeBuildTimeout)
+	defer cancelBuild()
+	build := exec.CommandContext(buildContext, "go", "build", "-o", binaryPath, ".")
+	build.Dir = ptySmokeWorkingDirectory(t)
+	buildOutput, err := build.CombinedOutput()
+	if err != nil {
+		t.Fatalf("build root executable: %v\n%s", err, buildOutput)
+	}
+
+	command := exec.Command(binaryPath, fixtureRoot)
+	command.Dir = fixtureRoot
+	command.Env = append(os.Environ(), "TERM=xterm-256color")
+	initialSize := &pty.Winsize{Rows: 24, Cols: 80}
+	terminal, err := pty.StartWithSize(command, initialSize)
+	if err != nil {
+		t.Fatalf("start root executable in PTY: %v", err)
+	}
+	processDone := make(chan error, 1)
+	go func() {
+		processDone <- command.Wait()
+	}()
+	processWaited := false
+	readerDone := make(chan error, 1)
+	readerStarted := false
+	readerWaited := false
+	t.Cleanup(func() {
+		_ = terminal.Close()
+		if !processWaited {
+			_ = command.Process.Kill()
+			timer := time.NewTimer(ptySmokeShutdownTimeout)
+			select {
+			case <-processDone:
+			case <-timer.C:
+				t.Errorf("root executable did not stop during cleanup")
+			}
+			timer.Stop()
+		}
+		if readerStarted && !readerWaited {
+			timer := time.NewTimer(ptySmokeShutdownTimeout)
+			select {
+			case <-readerDone:
+			case <-timer.C:
+				t.Errorf("PTY reader did not stop during cleanup")
+			}
+			timer.Stop()
+		}
+	})
+	rows, columns, err := pty.Getsize(terminal)
+	if err != nil {
+		t.Fatalf("read initial PTY dimensions: %v", err)
+	}
+	if rows != 24 || columns != 80 {
+		t.Fatalf("initial PTY dimensions = %dx%d, want 24x80", rows, columns)
+	}
+	transcript := newPTYSmokeTranscript()
+	go readPTYSmokeTranscript(terminal, transcript, readerDone)
+	readerStarted = true
+
+	transcript.waitForAll(t, 0, ptySmokeLaunchTimeout, "Directories", "Files", "Preview", "docs")
+	if _, err := io.WriteString(terminal, "\x1b[B\r"); err != nil {
+		t.Fatalf("open docs from directory tree: %v", err)
+	}
+	transcript.waitForAll(t, 0, ptySmokeInteractionTimeout, "01-alpha.txt", "02-target.md")
+	if _, err := io.WriteString(terminal, "\t\x1b[B"); err != nil {
+		t.Fatalf("focus files and select target: %v", err)
+	}
+	transcript.waitForAll(t, 0, ptySmokeInteractionTimeout, "TARGET_PTY_MARKER")
+	focusOffset := transcript.offset()
+	if _, err := io.WriteString(terminal, "\t"); err != nil {
+		t.Fatalf("focus preview: %v", err)
+	}
+	transcript.waitForAll(t, focusOffset, ptySmokeInteractionTimeout, "TARGET_PTY_MARKER")
+	preResizeTranscript := transcript.snapshot()
+	preResizeView := ansi.Strip(preResizeTranscript)
+	if strings.Contains(preResizeView, ptySmokeResizeRow) {
+		t.Fatalf("resize sentinel is visible before 100x30 resize: %q", ptySmokeResizeRow)
+	}
+
+	resizeOffset := transcript.offset()
+	resized := &pty.Winsize{Rows: 30, Cols: 100}
+	if err := pty.Setsize(terminal, resized); err != nil {
+		t.Fatalf("resize PTY: %v", err)
+	}
+	rows, columns, err = pty.Getsize(terminal)
+	if err != nil {
+		t.Fatalf("read resized PTY dimensions: %v", err)
+	}
+	if rows != 30 || columns != 100 {
+		t.Fatalf("resized PTY dimensions = %dx%d, want 30x100", rows, columns)
+	}
+	transcript.waitForAll(t, resizeOffset, ptySmokeInteractionTimeout, ptySmokeResizeRow)
+
+	if _, err := io.WriteString(terminal, "q"); err != nil {
+		t.Fatalf("quit root executable: %v", err)
+	}
+	processErr := awaitPTYSmokeProcess(t, processDone, transcript, "normal quit")
+	processWaited = true
+	if processErr != nil {
+		t.Fatalf("root executable exit: %v", processErr)
+	}
+	readerErr := awaitPTYSmokeReader(t, terminal, readerDone, transcript, "normal quit")
+	if err := terminal.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+		t.Fatalf("close PTY after normal quit: %v", err)
+	}
+	readerWaited = true
+	if readerErr != nil {
+		t.Fatalf("PTY reader: %v", readerErr)
+	}
+
+	raw := transcript.snapshot()
+	assertPTYSmokeSequence(t, raw, ansi.SetModeAltScreenSaveCursor, ansi.ResetModeAltScreenSaveCursor, "alternate screen")
+	assertPTYSmokeSequence(t, raw, ansi.HideCursor, ansi.ShowCursor, "cursor visibility")
+}
+
+type ptySmokeTranscript struct {
+	mu      sync.Mutex
+	raw     bytes.Buffer
+	updated chan struct{}
+}
+
+func newPTYSmokeTranscript() *ptySmokeTranscript {
+	return &ptySmokeTranscript{updated: make(chan struct{}, 1)}
+}
+
+func (t *ptySmokeTranscript) append(chunk []byte) {
+	t.mu.Lock()
+	_, _ = t.raw.Write(chunk)
+	t.mu.Unlock()
+	select {
+	case t.updated <- struct{}{}:
+	default:
+	}
+}
+
+func (t *ptySmokeTranscript) offset() int {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.raw.Len()
+}
+
+func (t *ptySmokeTranscript) snapshot() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.raw.String()
+}
+
+func (t *ptySmokeTranscript) waitForAll(testingT *testing.T, offset int, timeout time.Duration, markers ...string) {
+	testingT.Helper()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	for {
+		raw := t.snapshot()
+		if offset <= len(raw) {
+			section := raw[offset:]
+			stripped := ansi.Strip(section)
+			found := true
+			for _, marker := range markers {
+				if !strings.Contains(stripped, marker) {
+					found = false
+					break
+				}
+			}
+			if found {
+				return
+			}
+		}
+		select {
+		case <-t.updated:
+		case <-timer.C:
+			raw = t.snapshot()
+			stripped := ansi.Strip(raw)
+			testingT.Fatalf("PTY transcript after offset %d did not contain %q within %s\nraw=%q\nstripped=%q", offset, markers, timeout, raw, stripped)
+		}
+	}
+}
+
+func readPTYSmokeTranscript(terminal *os.File, transcript *ptySmokeTranscript, done chan<- error) {
+	buffer := make([]byte, 4096)
+	for {
+		count, err := terminal.Read(buffer)
+		if count > 0 {
+			transcript.append(buffer[:count])
+		}
+		if err == nil {
+			continue
+		}
+		if errors.Is(err, io.EOF) || errors.Is(err, syscall.EIO) || errors.Is(err, os.ErrClosed) {
+			done <- nil
+			return
+		}
+		done <- err
+		return
+	}
+}
+
+func awaitPTYSmokeProcess(testingT *testing.T, done <-chan error, transcript *ptySmokeTranscript, phase string) error {
+	testingT.Helper()
+	timer := time.NewTimer(ptySmokeShutdownTimeout)
+	defer timer.Stop()
+	select {
+	case err := <-done:
+		return err
+	case <-timer.C:
+		raw := transcript.snapshot()
+		stripped := ansi.Strip(raw)
+		testingT.Fatalf("root executable did not exit during %s within %s\nraw=%q\nstripped=%q", phase, ptySmokeShutdownTimeout, raw, stripped)
+		return nil
+	}
+}
+
+func awaitPTYSmokeReader(testingT *testing.T, terminal *os.File, done <-chan error, transcript *ptySmokeTranscript, phase string) error {
+	testingT.Helper()
+	timer := time.NewTimer(ptySmokeShutdownTimeout)
+	defer timer.Stop()
+	select {
+	case err := <-done:
+		return err
+	case <-timer.C:
+		if err := terminal.Close(); err != nil && !errors.Is(err, os.ErrClosed) {
+			testingT.Fatalf("close PTY after reader timeout: %v", err)
+		}
+		closer := time.NewTimer(ptySmokeShutdownTimeout)
+		defer closer.Stop()
+		select {
+		case err := <-done:
+			return err
+		case <-closer.C:
+			raw := transcript.snapshot()
+			stripped := ansi.Strip(raw)
+			testingT.Fatalf("PTY reader did not stop during %s within %s\nraw=%q\nstripped=%q", phase, ptySmokeShutdownTimeout, raw, stripped)
+			return nil
+		}
+	}
+}
+
+func assertPTYSmokeSequence(testingT *testing.T, raw, first, second, name string) {
+	testingT.Helper()
+	firstIndex := strings.Index(raw, first)
+	secondIndex := strings.LastIndex(raw, second)
+	if firstIndex < 0 || secondIndex <= firstIndex {
+		testingT.Fatalf("PTY %s sequence is missing or unordered: first=%q second=%q raw=%q", name, first, second, raw)
+	}
+}
+
+func ptySmokeWorkingDirectory(testingT *testing.T) string {
+	testingT.Helper()
+	directory, err := os.Getwd()
+	if err != nil {
+		testingT.Fatalf("get test working directory: %v", err)
+	}
+	return directory
+}
