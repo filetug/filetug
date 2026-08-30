@@ -31,19 +31,34 @@ permissions:
 
 jobs:
   release:
-    uses: strongo/cicd/.github/workflows/release.yml@v1
+    # Pinned to an immutable tag rather than the floating `v1` of strongo/cicd:
+    # @v1 defines the require_notarized_macos input but does not contain the
+    # macos_signing_preflight job that implements it, making the flag a silent
+    # no-op there. @v1.14.14 contains both.
+    uses: strongo/cicd/.github/workflows/release.yml@v1.14.14
     permissions:
       contents: write
     with:
       # Pre-1.0: cap an accidental major (feat!:) to a minor bump.
       allow_major_version_bump: false
+      # Block publication unless the macOS build is genuinely signed, notarized,
+      # AND executable. See https://github.com/strongo/cicd/issues/66
+      require_notarized_macos: true
     secrets:
       # Cross-repo PAT for the Homebrew tap (filetug/homebrew-filetug), forwarded
       # to GoReleaser as $GORELEASER_GITHUB_TOKEN and referenced by the cask's
       # repository.token.
       GORELEASER_GITHUB_TOKEN: ${{ secrets.FILETUG_GORELEASER_TOKEN }}
-      # Quill signing is intentionally dormant until strongo/cicd#66 is
-      # resolved and the shared preflight proves that the notarized binary
-      # both satisfies its designated requirement and executes on macOS.
-      # Do not forward the Apple secrets before that removal gate passes:
-      # https://github.com/strongo/cicd/issues/66
+      # macOS signing + notarization. These activate the `notarize:` block in
+      # .goreleaser.yaml. Previously withheld under a diagnosis (Go 1.27 Mach-O
+      # output) that was WRONG: the real cause was a .p12 rebuilt without the
+      # Apple Root CA, putting the G2 intermediate at cert-chain index 0, which
+      # quill emits as `root` in the designated requirement — unsatisfiable,
+      # hence SIGKILL. The .p12 has been rebuilt with the full chain and pushed
+      # to all org secret stores; proven on a real Go 1.27 binary
+      # (ingitdb/ingitdb-cli v0.65.11): signed, notarized, spctl-accepted, runs.
+      MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
+      MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+      NOTARIZE_ISSUER_ID: ${{ secrets.NOTARIZE_ISSUER_ID }}
+      NOTARIZE_KEY_ID: ${{ secrets.NOTARIZE_KEY_ID }}
+      NOTARIZE_KEY: ${{ secrets.NOTARIZE_KEY }}
