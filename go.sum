@@ -137,8 +137,8 @@ github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXf
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/strongo/buildinfo v0.1.1 h1:AblcAoKFDlgU2sOjTDZ8iKdvlKwW82WUK0LlR7cKypo=
-github.com/strongo/buildinfo v0.1.1/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
+github.com/strongo/buildinfo v0.2.0 h1:4lVoCUfUbwJN8EbqFNQ1oYdBnjKrKRx6FlLVrTPSleI=
+github.com/strongo/buildinfo v0.2.0/go.mod h1:JpxZ3Jku81LJC1RNIqCNYwguDzLk90eemxUXx4JnSlA=
 github.com/strongo/dsstore v0.0.1 h1:OwS+BIkI1CShxlUG40P5m+j/mpHPC5TRTUI0ZCLjCCA=
 github.com/strongo/dsstore v0.0.1/go.mod h1:Lwe80D8xUM44F8gPjJtLv1Sc0R3S4vTWJPeNzJNiCdo=
 github.com/strongo/strongo-tui v0.0.0-20260215000528-71bd9150836c h1:BcOhOsre5j3WymxIMmJdveRdzGKYYV4JB4AMpGwdoyk=

@@ -14,7 +14,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/rivo/tview v0.42.0
 	github.com/stretchr/testify v1.11.1
-	github.com/strongo/buildinfo v0.1.1
+	github.com/strongo/buildinfo v0.2.0
 	github.com/strongo/dsstore v0.0.1
 	github.com/strongo/strongo-tui v0.0.0-20260215000528-71bd9150836c
 	go.uber.org/mock v0.6.0
