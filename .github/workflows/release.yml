@@ -35,7 +35,7 @@ jobs:
     # @v1 defines the require_notarized_macos input but does not contain the
     # macos_signing_preflight job that implements it, making the flag a silent
     # no-op there. @v1.14.14 contains both.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.14.14
+    uses: strongo/cicd/.github/workflows/release.yml@v1.14.17
     permissions:
       contents: write
     with:
