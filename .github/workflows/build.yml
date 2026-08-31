@@ -26,7 +26,10 @@ jobs:
   strongo_workflow:
     permissions:
       contents: write
-    uses: strongo/cicd/.github/workflows/workflow.yml@v1
+    # Pinned to an exact tag, not the moving @v1 tag: @v1 has been retired
+    # because it drifted patch releases behind while still accepting inputs
+    # it did not implement, so a configured input could silently no-op.
+    uses: strongo/cicd/.github/workflows/workflow.yml@v1.14.15
     secrets:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     with:
