@@ -17,6 +17,7 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/profiling"
 	"github.com/filetug/filetug/pkg/tviewmocks"
+	"github.com/strongo/buildinfo"
 	"go.uber.org/mock/gomock"
 )
 
@@ -40,20 +41,17 @@ func TestMainRoot(t *testing.T) {
 
 func TestMainVersion(t *testing.T) {
 	oldRun := run
-	oldShowVersion := *showVersion
-	oldVersion := version
+	oldShowVersion := showVersion
 	oldVersionOutput := versionOutput
 	defer func() {
 		run = oldRun
-		*showVersion = oldShowVersion
-		version = oldVersion
+		showVersion = oldShowVersion
 		versionOutput = oldVersionOutput
 	}()
 
 	runCalled := false
 	run = func(application) { runCalled = true }
-	*showVersion = true
-	version = "test-version"
+	showVersion = true
 	var output bytes.Buffer
 	versionOutput = &output
 
@@ -61,8 +59,112 @@ func TestMainVersion(t *testing.T) {
 	if runCalled {
 		t.Fatal("version output started the TUI")
 	}
-	if got := output.String(); got != "filetug test-version\n" {
-		t.Fatalf("version output = %q", got)
+	want := buildinfo.Get("filetug").Short() + "\n"
+	if got := output.String(); got != want {
+		t.Fatalf("version output = %q, want %q", got, want)
+	}
+}
+
+// Test_newFileTugApp_versionFlags proves "-version" and its "-v" shorthand
+// both bind the shared showVersion variable through real flag.Parse()
+// parsing (not just by poking the package var directly), and that neither
+// collides with any other declared flag.
+func Test_newFileTugApp_versionFlags(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"long flag", []string{"ft", "-version"}},
+		{"short flag", []string{"ft", "-v"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldArgs := os.Args
+			oldFlags := flag.CommandLine
+			oldShowVersion := showVersion
+			oldVersionOutput := versionOutput
+			defer func() {
+				os.Args = oldArgs
+				flag.CommandLine = oldFlags
+				showVersion = oldShowVersion
+				versionOutput = oldVersionOutput
+			}()
+
+			flag.CommandLine = flag.NewFlagSet("filetug-test", flag.ContinueOnError)
+			showVersion = false
+			flag.BoolVar(&showVersion, "version", false, "print FileTug version and exit")
+			flag.BoolVar(&showVersion, "v", false, "print FileTug version and exit (shorthand)")
+			os.Args = tt.args
+			var output bytes.Buffer
+			versionOutput = &output
+
+			app := newFileTugApp()
+			if app != nil {
+				t.Fatal("expected nil app for a version flag")
+			}
+			want := buildinfo.Get("filetug").Short() + "\n"
+			if got := output.String(); got != want {
+				t.Fatalf("version output = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+// Test_newFileTugApp_versionSubcommand proves the bare "filetug version"
+// positional argument prints the long build identity and exits without
+// starting the TUI, matching the fleet's "<binary> version" convention.
+func Test_newFileTugApp_versionSubcommand(t *testing.T) {
+	oldArgs := os.Args
+	oldFlags := flag.CommandLine
+	oldVersionOutput := versionOutput
+	oldInitialPath := initialPath
+	defer func() {
+		os.Args = oldArgs
+		flag.CommandLine = oldFlags
+		versionOutput = oldVersionOutput
+		initialPath = oldInitialPath
+	}()
+
+	flag.CommandLine = flag.NewFlagSet("filetug-test", flag.ContinueOnError)
+	os.Args = []string{"ft", "version"}
+	var output bytes.Buffer
+	versionOutput = &output
+
+	app := newFileTugApp()
+	if app != nil {
+		t.Fatal("expected nil app for the version subcommand")
+	}
+	want := buildinfo.Get("filetug").Long() + "\n"
+	if got := output.String(); got != want {
+		t.Fatalf("version subcommand output = %q, want %q", got, want)
+	}
+}
+
+// Test_newFileTugApp_versionPathCollision proves a real path literally
+// named "version" is NOT swallowed by the version subcommand when it is
+// not the sole positional argument — documenting the inherent trade-off
+// that a bare `filetug version` with no other args opens the version
+// subcommand rather than a same-named path.
+func Test_newFileTugApp_versionPathCollision(t *testing.T) {
+	oldArgs := os.Args
+	oldFlags := flag.CommandLine
+	oldNewApp := newApp
+	oldInitialPath := initialPath
+	defer func() {
+		os.Args = oldArgs
+		flag.CommandLine = oldFlags
+		newApp = oldNewApp
+		initialPath = oldInitialPath
+	}()
+
+	flag.CommandLine = flag.NewFlagSet("filetug-test", flag.ContinueOnError)
+	os.Args = []string{"ft", "version", "extra-arg"}
+	ctrl := gomock.NewController(t)
+	newApp = func() navigator.App { return tviewmocks.NewMockApp(ctrl) }
+
+	app := newFileTugApp()
+	if app == nil || initialPath != "version" {
+		t.Fatalf("newFileTugApp initialPath = %q, want %q", initialPath, "version")
 	}
 }
 

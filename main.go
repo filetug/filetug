@@ -13,19 +13,28 @@ import (
 	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/profiling"
 	"github.com/rivo/tview"
+	"github.com/strongo/buildinfo"
 )
 
 var (
-	cpuProfile  = flag.String("cpuprofile", "", "write cpu profile to `file`")
-	memProfile  = flag.String("memprofile", "", "write memory profile to `file`")
-	pprofAddr   = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
-	showVersion = flag.Bool("version", false, "print FileTug version and exit")
+	cpuProfile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+	memProfile = flag.String("memprofile", "", "write memory profile to `file`")
+	pprofAddr  = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
 )
+
+// showVersion backs both the "-version" flag and its "-v" shorthand; flag
+// has no native alias syntax, so both flag.BoolVar registrations below bind
+// this one variable.
+var showVersion bool
+
+func init() {
+	flag.BoolVar(&showVersion, "version", false, "print FileTug version and exit")
+	flag.BoolVar(&showVersion, "v", false, "print FileTug version and exit (shorthand)")
+}
 
 var httpListenAndServe = http.ListenAndServe
 var osExit = os.Exit
 var pprofStopCPUProfile = pprof.StopCPUProfile
-var version = "dev"
 var versionOutput io.Writer = os.Stdout
 
 func main() {
@@ -37,12 +46,21 @@ func main() {
 
 func newFileTugApp() (app navigator.App) {
 	flag.Parse()
-	if *showVersion {
-		_, _ = fmt.Fprintf(versionOutput, "filetug %s\n", version)
+	if showVersion {
+		_, _ = fmt.Fprintf(versionOutput, "%s\n", buildinfo.Get("filetug").Short())
 		return nil
 	}
 	initialPath = ""
 	if flag.NArg() > 0 {
+		// "filetug version" (no other positional args) prints the long
+		// build identity and exits, matching the fleet's `<binary> version`
+		// convention. This shadows a real file or directory literally
+		// named "version" opened via a bare positional arg; a user with
+		// such a path must invoke it as e.g. `filetug ./version` instead.
+		if flag.NArg() == 1 && flag.Arg(0) == "version" {
+			_, _ = fmt.Fprintf(versionOutput, "%s\n", buildinfo.Get("filetug").Long())
+			return nil
+		}
 		initialPath = flag.Arg(0)
 	}
 
