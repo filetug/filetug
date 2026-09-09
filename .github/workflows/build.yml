@@ -36,3 +36,28 @@ jobs:
       disable-version-bumping: true
       code_coverage: true
       min_test_coverage_percent: 100
+
+  # Fail fast on go.mod/go.sum drift.
+  #
+  # This is the signal that would have caught datatug-cli's v0.13.2 before it
+  # shipped: two renovate pull requests for the same major bump interleaved and
+  # left go.mod requiring a version nothing imported. Build-and-test caught the
+  # stale imports only after both had merged; an untidy go.mod is visible on the
+  # FIRST of the pair, on its own pull request.
+  #
+  # `-diff` only reports; it never rewrites go.mod, so unlike a mutating
+  # `go mod tidy` it cannot mask the drift it is meant to find. This job belongs
+  # to the workflow named by release.yml's `require_workflow_success`, so drift
+  # also blocks the release, not just the merge.
+  go-mod-tidy:
+    name: go.mod is tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          # Must be >= this repo's go.mod `go` directive.
+          go-version: '1.26.0'
+          cache: true
+      - name: go mod tidy -diff
+        run: go mod tidy -diff

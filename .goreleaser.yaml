@@ -4,7 +4,15 @@ project_name: filetug
 
 before:
   hooks:
-    - go mod tidy
+    # VERIFY tidiness; never impose it. A mutating `go mod tidy` here rewrites
+    # go.mod inside the ephemeral release runner, so GoReleaser can build and
+    # publish something other than the tagged tree. datatug-cli's v0.13.2
+    # shipped exactly that way: two renovate pull requests for the same
+    # go-github major interleaved, this hook re-added the removed old major,
+    # and the published binaries were built against it while the tagged
+    # go.mod declared the new one. `-diff` writes nothing and exits non-zero
+    # on drift, so the release stops instead of healing itself.
+    - go mod tidy -diff
 
 builds:
   - id: filetug-unix
