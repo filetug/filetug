@@ -44,3 +44,10 @@ go.work.sum
 .idea
 specscore.local.yaml
 **/.*.lifecycle-transaction.lock
+
+# GoReleaser writes ./dist during a release. Go's VCS stamping counts UNTRACKED
+# files as a dirty tree, so leaving it unignored makes every released binary
+# report a `+dirty` version: `go version -m` on the published artifact shows
+# e.g. `v0.13.3+dirty`. GoReleaser's own dirty check only looks at tracked
+# modifications, so it never complains, and the version string lies quietly.
+dist/
