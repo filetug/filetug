@@ -35,10 +35,21 @@ jobs:
     # @v1 defines the require_notarized_macos input but does not contain the
     # macos_signing_preflight job that implements it, making the flag a silent
     # no-op there. @v1.14.14 contains both.
-    uses: strongo/cicd/.github/workflows/release.yml@v1.14.17
+    uses: strongo/cicd/.github/workflows/release.yml@v1.18.0
     permissions:
       contents: write
+      # Lets the require_workflow_success guard read the quality
+      # workflow's result for this commit. A reusable workflow cannot
+      # grant itself more than its caller allows, so it belongs here.
+      actions: read
     with:
+      # Refuse to tag or publish unless this repo's quality workflow
+      # passed for this exact commit. Release and that workflow are
+      # siblings started by the same push, with no cross-workflow
+      # `needs:` between them, so before this a red suite could not
+      # stop a release. datatug-cli shipped v0.13.2 that way. Names
+      # the workflow's `name:`, not its filename.
+      require_workflow_success: 'Build'
       # Pre-1.0: cap an accidental major (feat!:) to a minor bump.
       allow_major_version_bump: false
       # Block publication unless the macOS build is genuinely signed, notarized,
