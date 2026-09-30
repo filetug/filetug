@@ -77,7 +77,13 @@ type goDirMsg struct {
 
 // showDirMsg shows a directory in the file list without changing the root of
 // the tree; the tree sends it when its cursor moves to a sub-directory.
-type showDirMsg struct{ Path string }
+type showDirMsg struct {
+	// Store, when not nil, replaces the store first.
+	Store files.Store
+	Path  string
+	// Force shows the directory again although it is the one being shown.
+	Force bool
+}
 
 // dirLoadedMsg is the result of reading a directory.
 type dirLoadedMsg struct {

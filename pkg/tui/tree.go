@@ -148,6 +148,10 @@ func (t treeScreen) Update(msg tea.Msg) (nav.Screen, tea.Cmd) {
 		t = t.loaded(msg)
 	case gitStatusMsg:
 		t = t.gitStatus(msg)
+	case favoritesMsg:
+		return t, nav.SetPanels(newFavoritesScreen(t.sess, t), nil, nav.FocusToMenu)
+	case deleteMsg:
+		return t, t.deleteCurrent()
 	case widgets.NodeHighlightedMsg:
 		return t, t.highlighted(msg.Node)
 	case tea.KeyPressMsg:
@@ -289,6 +293,17 @@ func (t treeScreen) current() string {
 		return rootID
 	}
 	return node.ID
+}
+
+// deleteCurrent asks to delete the sub-directory under the cursor when the tree
+// has the focus. The root row stands for the directory being listed and is not
+// deleted from here.
+func (t treeScreen) deleteCurrent() tea.Cmd {
+	id := t.current()
+	if !t.tree.Focused() || id == rootID || id == loadingID || id == errorID {
+		return nil
+	}
+	return widgets.Emit(confirmDeleteMsg{Name: path.Base(id), Path: id})
 }
 
 // parentOf is the directory that contains dir.

@@ -38,6 +38,10 @@ type browser struct {
 	files     filesPane
 	preview   previewPane
 	worktrees worktreesPane
+	// panel, when not nil, takes the place of the preview.
+	panel panel
+	// modal, when not nil, is a dialog above the browser.
+	modal *dialog
 	// focus is the pane that has the focus while the browser is focused.
 	focus   pane
 	focused bool
@@ -80,6 +84,8 @@ func (b browser) AtEdge(dir widgets.Direction) bool {
 	switch {
 	case dir == widgets.Right:
 		return false
+	case b.focus == panePreview && b.panel != nil:
+		return false // a panel keeps every arrow key
 	case dir == widgets.Left:
 		return b.focus == paneFiles
 	case b.focus == paneFiles:
@@ -109,6 +115,9 @@ func (b *browser) layout() {
 	previewH, worktreesH := b.rightHeights()
 	w, h = frame.Inner(pw, previewH)
 	b.preview.SetSize(w, h)
+	if b.panel != nil {
+		b.panel.SetSize(w, h)
+	}
 	w, h = frame.Inner(pw, worktreesH)
 	b.worktrees.SetSize(w, h)
 }
@@ -125,6 +134,9 @@ func (b browser) rightHeights() (previewH, worktreesH int) {
 
 // applyFocus tells the panes whether they have the focus.
 func (b *browser) applyFocus() {
+	if b.panel != nil {
+		b.panel.SetFocused(b.focused && b.focus == panePreview)
+	}
 	if b.focused && b.focus == panePreview {
 		b.preview.Focus()
 	} else {
@@ -153,6 +165,26 @@ func (b browser) Update(msg tea.Msg) (nav.Screen, tea.Cmd) {
 		return b.loaded(msg)
 	case gitStatusMsg:
 		return b.gitStatus(msg)
+	case nav.HelpMsg:
+		return b.openDialog(newHelpDialog())
+	case deleteMsg:
+		return b.deleteFocused()
+	case confirmDeleteMsg:
+		return b.openDialog(newDeleteDialog(msg.Name, msg.Path))
+	case dialogDoneMsg:
+		return b.modalDone(msg)
+	case widgets.ButtonPressedMsg, widgets.CancelMsg, widgets.ItemSelectedMsg:
+		return b.toPanel(msg)
+	case deletedMsg:
+		return b.deleted(msg)
+	case openPanelMsg:
+		return b.openPanel(msg)
+	case panelClosedMsg:
+		return b.panelClosed(msg)
+	case createEntryMsg:
+		return b.createEntry(msg)
+	case createdMsg:
+		return b.created(msg)
 	case worktreesToggleMsg:
 		return b.toggleWorktrees()
 	case worktreeProbeMsg:
@@ -205,8 +237,11 @@ func (b browser) goDir(msg goDirMsg) (nav.Screen, tea.Cmd) {
 // showDir shows a directory in the file list while the tree keeps its root.
 func (b browser) showDir(msg showDirMsg) (nav.Screen, tea.Cmd) {
 	s := b.sess
+	if msg.Store != nil {
+		s.store = msg.Store
+	}
 	dirPath := fsutils.ExpandHome(msg.Path)
-	if s.currentPath() == dirPath {
+	if s.currentPath() == dirPath && !msg.Force && msg.Store == nil {
 		return b, nil
 	}
 	s.current = files.NewDirContext(s.store, dirPath, nil)
@@ -353,6 +388,11 @@ func crumbsFor(store files.Store, current string) (crumbs []widgets.Crumb, paths
 // preview and Left back; Space and the shortcuts are the grid's.
 func (b browser) key(msg tea.KeyPressMsg) (nav.Screen, tea.Cmd) {
 	switch {
+	case b.modal != nil:
+		return b.modalKey(msg)
+	case b.focus == panePreview && b.panel != nil:
+		cmd := b.panel.Update(msg)
+		return b, cmd
 	case b.focus == paneWorktrees:
 		return b.worktreesKey(msg)
 	case b.focus == panePreview && msg.String() == "down" && b.worktrees.visible && b.preview.AtEdge(widgets.Down):
@@ -461,6 +501,9 @@ func (b browser) focusPane(p pane) browser {
 
 // mouse focuses the pane that is clicked and scrolls the one under the wheel.
 func (b browser) mouse(msg tea.MouseMsg) (nav.Screen, tea.Cmd) {
+	if b.modal != nil {
+		return b, nil
+	}
 	fw, _ := b.geometry()
 	m := msg.Mouse()
 	target := panePreview
@@ -551,13 +594,21 @@ func (b browser) View() string {
 	left := widgets.NewFrame().WithTitle(b.filesTitle()).WithFocus(b.focused && b.focus == paneFiles).
 		Render(b.files.View(b.focused && b.focus == paneFiles), fw, b.h)
 	previewH, worktreesH := b.rightHeights()
-	right := widgets.NewFrame().WithTitle(b.preview.Title()).WithFocus(b.focused && b.focus == panePreview).
-		Render(b.preview.View(), pw, previewH)
+	rightTitle, rightBody := b.preview.Title(), b.preview.View()
+	if b.panel != nil {
+		rightTitle, rightBody = b.panel.Title(), b.panel.View()
+	}
+	right := widgets.NewFrame().WithTitle(rightTitle).WithFocus(b.focused && b.focus == panePreview).
+		Render(rightBody, pw, previewH)
 	if b.worktrees.visible {
 		below := widgets.NewFrame().WithTitle("Worktrees").WithFocus(b.focused && b.focus == paneWorktrees).
 			Render(b.worktrees.View(), pw, worktreesH)
 		right = right + "\n" + below
 	}
 	gap := strings.TrimSuffix(strings.Repeat(" \n", b.h), "\n")
-	return lipgloss.JoinHorizontal(lipgloss.Top, left, gap, right)
+	screen := lipgloss.JoinHorizontal(lipgloss.Top, left, gap, right)
+	if b.modal != nil {
+		screen = widgets.Center(screen, b.modal.box.View(), b.w, b.h)
+	}
+	return screen
 }
