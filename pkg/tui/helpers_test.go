@@ -10,6 +10,7 @@ import (
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
 	"github.com/tuigoff/tuigoff/pkg/nav/navtest"
+	"github.com/tuigoff/tuigoff/pkg/uitest"
 )
 
 // tree builds a small directory tree and returns its root:
@@ -46,6 +47,13 @@ func open(t *testing.T, dir string) *navtest.Harness {
 	return navtest.New(t, rootPage(Options{Path: dir}), navtest.WithNav(shellOptions()...), navtest.WithSize(140, 30))
 }
 
+// openSized is open with a terminal of the given size.
+func openSized(t *testing.T, dir string, w, h int) *navtest.Harness {
+	t.Helper()
+	isolateState(t)
+	return navtest.New(t, rootPage(Options{Path: dir}), navtest.WithNav(shellOptions()...), navtest.WithSize(w, h))
+}
+
 // isolateState keeps the tests away from the user's saved state.
 func isolateState(t *testing.T) {
 	t.Helper()
@@ -80,3 +88,6 @@ func (f fakeStore) CreateFile(context.Context, string) error { return nil }
 
 // osStore is the store of the real file system.
 func osStore() files.Store { return osfile.NewStore("/") }
+
+// stripANSI removes styling from rendered text.
+func stripANSI(s string) string { return uitest.Plain(s) }

@@ -10,6 +10,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/filetug/filetug/pkg/files"
+	"github.com/filetug/filetug/pkg/gitutils"
 	"github.com/tuigoff/tuigoff/pkg/grid"
 	"github.com/tuigoff/tuigoff/pkg/nav"
 	"github.com/tuigoff/tuigoff/pkg/nav/navtest"
@@ -284,5 +285,64 @@ func TestBrowserEmptyAndTinyViews(t *testing.T) {
 	}
 	if got := (browser{sess: &session{}}).filesTitle(); got != "" {
 		t.Fatalf("no title without a directory: %q", got)
+	}
+}
+
+func TestGitStatusDecoratesTheTreeAndTheList(t *testing.T) {
+	dir := tree(t)
+	fakeGit(t, dir, map[string]*gitutils.RepoStatus{
+		dir:                                changes("main", 0, 0, 0),
+		filepath.Join(dir, "alpha"):        changes("main", 2, 7, 1),
+		filepath.Join(dir, "a.go"):         changes("main", 1, 3, 0),
+		filepath.Join(dir, "README.md"):    changes("main", 0, 0, 0),
+		filepath.Join(dir, "alpha", "sub"): nil,
+	})
+	h := open(t, dir)
+	h.RequireContains("alpha ┆main┆ƒ2+7-1").RequireContains("a.go ┆main┆ƒ1+3").RequireContains(".. ┆main±0")
+	h.RequireNotContains("README.md ┆")
+	h.RequireNotContains("beta ┆")
+
+	// Moving the cursor starts a new list request but keeps the tree's statuses.
+	h.Press("down", "down")
+	h.RequireContains("alpha ┆main┆ƒ2+7-1")
+}
+
+func TestGitStatusIsOnlyReadOnTheLocalFileSystem(t *testing.T) {
+	b := newBrowser(&session{store: fakeStore{root: url.URL{Scheme: "ftp"}}})
+	if b.gitCmds(dirLoadedMsg{}) != nil {
+		t.Fatal("no repositories on an FTP server")
+	}
+}
+
+func TestGitStatusForADirectoryShownFromTheTree(t *testing.T) {
+	dir := tree(t)
+	fakeGit(t, dir, map[string]*gitutils.RepoStatus{filepath.Join(dir, "alpha", "x"): changes("main", 1, 1, 0)})
+	write(t, filepath.Join(dir, "alpha", "x"), "x")
+	h := open(t, dir)
+	h.Press("down", "down") // alpha: Gamma, alpha
+	h.RequireContains("x ┆main┆ƒ1+1")
+}
+
+func TestStaleGitStatusIsDropped(t *testing.T) {
+	sess := &session{store: osStore(), seq: 3, rootSeq: 2}
+	b := newBrowser(sess)
+	ch := make(chan gitStatusMsg)
+	for _, msg := range []gitStatusMsg{
+		{Seq: 1, Scope: gitFiles, Path: "/x", Text: "t", stream: ch},
+		{Seq: 1, Scope: gitTree, Path: "/x", Text: "t", stream: ch},
+	} {
+		if _, cmd := b.Update(msg); cmd != nil {
+			t.Fatalf("a stale status ends its stream: %+v", msg)
+		}
+	}
+	close(ch)
+	if _, cmd := b.Update(gitStatusMsg{Seq: 3, Scope: gitFiles, Path: "/x", Text: "t", stream: ch}); cmd == nil {
+		t.Fatal("a current status asks for the next one")
+	}
+	tr := newTreeScreen(sess)
+	s, _ := tr.Update(gitStatusMsg{Seq: 9, Scope: gitTree, Path: "/x", Text: "t"})
+	s, _ = s.Update(gitStatusMsg{Seq: 2, Scope: gitFiles, Path: "/x", Text: "t"})
+	if len(s.(treeScreen).git) != 0 {
+		t.Fatal("the tree shows only current statuses of its own list")
 	}
 }

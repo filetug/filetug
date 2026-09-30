@@ -274,3 +274,12 @@ func TestTreeKeysBeforeAnythingIsLoaded(t *testing.T) {
 		t.Fatal("Right asks the shell to focus the file list")
 	}
 }
+
+func TestEmojiForDir(t *testing.T) {
+	if emojiForDir("Library") != "📚" || emojiForDir("BIN") != "🚀" {
+		t.Fatal("well-known directories have their own icon, whatever the case")
+	}
+	if emojiForDir("anything-else") != dirEmoji {
+		t.Fatal("other directories share one icon")
+	}
+}

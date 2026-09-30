@@ -12,13 +12,21 @@ import (
 
 func TestSessionBeginCancelsTheRequestInFlight(t *testing.T) {
 	s := &session{}
-	ctx1, seq1 := s.begin()
-	ctx2, seq2 := s.begin()
+	ctx1, seq1 := s.begin(true)
+	root1 := s.rootCtx
+	ctx2, seq2 := s.begin(false)
 	if ctx1.Err() == nil {
 		t.Fatal("the first request must be canceled by the second")
 	}
 	if ctx2.Err() != nil || seq2 != seq1+1 {
 		t.Fatalf("the second request is current: err=%v seq=%d,%d", ctx2.Err(), seq1, seq2)
+	}
+	if root1.Err() != nil || s.rootSeq != seq1 {
+		t.Fatal("a request that keeps the tree root does not stop its git reads")
+	}
+	s.begin(true)
+	if root1.Err() == nil || s.rootSeq != s.seq {
+		t.Fatal("a new tree root stops the git reads of the old one")
 	}
 }
 

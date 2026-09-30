@@ -163,6 +163,7 @@ func actions() []nav.Action {
 	return []nav.Action{
 		{ID: "root", Binding: altBinding('/', "root", 'r'), Msg: goDirMsg{Path: "/"}},
 		{ID: "home", Binding: altBinding('~', "home", '`', 'h'), Msg: goDirMsg{Path: "~"}},
+		{ID: "worktrees", Binding: altBinding('w', "worktrees"), Msg: worktreesToggleMsg{}},
 		{ID: "exit", Binding: altBinding('x', "exit"), Msg: tea.QuitMsg{}},
 		{ID: "grow", Binding: altBinding('=', "wider", '+'), Msg: resizeMsg{Delta: 1}, Hidden: true},
 		{ID: "shrink", Binding: altBinding('-', "narrower", '_'), Msg: resizeMsg{Delta: -1}, Hidden: true},

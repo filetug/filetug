@@ -19,8 +19,15 @@ type session struct {
 	store files.Store
 	// seq numbers the requests that replace the directory being shown; a result
 	// whose sequence is not the current one is stale and is dropped.
-	seq    uint64
-	cancel context.CancelFunc
+	seq     uint64
+	listCtx context.Context
+	cancel  context.CancelFunc
+	// rootSeq and rootCtx belong to the request that made the current tree
+	// root; the git status of the tree's rows is read under them so that moving
+	// the cursor, which starts new list requests, does not stop it.
+	rootSeq    uint64
+	rootCtx    context.Context
+	rootCancel context.CancelFunc
 	// treeRoot is the directory the tree lists the sub-directories of.
 	treeRoot *files.DirContext
 	// current is the directory whose entries the file list shows: the tree's
@@ -34,13 +41,22 @@ type session struct {
 	previewSeq uint64
 }
 
-// begin cancels the request in flight and starts a new one.
-func (s *session) begin() (ctx context.Context, seq uint64) {
+// begin cancels the request in flight and starts a new one. A request that
+// replaces the tree root also cancels the git status reads of the old root.
+func (s *session) begin(root bool) (ctx context.Context, seq uint64) {
 	if s.cancel != nil {
 		s.cancel()
 	}
 	ctx, s.cancel = context.WithCancel(context.Background())
+	s.listCtx = ctx
 	s.seq++
+	if root {
+		if s.rootCancel != nil {
+			s.rootCancel()
+		}
+		s.rootCtx, s.rootCancel = context.WithCancel(context.Background())
+		s.rootSeq = s.seq
+	}
 	return ctx, s.seq
 }
 

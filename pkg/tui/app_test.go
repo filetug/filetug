@@ -112,9 +112,10 @@ func TestActionsAreBoundToAltAndOption(t *testing.T) {
 		keys[a.ID] = a.Binding.Keys()
 	}
 	for id, want := range map[string][]string{
-		"root": {"alt+/", "÷", "alt+r", "®"},
-		"home": {"alt+~", "alt+`", "alt+h", "˙"},
-		"exit": {"alt+x", "≈"},
+		"root":      {"alt+/", "÷", "alt+r", "®"},
+		"home":      {"alt+~", "alt+`", "alt+h", "˙"},
+		"exit":      {"alt+x", "≈"},
+		"worktrees": {"alt+w", "∑"},
 	} {
 		got := append([]string(nil), keys[id]...)
 		sort.Strings(got)
