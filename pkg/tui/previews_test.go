@@ -144,15 +144,15 @@ func TestBuildPreviewDirectory(t *testing.T) {
 	dir := tree(t)
 	entry := realEntry(t, filepath.Join(dir, "alpha"))
 	msg := buildPreview(1, osStore(), entry, true, 60)
-	if msg.Body != "1 directories, 0 files" || msg.Err != nil {
+	if msg.Summary == nil || msg.Summary.Path != filepath.Join(dir, "alpha") || msg.Err != nil {
 		t.Fatalf("%+v", msg)
 	}
 	msg = buildPreview(1, nil, entry, true, 60)
-	if msg.Body != "" || msg.Err != nil {
+	if msg.Summary == nil || len(msg.Summary.Groups) != 0 || msg.Err != nil {
 		t.Fatalf("no store, nothing to count: %+v", msg)
 	}
 	msg = buildPreview(1, fakeStore{root: url.URL{Scheme: "fake"}, err: errors.New("boom")}, entry, true, 60)
-	if msg.Err == nil {
+	if msg.Err == nil || msg.Summary != nil {
 		t.Fatalf("a read error is reported: %+v", msg)
 	}
 }

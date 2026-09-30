@@ -2,7 +2,6 @@ package tui
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,6 +42,8 @@ type previewMsg struct {
 	Size, Modified string
 	// Body is the styled text to show.
 	Body string
+	// Summary describes a directory; Body is then empty.
+	Summary *dirSummary
 	// Err is why the preview could not be built; Body is then empty.
 	Err error
 }
@@ -70,29 +71,11 @@ func buildPreview(seq uint64, store files.Store, entry files.EntryWithDirPath, i
 		msg.Modified = info.ModTime().Format(time.RFC3339)
 	}
 	if isDir {
-		msg.Body, msg.Err = dirSummaryText(store, entry.FullName())
+		msg.Summary, msg.Err = buildSummary(store, entry.FullName())
 		return msg
 	}
 	msg.Body, msg.Err = fileText(entry, width)
 	return msg
-}
-
-// dirSummaryText counts the entries of a directory.
-func dirSummaryText(store files.Store, dirPath string) (string, error) {
-	if store == nil {
-		return "", nil
-	}
-	entries, err := store.ReadDir(context.Background(), dirPath)
-	if err != nil {
-		return "", err
-	}
-	dirs := 0
-	for _, e := range entries {
-		if e.IsDir() {
-			dirs++
-		}
-	}
-	return fmt.Sprintf("%d directories, %d files", dirs, len(entries)-dirs), nil
 }
 
 // fileText renders the content of a file according to its type.

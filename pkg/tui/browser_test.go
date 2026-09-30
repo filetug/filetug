@@ -346,3 +346,16 @@ func TestStaleGitStatusIsDropped(t *testing.T) {
 		t.Fatal("the tree shows only current statuses of its own list")
 	}
 }
+
+func TestBrowserTextPreviewFocus(t *testing.T) {
+	h := open(t, tree(t))
+	h.Press("right", "down", "down", "right") // a.go, then its text preview
+	if browserOf(h).focus != panePreview || browserOf(h).preview.summary != nil {
+		t.Fatal("the text preview has the focus")
+	}
+	h.Press("pgdown", "down") // scrolls the text
+	h.Press("left")
+	if browserOf(h).focus != paneFiles {
+		t.Fatal("Left returns to the file list")
+	}
+}

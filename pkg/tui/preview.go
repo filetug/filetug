@@ -20,7 +20,11 @@ type previewPane struct {
 	size     string
 	modified string
 	loading  bool
-	w, h     int
+	// summary, when not nil, is shown instead of the text: the entry is a
+	// directory.
+	summary *summaryPane
+	focused bool
+	w, h    int
 }
 
 func newPreviewPane() previewPane {
@@ -34,15 +38,31 @@ func (p previewPane) Title() string { return p.title }
 func (p *previewPane) SetSize(w, h int) {
 	p.w, p.h = w, h
 	p.text.SetSize(w, max(h-attrRows, 0))
+	if p.summary != nil {
+		p.summary.SetSize(w, max(h-attrRows, 0))
+	}
 }
 
-// Focus and Blur move the focus into and out of the text.
-func (p *previewPane) Focus() { p.text.Focus() }
-func (p *previewPane) Blur()  { p.text.Blur() }
+// Focus and Blur move the focus into and out of the text or the summary.
+func (p *previewPane) Focus() { p.setFocus(true) }
+func (p *previewPane) Blur()  { p.setFocus(false) }
+
+func (p *previewPane) setFocus(focused bool) {
+	p.focused = focused
+	if focused {
+		p.text.Focus()
+	} else {
+		p.text.Blur()
+	}
+	if p.summary != nil {
+		p.summary.SetFocused(focused)
+	}
+}
 
 // Loading shows that a preview is being built.
 func (p *previewPane) Loading(title string) {
 	p.title, p.size, p.modified, p.loading = title, "", "", true
+	p.summary = nil
 	p.text.SetTextColor(theme.MutedColor())
 	p.text.SetContent("Loading…")
 }
@@ -51,6 +71,14 @@ func (p *previewPane) Loading(title string) {
 func (p *previewPane) Show(msg previewMsg) {
 	p.loading = false
 	p.title, p.size, p.modified = msg.Title, msg.Size, msg.Modified
+	p.summary = nil
+	if msg.Summary != nil {
+		p.summary = newSummaryPane(msg.Summary)
+		p.summary.SetSize(p.w, max(p.h-attrRows, 0))
+		p.summary.SetFocused(p.focused)
+		p.text.SetContent("")
+		return
+	}
 	if msg.Err != nil {
 		p.text.SetTextColor(theme.ErrorColor())
 		p.text.SetContent(msg.Err.Error())
@@ -65,13 +93,21 @@ func (p previewPane) Text() string { return p.text.Content() }
 
 // Update forwards keys and the wheel to the text.
 func (p previewPane) Update(msg tea.Msg) (previewPane, tea.Cmd) {
+	if p.summary != nil {
+		return p, p.summary.Update(msg)
+	}
 	var cmd tea.Cmd
 	p.text, cmd = p.text.Update(msg)
 	return p, cmd
 }
 
 // AtEdge implements widgets.Boundary.
-func (p previewPane) AtEdge(dir widgets.Direction) bool { return p.text.AtEdge(dir) }
+func (p previewPane) AtEdge(dir widgets.Direction) bool {
+	if p.summary != nil {
+		return p.summary.AtEdge(dir)
+	}
+	return p.text.AtEdge(dir)
+}
 
 // View draws the attributes above the text.
 func (p previewPane) View() string {
@@ -82,5 +118,9 @@ func (p previewPane) View() string {
 		label.Render("Modified") + " " + p.modified,
 		rule,
 	}
-	return widgets.Fit(strings.Join(head, "\n")+"\n"+p.text.View(), p.w, p.h)
+	body := p.text.View()
+	if p.summary != nil {
+		body = p.summary.View()
+	}
+	return widgets.Fit(strings.Join(head, "\n")+"\n"+body, p.w, p.h)
 }
