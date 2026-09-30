@@ -14,11 +14,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filetug/filetug/pkg/filetug/navigator"
+	tea "charm.land/bubbletea/v2"
 	"github.com/filetug/filetug/pkg/profiling"
-	"github.com/filetug/filetug/pkg/tviewmocks"
+	"github.com/filetug/filetug/pkg/tui"
 	"github.com/strongo/buildinfo"
-	"go.uber.org/mock/gomock"
 )
 
 func TestMainRoot(t *testing.T) {
@@ -159,8 +158,7 @@ func Test_newFileTugApp_versionPathCollision(t *testing.T) {
 
 	flag.CommandLine = flag.NewFlagSet("filetug-test", flag.ContinueOnError)
 	os.Args = []string{"ft", "version", "extra-arg"}
-	ctrl := gomock.NewController(t)
-	newApp = func() navigator.App { return tviewmocks.NewMockApp(ctrl) }
+	newApp = func() application { return okApp{} }
 
 	app := newFileTugApp()
 	if app == nil || initialPath != "version" {
@@ -169,40 +167,25 @@ func Test_newFileTugApp_versionPathCollision(t *testing.T) {
 }
 
 func Test_newApp(t *testing.T) {
-	oldSetupApp := setupApp
+	oldInitialPath := initialPath
+	oldRunTUI := runTUI
 	defer func() {
-		setupApp = oldSetupApp
+		initialPath = oldInitialPath
+		runTUI = oldRunTUI
 	}()
-	setupAppCalled := false
-	setupApp = func(app navigator.App) {
-		setupAppCalled = true
+	initialPath = "/tmp/filetug"
+	var got tui.Options
+	runTUI = func(options tui.Options, _ ...tea.ProgramOption) error {
+		got = options
+		return errors.New("ended")
 	}
 
 	app := newApp()
 	if app == nil {
-		t.Errorf("newApp returned nil")
+		t.Fatal("newApp returned nil")
 	}
-	if !setupAppCalled {
-		t.Errorf("expected newApp to call setupApp")
-	}
-}
-
-func Test_newAppWithInitialPath(t *testing.T) {
-	oldSetupAppAtPath := setupAppAtPath
-	oldInitialPath := initialPath
-	defer func() {
-		setupAppAtPath = oldSetupAppAtPath
-		initialPath = oldInitialPath
-	}()
-	calledWith := ""
-	setupAppAtPath = func(_ navigator.App, path string) {
-		calledWith = path
-	}
-	initialPath = "/tmp/filetug"
-
-	app := newApp()
-	if app == nil || calledWith != initialPath {
-		t.Fatalf("newApp path setup = %q", calledWith)
+	if err := app.Run(); err == nil || err.Error() != "ended" || got.Path != "/tmp/filetug" {
+		t.Fatalf("the application runs the user interface at the path: err=%v options=%+v", err, got)
 	}
 }
 
@@ -220,8 +203,7 @@ func Test_newFileTugAppWithPositionalPath(t *testing.T) {
 
 	flag.CommandLine = flag.NewFlagSet("filetug-test", flag.ContinueOnError)
 	os.Args = []string{"ft", "/tmp/filetug"}
-	ctrl := gomock.NewController(t)
-	newApp = func() navigator.App { return tviewmocks.NewMockApp(ctrl) }
+	newApp = func() application { return okApp{} }
 
 	if app := newFileTugApp(); app == nil || initialPath != "/tmp/filetug" {
 		t.Fatalf("newFileTugApp positional path = %q", initialPath)
@@ -292,11 +274,7 @@ func Test_newFileTugApp(t *testing.T) {
 		newApp = oldNewApp
 	}()
 
-	ctrl := gomock.NewController(t)
-
-	newApp = func() navigator.App {
-		return tviewmocks.NewMockApp(ctrl)
-	}
+	newApp = func() application { return okApp{} }
 
 	t.Run("default", func(t *testing.T) {
 		app := newFileTugApp()
@@ -403,11 +381,7 @@ func Test_newFileTugApp_pprofError(t *testing.T) {
 		httpListenAndServe = oldListenAndServe
 	}()
 
-	ctrl := gomock.NewController(t)
-
-	newApp = func() navigator.App {
-		return tviewmocks.NewMockApp(ctrl)
-	}
+	newApp = func() application { return okApp{} }
 
 	oldStderr := os.Stderr
 	r, w, _ := os.Pipe()
@@ -483,7 +457,7 @@ func Test_newFileTugApp_panicRecovery(t *testing.T) {
 		osExit = oldExit
 		pprofStopCPUProfile = oldStop
 	}()
-	newApp = func() navigator.App {
+	newApp = func() application {
 		panic("boom")
 	}
 
