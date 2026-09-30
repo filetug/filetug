@@ -128,6 +128,13 @@ func (p *filesPane) SetDir(dir *files.DirContext, showDirs bool, selectName stri
 	}
 }
 
+// SetGitText shows the git status of an entry after its name.
+func (p *filesPane) SetGitText(fullPath, text string) {
+	if p.state.rows.SetGitText(fullPath, text) {
+		p.grid.Refresh()
+	}
+}
+
 // SetError shows why a directory could not be read.
 func (p *filesPane) SetError(err error) {
 	p.err = err

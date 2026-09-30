@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"maps"
 	"os"
 	"path"
 	"strings"
@@ -66,11 +67,14 @@ type treeScreen struct {
 	loading  bool
 	err      error
 	search   string
-	w, h     int
+	// git is the styled git status of the root and of its sub-directories, by
+	// path.
+	git  map[string]string
+	w, h int
 }
 
 func newTreeScreen(sess *session) treeScreen {
-	return treeScreen{sess: sess, tree: widgets.NewTree("tree"), keys: defaultTreeKeys()}
+	return treeScreen{sess: sess, tree: widgets.NewTree("tree"), keys: defaultTreeKeys(), git: map[string]string{}}
 }
 
 var (
@@ -142,6 +146,8 @@ func (t treeScreen) Update(msg tea.Msg) (nav.Screen, tea.Cmd) {
 		t = t.reset(msg)
 	case dirLoadedMsg:
 		t = t.loaded(msg)
+	case gitStatusMsg:
+		t = t.gitStatus(msg)
 	case widgets.NodeHighlightedMsg:
 		return t, t.highlighted(msg.Node)
 	case tea.KeyPressMsg:
@@ -158,7 +164,19 @@ func (t treeScreen) Update(msg tea.Msg) (nav.Screen, tea.Cmd) {
 func (t treeScreen) reset(msg goDirMsg) treeScreen {
 	t.rootPath = fsutils.ExpandHome(msg.Path)
 	t.children, t.err, t.loading, t.search = nil, nil, true, ""
+	t.git = map[string]string{}
 	return t.rebuild(rootID)
+}
+
+// gitStatus shows the git status of a directory of the tree. Statuses of
+// other lists, and stale ones, are not the tree's.
+func (t treeScreen) gitStatus(msg gitStatusMsg) treeScreen {
+	if msg.Scope != gitTree || msg.Seq != t.sess.rootSeq {
+		return t
+	}
+	t.git = maps.Clone(t.git)
+	t.git[msg.Path] = msg.Text
+	return t.rebuild(t.current())
 }
 
 // loaded shows the sub-directories of the new root. Stale results and results
@@ -192,7 +210,7 @@ func (t treeScreen) rootText() string {
 
 // rebuild recreates the nodes from the state and puts the cursor on id.
 func (t treeScreen) rebuild(id string) treeScreen {
-	root := widgets.TreeNode{ID: rootID, Text: t.rootText(), Ref: t.rootPath}
+	root := widgets.TreeNode{ID: rootID, Text: t.withGit(t.rootText(), t.rootPath), Ref: t.rootPath}
 	switch {
 	case t.loading:
 		root.Children = []widgets.TreeNode{{ID: loadingID, Text: "Loading…", Color: theme.MutedColor(), Unselectable: true}}
@@ -217,7 +235,7 @@ func (t treeScreen) nodes() []widgets.TreeNode {
 		}
 		nodes = append(nodes, widgets.TreeNode{
 			ID:   path.Join(t.rootPath, name),
-			Text: t.nodeText(name),
+			Text: t.withGit(t.nodeText(name), path.Join(t.rootPath, name)),
 			Ref:  path.Join(t.rootPath, name),
 		})
 	}
@@ -239,6 +257,14 @@ func (t treeScreen) nodeText(name string) string {
 	}
 	match := name[i : i+len(t.search)]
 	return dirEmoji + " " + name[:i] + matchStyle.Render(match) + name[i+len(t.search):]
+}
+
+// withGit appends the git status of a path to a caption.
+func (t treeScreen) withGit(text, fullPath string) string {
+	if status := t.git[fullPath]; status != "" {
+		return text + " " + status
+	}
+	return text
 }
 
 // nodePath is the directory a node stands for.
