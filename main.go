@@ -9,10 +9,8 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/filetug/filetug/pkg/filetug"
-	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/profiling"
-	"github.com/rivo/tview"
+	"github.com/filetug/filetug/pkg/tui"
 	"github.com/strongo/buildinfo"
 )
 
@@ -44,7 +42,7 @@ func main() {
 	}
 }
 
-func newFileTugApp() (app navigator.App) {
+func newFileTugApp() (app application) {
 	flag.Parse()
 	if showVersion {
 		_, _ = fmt.Fprintf(versionOutput, "%s\n", buildinfo.Get("filetug").Short())
@@ -95,20 +93,19 @@ func newFileTugApp() (app navigator.App) {
 	return
 }
 
-var setupApp = filetug.SetupApp
-var setupAppAtPath = filetug.SetupAppAtPath
 var initialPath string
 
-var newApp = func() navigator.App {
-	tvApp := tview.NewApplication()
-	app := navigator.NewApp(tvApp)
-	if initialPath == "" {
-		setupApp(app)
-	} else {
-		setupAppAtPath(app, initialPath)
-	}
-	return app
-}
+// runTUI runs the Bubble Tea user interface; tests replace it so that no
+// terminal is needed.
+var runTUI = tui.Run
+
+// tuiApp is the FileTug user interface opened at a path.
+type tuiApp struct{ path string }
+
+// Run shows the user interface until the user quits.
+func (a tuiApp) Run() error { return runTUI(tui.Options{Path: a.path}) }
+
+var newApp = func() application { return tuiApp{path: initialPath} }
 
 type application interface{ Run() error }
 
