@@ -135,6 +135,15 @@ func (p *filesPane) SetGitText(fullPath, text string) {
 	}
 }
 
+// SetExtFilter shows only the files with these extensions; none shows all
+// files.
+func (p *filesPane) SetExtFilter(extensions []string) {
+	filter := p.state.rows.filter
+	filter.Extensions = extensions
+	p.state.rows.SetFilter(filter)
+	p.grid.Refresh()
+}
+
 // SetError shows why a directory could not be read.
 func (p *filesPane) SetError(err error) {
 	p.err = err

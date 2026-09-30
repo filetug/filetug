@@ -165,6 +165,14 @@ func (b browser) Update(msg tea.Msg) (nav.Screen, tea.Cmd) {
 		return b.loaded(msg)
 	case gitStatusMsg:
 		return b.gitStatus(msg)
+	case extFilterMsg:
+		b.files.SetExtFilter(msg.Extensions)
+	case focusFilesMsg:
+		return b.focusPane(paneFiles), nil
+	case gitDirLoadedMsg:
+		if b.preview.summary != nil {
+			b.preview.summary.GitLoaded(msg)
+		}
 	case nav.HelpMsg:
 		return b.openDialog(newHelpDialog())
 	case deleteMsg:
@@ -199,10 +207,7 @@ func (b browser) Update(msg tea.Msg) (nav.Screen, tea.Cmd) {
 			b.preview.Show(msg)
 		}
 	case grid.SelectionChangedMsg:
-		if msg.ID == filesID {
-			cmd := b.previewCurrent()
-			return b, cmd
-		}
+		return b.selectionChanged(msg)
 	case grid.RowActivatedMsg:
 		return b, b.activated(msg)
 	case widgets.CrumbSelectedMsg:
@@ -324,6 +329,19 @@ func (b *browser) previewCurrent() tea.Cmd {
 	return previewCmd(s.previewSeq, s.store, ref.Entry, ref.IsDir, b.preview.w)
 }
 
+// selectionChanged follows the cursor of the file list with the preview, and the
+// cursor of the file types table with the filter of the file list.
+func (b browser) selectionChanged(msg grid.SelectionChangedMsg) (nav.Screen, tea.Cmd) {
+	switch {
+	case msg.ID == filesID:
+		cmd := b.previewCurrent()
+		return b, cmd
+	case msg.ID == typesID && b.preview.summary != nil:
+		return b, b.preview.summary.Selection()
+	}
+	return b, nil
+}
+
 // activated opens the directory of an activated row.
 func (b browser) activated(msg grid.RowActivatedMsg) tea.Cmd {
 	if item, ok := msg.Row.Ref.(worktreeInfo); ok && msg.ID == worktreesID {
@@ -397,6 +415,10 @@ func (b browser) key(msg tea.KeyPressMsg) (nav.Screen, tea.Cmd) {
 		return b.worktreesKey(msg)
 	case b.focus == panePreview && msg.String() == "down" && b.worktrees.visible && b.preview.AtEdge(widgets.Down):
 		return b.focusPane(paneWorktrees), nil
+	case b.focus == panePreview && b.preview.summary != nil:
+		var cmd tea.Cmd
+		b.preview, cmd = b.preview.Update(msg)
+		return b, cmd
 	case b.focus == paneFiles && msg.String() == "right":
 		return b.focusPane(panePreview), nil
 	case b.focus == panePreview && msg.String() == "left":
