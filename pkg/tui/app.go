@@ -163,6 +163,11 @@ func actions() []nav.Action {
 	return []nav.Action{
 		{ID: "root", Binding: altBinding('/', "root", 'r'), Msg: goDirMsg{Path: "/"}},
 		{ID: "home", Binding: altBinding('~', "home", '`', 'h'), Msg: goDirMsg{Path: "~"}},
+		{ID: "new", Binding: key.NewBinding(key.WithKeys("f7"), key.WithHelp("f7", "new")), Msg: openPanelMsg{Kind: panelNew}},
+		{ID: "delete", Binding: key.NewBinding(key.WithKeys("f8"), key.WithHelp("f8", "delete")), Msg: deleteMsg{}},
+		{ID: "scripts", Binding: key.NewBinding(key.WithKeys("f10"), key.WithHelp("f10", "scripts")), Msg: openPanelMsg{Kind: panelScripts}},
+		{ID: "favorites", Binding: altBinding('f', "favorites"), Msg: favoritesMsg{}},
+		{ID: "masks", Binding: altBinding('m', "masks"), Msg: openPanelMsg{Kind: panelMasks}},
 		{ID: "worktrees", Binding: altBinding('w', "worktrees"), Msg: worktreesToggleMsg{}},
 		{ID: "exit", Binding: altBinding('x', "exit"), Msg: tea.QuitMsg{}},
 		{ID: "grow", Binding: altBinding('=', "wider", '+'), Msg: resizeMsg{Delta: 1}, Hidden: true},

@@ -9,6 +9,7 @@ import (
 
 	"github.com/filetug/filetug/pkg/files"
 	"github.com/filetug/filetug/pkg/files/osfile"
+	"github.com/filetug/filetug/pkg/filetug/ftfav"
 	"github.com/tuigoff/tuigoff/pkg/nav/navtest"
 	"github.com/tuigoff/tuigoff/pkg/uitest"
 )
@@ -58,10 +59,17 @@ func openSized(t *testing.T, dir string, w, h int) *navtest.Harness {
 func isolateState(t *testing.T) {
 	t.Helper()
 	oldDir, oldTree, oldName := saveCurrentDir, saveSelectedTreeDir, saveCurrentFileName
+	oldGet, oldAdd, oldDel := getFavorites, addFavorite, deleteFavorite
 	saveCurrentDir = func(string, string) {}
 	saveSelectedTreeDir = func(string) {}
 	saveCurrentFileName = func(string) {}
-	t.Cleanup(func() { saveCurrentDir, saveSelectedTreeDir, saveCurrentFileName = oldDir, oldTree, oldName })
+	getFavorites = func() ([]ftfav.Favorite, error) { return nil, nil }
+	addFavorite = func(ftfav.Favorite) error { return nil }
+	deleteFavorite = func(ftfav.Favorite) error { return nil }
+	t.Cleanup(func() {
+		saveCurrentDir, saveSelectedTreeDir, saveCurrentFileName = oldDir, oldTree, oldName
+		getFavorites, addFavorite, deleteFavorite = oldGet, oldAdd, oldDel
+	})
 }
 
 // fakeStore is a files.Store whose directories are given as entries.
