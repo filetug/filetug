@@ -13,12 +13,6 @@ import (
 	"github.com/tuigoff/tuigoff/pkg/grid"
 )
 
-// entryFor builds an entry with the given info in a directory.
-func entryFor(name string, isDir bool, size int64, mod time.Time) files.EntryWithDirPath {
-	e := files.NewDirEntry(name, isDir, files.Size(size), files.ModTime(mod))
-	return files.NewEntryWithDirPath(e, "/d")
-}
-
 // failingEntry is an os.DirEntry whose Info fails.
 type failingEntry struct{ files.DirEntry }
 
@@ -135,7 +129,7 @@ func TestFileRowsParentEntry(t *testing.T) {
 			}
 			continue
 		}
-		if full != c.want && !(c.want == "/" && full == "/") {
+		if full != c.want {
 			t.Errorf("%s: parent %q, want %q", c.dir, full, c.want)
 		}
 	}

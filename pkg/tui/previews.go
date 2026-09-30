@@ -119,7 +119,7 @@ func fileText(entry files.EntryWithDirPath, width int) (string, error) {
 func readAndRender(full string, max int, render func(name string, data []byte) (string, error)) (string, error) {
 	data, err := readFileData(full, max)
 	if err != nil && !errors.Is(err, io.EOF) {
-		return "", fmt.Errorf("Failed to read file %s: %w", full, err)
+		return "", fmt.Errorf("failed to read file %s: %w", full, err)
 	}
 	return render(filepath.Base(full), data)
 }
@@ -133,7 +133,7 @@ func highlightedText(name string, data []byte) (string, error) {
 	}
 	text, err := colorize(string(data), highlight.DefaultStyle, lexer)
 	if err != nil {
-		return "", fmt.Errorf("Failed to format file: %w", err)
+		return "", fmt.Errorf("failed to format file: %w", err)
 	}
 	return text, nil
 }
@@ -153,7 +153,7 @@ func jsonText(name string, data []byte) (string, error) {
 func dsstoreText(name string, data []byte) (string, error) {
 	var s dsstore.Store
 	if err := s.Read(bytes.NewBuffer(data)); err != nil {
-		return "", fmt.Errorf("Failed to read %s: %w", name, err)
+		return "", fmt.Errorf("failed to read %s: %w", name, err)
 	}
 	var sb strings.Builder
 	for _, r := range s.Records {
@@ -173,12 +173,12 @@ func isImageExt(ext string) bool { return imageExts[ext] }
 func imageMeta(full string) (string, error) {
 	f, err := openFile(full)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read file %s: %w", full, err)
+		return "", fmt.Errorf("failed to read file %s: %w", full, err)
 	}
 	defer func() { _ = f.Close() }()
 	cfg, format, err := image.DecodeConfig(f)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read image %s: %w", full, err)
+		return "", fmt.Errorf("failed to read image %s: %w", full, err)
 	}
 	return fmt.Sprintf("Format: %s\n  Width  %d\n  Height %d\n", strings.ToUpper(format), cfg.Width, cfg.Height), nil
 }

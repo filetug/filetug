@@ -181,7 +181,7 @@ func TestCrumbsFor(t *testing.T) {
 	if len(crumbs) != 2 || len(paths) != 1 || paths[0] != "/srv" || crumbs[1].Title != "fake" {
 		t.Fatalf("only the store: %v %v", crumbs, paths)
 	}
-	crumbs, paths = crumbsFor(store, "/srv")
+	crumbs, _ = crumbsFor(store, "/srv")
 	if len(crumbs) != 2 {
 		t.Fatal("the store root itself")
 	}

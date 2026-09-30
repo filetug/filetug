@@ -69,7 +69,7 @@ func TestBuildPreviewMarkdownJSONAndDSStore(t *testing.T) {
 	}
 
 	write(t, filepath.Join(dir, ".DS_Store"), "not a store")
-	if msg := preview(t, filepath.Join(dir, ".DS_Store")); msg.Err == nil || !strings.Contains(msg.Err.Error(), "Failed to read .DS_Store") {
+	if msg := preview(t, filepath.Join(dir, ".DS_Store")); msg.Err == nil || !strings.Contains(msg.Err.Error(), "failed to read .DS_Store") {
 		t.Fatalf("a broken .DS_Store is reported: %+v", msg)
 	}
 }
@@ -102,7 +102,7 @@ func TestBuildPreviewImage(t *testing.T) {
 		t.Fatalf("image metadata: %q", got)
 	}
 	write(t, filepath.Join(dir, "broken.png"), "not an image")
-	if msg := preview(t, filepath.Join(dir, "broken.png")); msg.Err == nil || !strings.Contains(msg.Err.Error(), "Failed to read image") {
+	if msg := preview(t, filepath.Join(dir, "broken.png")); msg.Err == nil || !strings.Contains(msg.Err.Error(), "failed to read image") {
 		t.Fatalf("a broken image is reported: %+v", msg)
 	}
 	oldOpen := openFile
@@ -119,7 +119,7 @@ func TestBuildPreviewErrors(t *testing.T) {
 	defer func() { readFileData = oldRead }()
 
 	readFileData = func(string, int) ([]byte, error) { return nil, errors.New("denied") }
-	if msg := preview(t, filepath.Join(dir, "a.go")); msg.Err == nil || !strings.Contains(msg.Err.Error(), "Failed to read file") {
+	if msg := preview(t, filepath.Join(dir, "a.go")); msg.Err == nil || !strings.Contains(msg.Err.Error(), "failed to read file") {
 		t.Fatalf("a read error is reported: %+v", msg)
 	}
 	readFileData = func(string, int) ([]byte, error) { return []byte("abc"), io.EOF }
@@ -135,7 +135,7 @@ func TestHighlightedTextReportsALexerFailure(t *testing.T) {
 	old := colorize
 	colorize = func(string, string, chroma.Lexer) (string, error) { return "", errors.New("bad") }
 	defer func() { colorize = old }()
-	if _, err := highlightedText("x.go", []byte("package x")); err == nil || !strings.Contains(err.Error(), "Failed to format file") {
+	if _, err := highlightedText("x.go", []byte("package x")); err == nil || !strings.Contains(err.Error(), "failed to format file") {
 		t.Fatalf("got %v", err)
 	}
 }
