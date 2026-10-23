@@ -10,3 +10,6 @@ func createBuiltInMasks() []Mask {
 		}},
 	}
 }
+
+// BuiltIn returns the masks that ship with FileTug.
+func BuiltIn() []Mask { return createBuiltInMasks() }

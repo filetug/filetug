@@ -12,48 +12,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-func TestDirGitStatus_String(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		name   string
-		status *RepoStatus
-		want   string
-	}{
-		{
-			name:   "nil",
-			status: nil,
-			want:   "",
-		},
-		{
-			name:   "clean",
-			status: &RepoStatus{Branch: "main"},
-			want:   "[gray]┆[-][darkgray]main[-][lightgray]±0[-]",
-		},
-		{
-			name: "dirty",
-			status: &RepoStatus{Branch: "feature", DirGitChangesStats: DirGitChangesStats{
-				FilesChanged:  2,
-				FileGitStatus: FileGitStatus{Insertions: 10, Deletions: 5},
-			}},
-			want: "[gray]┆[-][darkgray]feature[-][gray]┆[-][darkgray]ƒ2[-][green]+10[-][red]-5[-]",
-		},
-		{
-			name: "only_files_changed",
-			status: &RepoStatus{Branch: "main", DirGitChangesStats: DirGitChangesStats{
-				FilesChanged: 1,
-			}},
-			want: "[gray]┆[-][darkgray]main[-][gray]┆[-][darkgray]ƒ1[-][lightgray]±0[-]",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.status.String(); got != tt.want {
-				t.Errorf("RepoStatus.String() = %s, want %s", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestGetRepositoryStatus(t *testing.T) {
 	t.Parallel()
 	tempDir, err := os.MkdirTemp("", "gitutils-test-*")

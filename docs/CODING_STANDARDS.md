@@ -64,13 +64,14 @@ Responsiveness of the app is critical for a good user experience.
 - All top tests that do replace mock package level variable should be able to run in parallel (call `t.Parallel()` as
   1st stament of the test)
 - use `-timeout=10s` when running tests
-- use `package tviewmocks` for mocks of the interfaces of the `tview` package
+- drive the terminal UI with the tuigoff test harnesses: `pkg/nav/navtest` for whole screens and `pkg/uitest` for keys
+  and plain-text views; no test starts a real terminal
 
 - **Adding New Tests**:
     - Place tests in the same package as the code being tested, using the `_test.go` suffix.
     - The project uses both the standard `testing` package and `github.com/stretchr/testify/assert` for more expressive
       assertions.
-    - For UI-related tests, check `pkg/sneatv/ttestutils` for helper functions.
+    - For UI-related tests, see `pkg/tui/helpers_test.go` (temporary directory tree, harness setup, fake store).
 
 - **Demonstration Test Example**:
   The following example demonstrates a simple test using `testify/assert`:

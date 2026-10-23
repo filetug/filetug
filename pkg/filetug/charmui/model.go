@@ -446,8 +446,12 @@ func readLocalFile(ctx context.Context, path string, limit int64) (string, error
 }
 
 func renderPreview(path, content string) (string, error) {
+	return renderPreviewWithStyle(path, content, "dark")
+}
+
+func renderPreviewWithStyle(path, content, style string) (string, error) {
 	if strings.EqualFold(filepath.Ext(path), ".md") || strings.EqualFold(filepath.Ext(path), ".markdown") {
-		rendered, err := glamour.Render(content, "dark")
+		rendered, err := glamour.Render(content, style)
 		if err != nil {
 			return "", err
 		}

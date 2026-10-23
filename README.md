@@ -106,7 +106,7 @@ ft <PATH_TO_DIRECTORY_OR_FILE>
 
 ## Libraries used
 
-- [tview](https://github.com/rivo/tview) - Modern, rich, and extensible Go UI library for terminal applications
+- [Bubble Tea](https://charm.land/bubbletea) and [tuigoff](https://github.com/tuigoff/tuigoff) - the terminal UI: Elm architecture, the shared navigation shell, lists, trees, grids and forms
 - [chroma](https://github.com/alecthomas/chroma) - Go syntax highlighting library
 
 ## Contributing

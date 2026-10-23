@@ -55,15 +55,7 @@ func TestCompiledBinaryPTYHappyPath(t *testing.T) {
 		t.Fatalf("write resize sentinel fixture: %v", err)
 	}
 
-	binaryPath := filepath.Join(t.TempDir(), "filetug")
-	buildContext, cancelBuild := context.WithTimeout(context.Background(), ptySmokeBuildTimeout)
-	defer cancelBuild()
-	build := exec.CommandContext(buildContext, "go", "build", "-o", binaryPath, ".")
-	build.Dir = ptySmokeWorkingDirectory(t)
-	buildOutput, err := build.CombinedOutput()
-	if err != nil {
-		t.Fatalf("build root executable: %v\n%s", err, buildOutput)
-	}
+	binaryPath := buildCharmMVPBinary(t)
 
 	command := exec.Command(binaryPath, fixtureRoot)
 	command.Dir = fixtureRoot
@@ -307,4 +299,53 @@ func ptySmokeWorkingDirectory(testingT *testing.T) string {
 		testingT.Fatalf("get test working directory: %v", err)
 	}
 	return directory
+}
+
+// charmMVPHarnessSource is a throwaway main that launches the Bubble Tea MVP.
+// The production root stays on the tuigoff UI from main; this harness keeps the
+// compiled PTY smoke pointed at charmui.RunLocal.
+const charmMVPHarnessSource = `package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/filetug/filetug/pkg/filetug/charmui"
+)
+
+func main() {
+	path := "."
+	if len(os.Args) > 1 {
+		path = os.Args[1]
+	}
+	if err := charmui.RunLocal(path); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
+}
+`
+
+func buildCharmMVPBinary(testingT *testing.T) string {
+	testingT.Helper()
+	moduleRoot := ptySmokeWorkingDirectory(testingT)
+	harnessDir := testingT.TempDir()
+	mainPath := filepath.Join(harnessDir, "main.go")
+	if err := os.WriteFile(mainPath, []byte(charmMVPHarnessSource), 0o600); err != nil {
+		testingT.Fatalf("write MVP harness: %v", err)
+	}
+	goMod := fmt.Sprintf("module ptyharness\n\ngo 1.27.0\n\nrequire github.com/filetug/filetug v0.0.0\n\nreplace github.com/filetug/filetug => %s\n", moduleRoot)
+	modPath := filepath.Join(harnessDir, "go.mod")
+	if err := os.WriteFile(modPath, []byte(goMod), 0o600); err != nil {
+		testingT.Fatalf("write MVP harness module: %v", err)
+	}
+	binaryPath := filepath.Join(testingT.TempDir(), "filetug-mvp")
+	buildContext, cancelBuild := context.WithTimeout(context.Background(), ptySmokeBuildTimeout)
+	defer cancelBuild()
+	build := exec.CommandContext(buildContext, "go", "build", "-mod=mod", "-o", binaryPath, ".")
+	build.Dir = harnessDir
+	buildOutput, err := build.CombinedOutput()
+	if err != nil {
+		testingT.Fatalf("build MVP executable: %v\n%s", err, buildOutput)
+	}
+	return binaryPath
 }

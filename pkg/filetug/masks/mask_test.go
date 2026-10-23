@@ -115,3 +115,11 @@ func TestMask_String(t *testing.T) {
 		t.Errorf("String() = %v, want %v", got, want)
 	}
 }
+
+func TestBuiltIn(t *testing.T) {
+	t.Parallel()
+	all := BuiltIn()
+	if len(all) == 0 || all[0].Name != "Coding" {
+		t.Fatalf("unexpected built-in masks: %v", all)
+	}
+}

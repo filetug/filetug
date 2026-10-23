@@ -9,87 +9,56 @@ import (
 	"os"
 	"runtime/pprof"
 
-	"github.com/filetug/filetug/pkg/filetug"
-	"github.com/filetug/filetug/pkg/filetug/charmui"
-	"github.com/filetug/filetug/pkg/filetug/navigator"
 	"github.com/filetug/filetug/pkg/profiling"
-	"github.com/rivo/tview"
+	"github.com/filetug/filetug/pkg/tui"
+	"github.com/strongo/buildinfo"
 )
 
 var (
-	cpuProfile  = flag.String("cpuprofile", "", "write cpu profile to `file`")
-	memProfile  = flag.String("memprofile", "", "write memory profile to `file`")
-	pprofAddr   = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
-	showVersion = flag.Bool("version", false, "print FileTug version and exit")
+	cpuProfile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+	memProfile = flag.String("memprofile", "", "write memory profile to `file`")
+	pprofAddr  = flag.String("pprof", "", "start pprof http server on `address` (e.g. localhost:6060)")
 )
+
+// showVersion backs both the "-version" flag and its "-v" shorthand; flag
+// has no native alias syntax, so both flag.BoolVar registrations below bind
+// this one variable.
+var showVersion bool
+
+func init() {
+	flag.BoolVar(&showVersion, "version", false, "print FileTug version and exit")
+	flag.BoolVar(&showVersion, "v", false, "print FileTug version and exit (shorthand)")
+}
 
 var httpListenAndServe = http.ListenAndServe
 var osExit = os.Exit
 var pprofStopCPUProfile = pprof.StopCPUProfile
-var version = "dev"
 var versionOutput io.Writer = os.Stdout
 
 func main() {
-	app := newMVPFileTugApp()
+	app := newFileTugApp()
 	if app != nil {
 		run(app)
 	}
 }
 
-// charmApplication keeps runtime profiling alive for the direct Bubble Tea
-// process, then relies on Bubble Tea v2 to restore terminal state on exit.
-type charmApplication struct {
-	path     string
-	cleanups []func()
-}
-
-func (a charmApplication) Run() error {
-	defer func() {
-		for index := len(a.cleanups) - 1; index >= 0; index-- {
-			a.cleanups[index]()
+func newFileTugApp() (app application) {
+	flag.Parse()
+	if showVersion {
+		_, _ = fmt.Fprintf(versionOutput, "%s\n", buildinfo.Get("filetug").Short())
+		return nil
+	}
+	initialPath = ""
+	if flag.NArg() > 0 {
+		// "filetug version" (no other positional args) prints the long
+		// build identity and exits, matching the fleet's `<binary> version`
+		// convention. This shadows a real file or directory literally
+		// named "version" opened via a bare positional arg; a user with
+		// such a path must invoke it as e.g. `filetug ./version` instead.
+		if flag.NArg() == 1 && flag.Arg(0) == "version" {
+			_, _ = fmt.Fprintf(versionOutput, "%s\n", buildinfo.Get("filetug").Long())
+			return nil
 		}
-	}()
-	return charmui.RunLocal(a.path)
-}
-
-func newMVPFileTugApp() (app application) {
-	flag.Parse()
-	if *showVersion {
-		_, _ = fmt.Fprintf(versionOutput, "filetug %s\n", version)
-		return nil
-	}
-	initialPath = ""
-	if flag.NArg() > 0 {
-		initialPath = flag.Arg(0)
-	}
-	if *pprofAddr != "" {
-		go func() {
-			err := httpListenAndServe(*pprofAddr, nil)
-			if err != nil {
-				_, _ = fmt.Fprintf(os.Stderr, "pprof server error: %v\n", err)
-			}
-		}()
-	}
-	cleanups := make([]func(), 0, 2)
-	if *cpuProfile != "" {
-		cleanup := profiling.DoCPUProfiling(*cpuProfile)
-		cleanups = append(cleanups, cleanup)
-	}
-	if *memProfile != "" {
-		cleanup := profiling.DoMemProfiling(*memProfile)
-		cleanups = append(cleanups, cleanup)
-	}
-	return charmApplication{path: initialPath, cleanups: cleanups}
-}
-
-func newFileTugApp() (app navigator.App) {
-	flag.Parse()
-	if *showVersion {
-		_, _ = fmt.Fprintf(versionOutput, "filetug %s\n", version)
-		return nil
-	}
-	initialPath = ""
-	if flag.NArg() > 0 {
 		initialPath = flag.Arg(0)
 	}
 
@@ -124,20 +93,19 @@ func newFileTugApp() (app navigator.App) {
 	return
 }
 
-var setupApp = filetug.SetupApp
-var setupAppAtPath = filetug.SetupAppAtPath
 var initialPath string
 
-var newApp = func() navigator.App {
-	tvApp := tview.NewApplication()
-	app := navigator.NewApp(tvApp)
-	if initialPath == "" {
-		setupApp(app)
-	} else {
-		setupAppAtPath(app, initialPath)
-	}
-	return app
-}
+// runTUI runs the Bubble Tea user interface; tests replace it so that no
+// terminal is needed.
+var runTUI = tui.Run
+
+// tuiApp is the FileTug user interface opened at a path.
+type tuiApp struct{ path string }
+
+// Run shows the user interface until the user quits.
+func (a tuiApp) Run() error { return runTUI(tui.Options{Path: a.path}) }
+
+var newApp = func() application { return tuiApp{path: initialPath} }
 
 type application interface{ Run() error }
 
