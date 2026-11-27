@@ -23,9 +23,7 @@ on:
 
 # One release at a time; a second push queues instead of racing the first.
 concurrency:
-  # Per ref: a tag-push release must never be replaced by a main-push one
-  # (one pending run per group), or the tag is never published.
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 permissions:
